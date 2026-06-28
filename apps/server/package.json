@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "../../node_modules/.bin/tsc -p tsconfig.json && node --watch dist/index.js",
+    "dev": "../../node_modules/.bin/tsc -p tsconfig.json && node dist/index.js",
+    "dev:watch": "../../node_modules/.bin/tsc -p tsconfig.json && node --watch dist/index.js",
     "start": "../../node_modules/.bin/tsc -p tsconfig.json && node dist/index.js",
     "build": "../../node_modules/.bin/tsc -p tsconfig.json",
     "typecheck": "../../node_modules/.bin/tsc -p tsconfig.json --noEmit",

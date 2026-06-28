@@ -15,6 +15,9 @@ npm --prefix apps/server run dev
 ```
 
 The default port is `4317`. Override it with `PORT=4318`.
+The default dev command does not use Node watch mode because hackathon demos
+need a stable long-running server. Use `npm --prefix apps/server run dev:watch`
+only when active server hot reload is worth the occasional restart.
 
 Receipts are written to `apps/server/sessions/` by default outside production.
 Disable them with:
