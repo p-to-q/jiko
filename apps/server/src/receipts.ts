@@ -32,6 +32,16 @@ export class ReceiptWriter {
         transcript: session.transcript?.text,
         language: session.transcript?.language
       },
+      providers: {
+        stt: session.transcript
+          ? {
+              id: session.transcript.provider,
+              latencyMs: session.transcript.latencyMs,
+              remote: false
+            }
+          : undefined,
+        tts: latestTtsProvider(session)
+      },
       features: session.features,
       readings: session.readings,
       result: session.result,
@@ -40,6 +50,17 @@ export class ReceiptWriter {
 
     await writeFile(path.join(receiptDir, `${safeFilePart(session.id)}.json`), `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
   }
+}
+
+function latestTtsProvider(session: SessionRecord) {
+  for (let index = session.events.length - 1; index >= 0; index -= 1) {
+    const event = session.events[index];
+    if (event.type === "tts.finished") {
+      return event.provider;
+    }
+  }
+
+  return undefined;
 }
 
 function defaultReceiptState(): boolean {

@@ -507,6 +507,7 @@ function getDebugFields(payload: unknown) {
   const features = isRecord(record.features) ? record.features : undefined;
   const result = isRecord(record.result) ? record.result : undefined;
   const readings = Array.isArray(record.readings) ? record.readings : undefined;
+  const providers = isRecord(record.providers) ? record.providers : undefined;
 
   return [
     {
@@ -524,6 +525,10 @@ function getDebugFields(payload: unknown) {
     {
       label: "Result",
       value: summarizeResult(result),
+    },
+    {
+      label: "TTS",
+      value: summarizeTts(result, providers),
     },
   ];
 }
@@ -600,6 +605,24 @@ function summarizeResult(result: Record<string, unknown> | undefined) {
   }
 
   return "available";
+}
+
+function summarizeTts(
+  result: Record<string, unknown> | undefined,
+  providers: Record<string, unknown> | undefined,
+) {
+  const tts = isRecord(result?.tts) ? result.tts : undefined;
+  const provider = isRecord(providers?.tts) ? providers.tts : undefined;
+  const clipKey = stringValue(tts?.clipKey);
+  const providerId = stringValue(provider?.id);
+
+  if (!clipKey && !providerId) {
+    return "pending";
+  }
+
+  return [clipKey ? `clip ${clipKey}` : undefined, providerId]
+    .filter(Boolean)
+    .join(" / ");
 }
 
 function formatDuration(durationMs: number | undefined) {
