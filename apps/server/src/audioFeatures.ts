@@ -8,13 +8,18 @@ type WavData = {
 
 const sampleMax = 32768;
 const frameMs = 25;
+const pitchFrameMs = 60;
 const silenceThreshold = 0.015;
 const speechThreshold = 0.026;
 const minPauseMs = 220;
+const minPitchHz = 60;
+const maxPitchHz = 500;
+const minPitchCorrelation = 0.35;
 
 export async function extractWavFeatures(path: string): Promise<AudioFeatures> {
   const wav = parsePcm16MonoWav(await readFile(path));
   const frameSize = Math.max(1, Math.round((wav.sampleRateHz * frameMs) / 1000));
+  const pitchFrameSize = Math.max(1, Math.round((wav.sampleRateHz * pitchFrameMs) / 1000));
   const frameRms = collectFrameRms(wav.samples, frameSize);
   const durationMs = Math.round((wav.samples.length / wav.sampleRateHz) * 1000);
   const rmsMean = mean(frameRms);
@@ -27,6 +32,8 @@ export async function extractWavFeatures(path: string): Promise<AudioFeatures> {
   const pauseRuns = collectPauseRuns(speechFlags, frameMs, minPauseMs);
   const firstSpeechFrame = speechFlags.findIndex(Boolean);
   const clippedSamples = countClippedSamples(wav.samples);
+  const pitchValues = collectPitchValues(wav.samples, wav.sampleRateHz, pitchFrameSize);
+  const pitchMeanHz = pitchValues.length ? mean(pitchValues) : undefined;
 
   return {
     durationMs,
@@ -38,6 +45,8 @@ export async function extractWavFeatures(path: string): Promise<AudioFeatures> {
     rmsMean: round(rmsMean),
     rmsStd: round(rmsStd),
     rmsPeak: round(rmsPeak),
+    pitchMeanHz: pitchMeanHz === undefined ? undefined : round(pitchMeanHz),
+    pitchStdHz: pitchMeanHz === undefined ? undefined : round(standardDeviation(pitchValues, pitchMeanHz)),
     clippingDetected: clippedSamples > Math.max(12, wav.samples.length * 0.001),
     noiseDetected: rmsMean > 0 && rmsMean < 0.006 && rmsPeak > 0.08
   };
@@ -159,6 +168,88 @@ function countClippedSamples(samples: Int16Array): number {
   }
 
   return count;
+}
+
+function collectPitchValues(
+  samples: Int16Array,
+  sampleRateHz: number,
+  frameSize: number
+): number[] {
+  const values: number[] = [];
+
+  for (let start = 0; start < samples.length; start += frameSize) {
+    const end = Math.min(samples.length, start + frameSize);
+    const rms = frameRms(samples, start, end);
+
+    if (rms < speechThreshold) {
+      continue;
+    }
+
+    const pitch = estimateFramePitch(samples, start, end, sampleRateHz);
+
+    if (pitch !== undefined) {
+      values.push(pitch);
+    }
+  }
+
+  return values;
+}
+
+function frameRms(samples: Int16Array, start: number, end: number): number {
+  let sumSquares = 0;
+
+  for (let index = start; index < end; index += 1) {
+    const normalized = samples[index] / sampleMax;
+    sumSquares += normalized * normalized;
+  }
+
+  return Math.sqrt(sumSquares / Math.max(1, end - start));
+}
+
+function estimateFramePitch(
+  samples: Int16Array,
+  start: number,
+  end: number,
+  sampleRateHz: number
+): number | undefined {
+  const length = end - start;
+
+  if (length < 32) {
+    return undefined;
+  }
+
+  const minLag = Math.max(1, Math.floor(sampleRateHz / maxPitchHz));
+  const maxLag = Math.min(length - 1, Math.ceil(sampleRateHz / minPitchHz));
+  let bestLag = 0;
+  let bestCorrelation = 0;
+
+  for (let lag = minLag; lag <= maxLag; lag += 1) {
+    let sum = 0;
+    let energyA = 0;
+    let energyB = 0;
+
+    for (let index = start; index < end - lag; index += 1) {
+      const a = samples[index] / sampleMax;
+      const b = samples[index + lag] / sampleMax;
+      sum += a * b;
+      energyA += a * a;
+      energyB += b * b;
+    }
+
+    const denominator = Math.sqrt(energyA * energyB);
+    const correlation = denominator > 0 ? sum / denominator : 0;
+
+    if (correlation > bestCorrelation) {
+      bestCorrelation = correlation;
+      bestLag = lag;
+    }
+  }
+
+  if (bestLag === 0 || bestCorrelation < minPitchCorrelation) {
+    return undefined;
+  }
+
+  return sampleRateHz / bestLag;
 }
 
 function mean(values: number[]): number {

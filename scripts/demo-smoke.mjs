@@ -1,6 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
-import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -55,10 +54,6 @@ async function main() {
 }
 
 function ensureBuiltServer() {
-  if (existsSync(path.join(root, "apps/server/dist/index.js"))) {
-    return;
-  }
-
   const result = spawnSync("pnpm", ["--filter", "@jiko/server", "build"], {
     cwd: root,
     stdio: "inherit",
@@ -169,6 +164,10 @@ async function smokeAudioUpload() {
 
     if (!session?.features || typeof session.features.rmsMean !== "number") {
       throw new Error("Audio smoke did not produce RMS features.");
+    }
+
+    if (typeof session.features.pitchMeanHz !== "number") {
+      throw new Error("Audio smoke did not produce pitch features.");
     }
 
     if (!session?.transcript?.provider?.includes("unavailable")) {
