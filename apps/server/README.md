@@ -54,6 +54,12 @@ features, readings, result, and events, but not raw recordings.
 - If no local STT is configured, the text layer receives an empty transcript
   with provider `local:stt-unconfigured:unavailable`; voice and timing features
   still come from real audio.
+- `TTS_PROVIDER=clip` with `TTS_CLIP_DIR`: looks for a pre-generated local clip
+  by `tts.clipKey`, such as `minority.maintain.wav` or
+  `consensus.static.wav`.
+- Set `TTS_PLAY_AUDIO=1` to let the server play a found clip with
+  `TTS_PLAY_COMMAND` or the platform default (`afplay` on macOS, `aplay` on Pi).
+  When playback is disabled, the server records clip readiness in the receipt.
 - `TTS_PROVIDER=piper` with `PIPER_BIN` and `PIPER_VOICE`: runs Piper locally.
   If no voice is configured, the server records that in the TTS provider receipt
   and keeps the result flow moving.
