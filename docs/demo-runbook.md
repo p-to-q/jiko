@@ -142,6 +142,8 @@ Web smoke:
 - Open `http://localhost:5173/` on the laptop.
 - Use browser recording and confirm the debug panel shows transcript, features,
   readings, result, and TTS provider status.
+- Paste a transcript into the laptop fallback panel and confirm it drives the
+  same UI/result path.
 - Open `http://localhost:5173/?mode=device` and confirm it fits the MPI3508
   device canvas.
 - Open the same device URL from the Pi using the laptop IP.

@@ -132,6 +132,35 @@ export async function uploadSessionAudio(
   return payload;
 }
 
+export async function submitManualTranscript(
+  apiBaseUrl: string,
+  sessionId: string,
+  transcript: string,
+  language = "zh",
+): Promise<unknown> {
+  const response = await fetch(
+    `${apiBaseUrl}/sessions/${encodeURIComponent(sessionId)}/manual-transcript`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        transcript,
+        language,
+      }),
+    },
+  );
+
+  const payload = await readJsonResponse(response);
+
+  if (!response.ok) {
+    throw new Error(getResponseError(payload, "Unable to submit manual transcript."));
+  }
+
+  return payload;
+}
+
 export async function fetchSessionDebugSnapshot(
   apiBaseUrl: string,
   sessionId: string,

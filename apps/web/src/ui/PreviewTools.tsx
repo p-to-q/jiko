@@ -12,6 +12,7 @@ import {
   fetchSessionDebugSnapshot,
   postRecordingStarted,
   resolveApiBaseUrl,
+  submitManualTranscript,
   toErrorMessage,
   uploadSessionAudio,
   type SessionDebugSnapshot,
@@ -50,6 +51,10 @@ export function PreviewTools({
   });
   const [localSessionId, setLocalSessionId] = useState<string>();
   const [debugSnapshot, setDebugSnapshot] = useState<SessionDebugSnapshot>({
+    status: "idle",
+  });
+  const [manualTranscript, setManualTranscript] = useState("");
+  const [manualStatus, setManualStatus] = useState<RecordingControlState>({
     status: "idle",
   });
   const recorderRef = useRef<MediaRecorder>();
@@ -339,6 +344,34 @@ export function PreviewTools({
     [startRecording, stopRecording],
   );
 
+  const handleManualSubmit = useCallback(async () => {
+    const transcript = manualTranscript.trim();
+
+    if (!transcript || manualStatus.status === "requesting" || manualStatus.status === "uploading") {
+      return;
+    }
+
+    setManualStatus({ status: "requesting" });
+
+    try {
+      const targetSessionId = await ensureSession();
+      await submitManualTranscript(apiBaseUrl, targetSessionId, transcript);
+      setManualStatus({ status: "idle" });
+      await refreshDebugSnapshot(targetSessionId);
+    } catch (error) {
+      setManualStatus({
+        status: "error",
+        error: toErrorMessage(error),
+      });
+    }
+  }, [
+    apiBaseUrl,
+    ensureSession,
+    manualStatus.status,
+    manualTranscript,
+    refreshDebugSnapshot,
+  ]);
+
   useEffect(() => {
     unmountingRef.current = false;
 
@@ -413,6 +446,33 @@ export function PreviewTools({
           </div>
         </dl>
         {recording.error ? <p className="panel-error">{recording.error}</p> : null}
+      </section>
+
+      <section className="manual-panel" aria-label="Manual transcript fallback">
+        <div className="panel-header">
+          <span>Fallback</span>
+          <span className={`status-pill status-${manualStatus.status}`}>
+            {manualStatus.status}
+          </span>
+        </div>
+        <textarea
+          className="manual-input"
+          onChange={(event) => {
+            setManualTranscript(event.target.value);
+          }}
+          placeholder="我在考虑辞职，但还想先把这件事说清楚。"
+          rows={3}
+          value={manualTranscript}
+        />
+        <button
+          className="mini-button manual-submit"
+          disabled={!manualTranscript.trim() || manualStatus.status === "requesting"}
+          onClick={handleManualSubmit}
+          type="button"
+        >
+          Send transcript
+        </button>
+        {manualStatus.error ? <p className="panel-error">{manualStatus.error}</p> : null}
       </section>
 
       <section className="debug-panel" aria-label="Session debug">
