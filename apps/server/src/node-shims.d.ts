@@ -3,6 +3,7 @@ declare module "node:crypto" {
 }
 
 declare module "node:fs/promises" {
+  export function access(path: string): Promise<void>;
   export function mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
   export function mkdtemp(prefix: string): Promise<string>;
   export function readFile(path: string): Promise<Buffer>;

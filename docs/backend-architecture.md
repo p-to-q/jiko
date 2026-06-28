@@ -268,6 +268,12 @@ First reliable path:
 - Use Piper only if we find an acceptable voice and latency.
 - Use macOS `say` or browser speech synthesis as a dev emergency fallback, not as the product path.
 
+The server should attach a stable `tts.clipKey` to each result so a rehearsal can
+use pre-rendered clips without changing the reading/result protocol. Clip
+playback is a local runtime detail; if playback is disabled or the clip is
+missing, the receipt should show that clearly and the visual result should still
+complete.
+
 TTS should be short. It should not explain the user. It should announce the signal and leave silence.
 
 ## Receipts And Data

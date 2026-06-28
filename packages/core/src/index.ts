@@ -306,7 +306,8 @@ function buildTts(
   if (!majorityState) {
     return {
       language: "zh",
-      text: "没有多数。"
+      text: "没有多数。",
+      clipKey: "mixed.no-majority"
     };
   }
 
@@ -315,13 +316,15 @@ function buildTts(
       language: "zh",
       text: `两项${stateLineZh(majorityState)}。一项不同。${spokenLine(
         topWindow.lineZh
-      )}`
+      )}`,
+      clipKey: `minority.${majorityState}`
     };
   }
 
   return {
     language: "zh",
-    text: spokenLine(topWindow.lineZh)
+    text: spokenLine(topWindow.lineZh),
+    clipKey: `consensus.${majorityState}`
   };
 }
 

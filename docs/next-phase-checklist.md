@@ -36,7 +36,7 @@ Start here unless a quick spike proves it wrong:
 - Core: shared TypeScript packages.
 - Laptop audio capture: browser `MediaRecorder`.
 - Laptop STT: FunASR local service first; faster-whisper, whisper.cpp, or MLX Whisper as local fallbacks.
-- Laptop TTS: Piper or pre-generated local audio clips first.
+- Laptop TTS: pre-generated local audio clips first; Piper remains the dynamic fallback.
 - Audio features: start with simple duration, silence, RMS, pause, and rough pitch features.
 - Pi display: Chromium kiosk on MPI3508.
 - Pi button: Python `gpiozero` adapter in `apps/device`; hardware smoke test pending.
@@ -87,8 +87,8 @@ This sequence protects the demo: if local STT is slow or fails, the UI, readings
 ## Confirm During Kickoff
 
 - Which local STT path to benchmark first on the demo laptop: FunASR local HTTP or whisper.cpp CLI.
-- Whether Piper has an acceptable Chinese voice for the demo.
-- Whether pre-generated audio clips are enough for the result lines.
+- Whether Piper has an acceptable Chinese voice for the demo fallback.
+- Which pre-generated local clips are needed for the canonical result lines.
 - Whether raw recordings should be kept during rehearsal, and where.
 - Whether the first UI uses Canvas directly or PixiJS.
 
@@ -106,7 +106,7 @@ This sequence protects the demo: if local STT is slow or fails, the UI, readings
 Do these only if they affect the first build:
 
 - Measure local STT latency on the demo laptop.
-- Test Piper or pre-generated local clips for result-line playback.
+- Test local clips and Piper fallback for result-line playback.
 - Test browser `MediaRecorder` output format compatibility with the server `ffmpeg` path.
 - Test whether PixiJS is necessary or plain Canvas is enough for the block UI.
 - Confirm Pi screen resolution and orientation.

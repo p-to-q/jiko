@@ -600,7 +600,8 @@ function buildDebugReceipt(session: SessionRecord): JsonValue {
             latencyMs: session.transcript.latencyMs,
             remote: false
           }
-        : undefined
+        : undefined,
+      tts: latestTtsProvider(session)
     },
     transcript: session.transcript,
     features: session.features,
@@ -608,6 +609,17 @@ function buildDebugReceipt(session: SessionRecord): JsonValue {
     result: session.result,
     events: session.events
   } as JsonValue;
+}
+
+function latestTtsProvider(session: SessionRecord): JsonValue | undefined {
+  for (let index = session.events.length - 1; index >= 0; index -= 1) {
+    const event = session.events[index];
+    if (event.type === "tts.finished") {
+      return event.provider as JsonValue | undefined;
+    }
+  }
+
+  return undefined;
 }
 
 function stringValue(value: unknown): string | undefined {
