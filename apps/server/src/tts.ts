@@ -1,12 +1,15 @@
 import { access, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ProviderReceipt, TtsRequest } from "@jiko/protocol";
 import { runProcess } from "./process.js";
 
 type TtsOutput = {
   provider: ProviderReceipt;
 };
+
+const serverRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export async function speakLocalResult(tts: TtsRequest | undefined): Promise<TtsOutput | undefined> {
   if (!tts?.text.trim()) {
@@ -118,14 +121,24 @@ async function findClipPath(clipKey: string): Promise<string | undefined> {
     return undefined;
   }
 
-  for (const extension of ["wav", "mp3", "m4a", "aiff"]) {
-    const candidate = path.join(dir, `${safeFilePart(clipKey)}.${extension}`);
-    if (await fileExists(candidate)) {
-      return candidate;
+  for (const baseDir of resolveLocalDirs(dir)) {
+    for (const extension of ["wav", "mp3", "m4a", "aiff"]) {
+      const candidate = path.join(baseDir, `${safeFilePart(clipKey)}.${extension}`);
+      if (await fileExists(candidate)) {
+        return candidate;
+      }
     }
   }
 
   return undefined;
+}
+
+function resolveLocalDirs(dir: string): string[] {
+  if (path.isAbsolute(dir)) {
+    return [dir];
+  }
+
+  return [path.resolve(dir), path.resolve(serverRoot, dir)];
 }
 
 async function playAudioFile(filePath: string): Promise<void> {

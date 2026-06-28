@@ -58,7 +58,7 @@ Run the server with clip playback enabled:
 
 ```sh
 TTS_PROVIDER=clip \
-TTS_CLIP_DIR=apps/server/local-clips \
+TTS_CLIP_DIR=local-clips \
 TTS_PLAY_AUDIO=1 \
 pnpm dev:server
 ```

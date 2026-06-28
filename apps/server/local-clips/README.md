@@ -25,7 +25,7 @@ Supported extensions in lookup order:
 Use:
 
 ```sh
-TTS_PROVIDER=clip TTS_CLIP_DIR=apps/server/local-clips pnpm dev:server
+TTS_PROVIDER=clip TTS_CLIP_DIR=local-clips pnpm dev:server
 ```
 
 Generate rehearsal clips locally:

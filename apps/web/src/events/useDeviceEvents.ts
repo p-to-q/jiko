@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { resolveEventsUrl } from "../api/server";
 
 const SESSION_EVENT_TYPES = [
+  "server.connected",
+  "server.disconnected",
   "session.created",
   "input.recording.started",
   "input.recording.stopped",
@@ -136,6 +138,19 @@ export function useDeviceEvents(): DeviceEventsState {
     });
 
     source.addEventListener("message", handleMessage);
+    source.addEventListener("open", () => {
+      setEventsState((current) => reduceEventsState(current, {
+        type: "server.connected",
+        timestamp: Date.now(),
+      }));
+    });
+    source.addEventListener("error", () => {
+      setEventsState((current) => reduceEventsState(current, {
+        type: "server.disconnected",
+        timestamp: Date.now(),
+        message: "SSE disconnected",
+      }));
+    });
 
     return () => {
       source.removeEventListener("message", handleMessage);
@@ -195,6 +210,17 @@ function reduceDeviceState(
     case "session.created":
     case "session.reset":
       return IDLE_DEVICE_STATE;
+    case "server.disconnected":
+      return {
+        phase: "error",
+        topTitle: "LINK",
+        topSubtitle: "OFFLINE",
+        lamps: ERROR_LAMPS,
+      };
+    case "server.connected":
+      return current.phase === "error" && current.topTitle === "LINK"
+        ? IDLE_DEVICE_STATE
+        : current;
     case "input.recording.started":
       return {
         phase: "recording",

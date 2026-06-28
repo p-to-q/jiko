@@ -516,6 +516,11 @@ function handleEvents(request: any, response: any, dependencies: RouteDependenci
     sessionCount: dependencies.store.listSessions().length
   });
 
+  const latestSession = dependencies.store.listSessions().at(-1);
+  for (const event of latestSession?.events ?? []) {
+    writeSse(response, event);
+  }
+
   const unsubscribe = dependencies.bus.subscribe((event) => {
     writeSse(response, event);
   });

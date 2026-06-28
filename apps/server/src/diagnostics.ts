@@ -1,5 +1,6 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { runProcess } from "./process.js";
 
 export type DiagnosticStatus = "ready" | "configured" | "missing" | "disabled";
@@ -21,6 +22,7 @@ const requiredClipKeys = [
 ];
 
 const clipExtensions = ["wav", "mp3", "m4a", "aiff"];
+const serverRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 export async function collectDiagnostics() {
   const [ffmpeg, stt, tts] = await Promise.all([
@@ -168,14 +170,17 @@ async function checkTtsProvider(): Promise<DiagnosticCheck> {
       };
     }
 
-    if (!(await fileExists(dir))) {
+    const dirs = resolveLocalDirs(dir);
+    const existingDir = await firstExistingDir(dirs);
+
+    if (!existingDir) {
       return { status: "missing", id: "local:clip", detail: "TTS_CLIP_DIR not found." };
     }
 
-    const missingKeys = await findMissingClipKeys(dir);
+    const missingKeys = await findMissingClipKeys(existingDir);
 
     return missingKeys.length === 0
-      ? { status: "ready", id: "local:clip", detail: dir }
+      ? { status: "ready", id: "local:clip", detail: existingDir }
       : {
           status: "missing",
           id: "local:clip",
@@ -221,6 +226,24 @@ async function findMissingClipKeys(dir: string): Promise<string[]> {
   }
 
   return missingKeys;
+}
+
+async function firstExistingDir(dirs: string[]): Promise<string | undefined> {
+  for (const dir of dirs) {
+    if (await fileExists(dir)) {
+      return dir;
+    }
+  }
+
+  return undefined;
+}
+
+function resolveLocalDirs(dir: string): string[] {
+  if (path.isAbsolute(dir)) {
+    return [dir];
+  }
+
+  return [path.resolve(dir), path.resolve(serverRoot, dir)];
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
