@@ -1,0 +1,20 @@
+{
+  "name": "@jiko/server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "../../node_modules/.bin/tsc -p tsconfig.json && node --watch dist/index.js",
+    "start": "../../node_modules/.bin/tsc -p tsconfig.json && node dist/index.js",
+    "build": "../../node_modules/.bin/tsc -p tsconfig.json",
+    "typecheck": "../../node_modules/.bin/tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@jiko/core": "workspace:*",
+    "@jiko/protocol": "workspace:*",
+    "@jiko/readings": "workspace:*"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

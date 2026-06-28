@@ -1,0 +1,16 @@
+{
+  "name": "jiko",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:web": "pnpm --filter @jiko/web dev",
+    "dev:server": "pnpm --filter @jiko/server dev",
+    "build": "pnpm --recursive --if-present build",
+    "typecheck": "pnpm --recursive --if-present typecheck"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

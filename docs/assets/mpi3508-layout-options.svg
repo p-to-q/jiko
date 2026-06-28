@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="620" viewBox="0 0 760 620">
+  <defs>
+    <style>
+      .bg { fill: #141210; }
+      .panel { fill: #25221d; stroke: #6f6658; stroke-width: 2; }
+      .screen { fill: #080807; stroke: #d3b26a; stroke-width: 2; }
+      .recess { fill: #1c1a17; stroke: #766c5f; stroke-width: 2; }
+      .lens { fill: #050505; stroke: #d3a13d; stroke-width: 2; }
+      .grid { stroke: #3d3932; stroke-width: 1; opacity: 0.55; }
+      .label { fill: #f2e7c9; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .small { fill: #b8aa90; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .amber { fill: #f0a818; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .dot { fill: #f0a818; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="760" height="620"/>
+
+  <text class="label" x="96" y="42">MPI3508 320x480 / Option A</text>
+  <text class="small" x="107" y="60">safer margins, calmer mask</text>
+  <text class="label" x="466" y="42">MPI3508 320x480 / Option B</text>
+  <text class="small" x="465" y="60">larger windows, tighter body</text>
+
+  <!-- Option A device canvas -->
+  <g transform="translate(70,86)">
+    <rect class="panel" x="0" y="0" width="320" height="480" rx="34"/>
+    <rect class="grid" x="18" y="16" width="284" height="448" rx="24" fill="none"/>
+
+    <rect class="screen" x="34" y="24" width="252" height="58" rx="18"/>
+    <circle class="dot" cx="54" cy="44" r="3"/>
+    <circle class="dot" cx="54" cy="56" r="3"/>
+    <circle class="dot" cx="54" cy="68" r="3"/>
+    <text class="label" x="78" y="59">12:49</text>
+    <text class="amber" x="216" y="49">THU</text>
+    <text class="amber" x="216" y="66">APR 4</text>
+
+    <g>
+      <rect class="recess" x="42" y="98" width="236" height="104" rx="22"/>
+      <circle class="lens" cx="160" cy="150" r="50"/>
+      <text class="amber" x="130" y="155">LAYER 1</text>
+    </g>
+
+    <g>
+      <rect class="recess" x="42" y="218" width="236" height="104" rx="22"/>
+      <circle class="lens" cx="160" cy="270" r="50"/>
+      <text class="amber" x="130" y="275">LAYER 2</text>
+    </g>
+
+    <g>
+      <rect class="recess" x="42" y="338" width="236" height="104" rx="22"/>
+      <circle class="lens" cx="160" cy="390" r="50"/>
+      <text class="amber" x="130" y="395">LAYER 3</text>
+    </g>
+  </g>
+
+  <!-- Option B device canvas -->
+  <g transform="translate(440,86)">
+    <rect class="panel" x="0" y="0" width="320" height="480" rx="34"/>
+    <rect class="grid" x="16" y="14" width="288" height="452" rx="24" fill="none"/>
+
+    <rect class="screen" x="28" y="22" width="264" height="56" rx="18"/>
+    <circle class="dot" cx="48" cy="41" r="3"/>
+    <circle class="dot" cx="48" cy="53" r="3"/>
+    <circle class="dot" cx="48" cy="65" r="3"/>
+    <text class="label" x="72" y="57">12:49</text>
+    <text class="amber" x="222" y="47">THU</text>
+    <text class="amber" x="222" y="64">APR 4</text>
+
+    <g>
+      <rect class="recess" x="34" y="92" width="252" height="112" rx="24"/>
+      <circle class="lens" cx="160" cy="148" r="54"/>
+      <text class="amber" x="130" y="153">LAYER 1</text>
+    </g>
+
+    <g>
+      <rect class="recess" x="34" y="216" width="252" height="112" rx="24"/>
+      <circle class="lens" cx="160" cy="272" r="54"/>
+      <text class="amber" x="130" y="277">LAYER 2</text>
+    </g>
+
+    <g>
+      <rect class="recess" x="34" y="340" width="252" height="112" rx="24"/>
+      <circle class="lens" cx="160" cy="396" r="54"/>
+      <text class="amber" x="130" y="401">LAYER 3</text>
+    </g>
+  </g>
+
+  <text class="small" x="70" y="592">Reference layout only: screen-first split for MPI3508. Shell and printed mask should follow the chosen screen layout.</text>
+</svg>
