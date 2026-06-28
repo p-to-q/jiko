@@ -115,6 +115,10 @@ Server health:
 curl http://localhost:4317/health
 ```
 
+Check `diagnostics.runtime.ffmpeg.status` before using browser recording. It
+should be `ready`. STT/TTS may be `disabled` during rehearsal, but that should
+be an explicit choice rather than a surprise.
+
 Create a session and run the manual transcript fallback:
 
 ```sh

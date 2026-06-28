@@ -46,6 +46,10 @@ features, readings, result, and events, but not raw recordings.
 
 ## Local providers
 
+`GET /health` reports lightweight diagnostics for `ffmpeg`, STT, and TTS. It
+does not run real transcription or speech synthesis; it only checks whether the
+configured local tools look reachable enough for a demo.
+
 - `FFMPEG_BIN`: defaults to `ffmpeg`.
 - `STT_PROVIDER=funasr` with `FUNASR_ENDPOINT`: posts the normalized WAV to a
   local/self-hosted FunASR-compatible HTTP endpoint.

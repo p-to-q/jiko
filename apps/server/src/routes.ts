@@ -1,5 +1,6 @@
 import { parseSessionEvent, type RuntimeSource } from "@jiko/protocol";
 import { runAudioPipeline } from "./audioPipeline.js";
+import { collectDiagnostics } from "./diagnostics.js";
 import type { EventBus } from "./eventBus.js";
 import { buildMockFeatures, buildReadings, buildResult } from "./mockPipeline.js";
 import type { ReceiptWriter } from "./receipts.js";
@@ -45,6 +46,7 @@ export function createRequestHandler(dependencies: RouteDependencies) {
       const parts = url.pathname.split("/").filter(Boolean);
 
       if (request.method === "GET" && url.pathname === "/health") {
+        const diagnostics = await collectDiagnostics();
         sendJson(response, 200, {
           ok: true,
           service: "@jiko/server",
@@ -56,7 +58,8 @@ export function createRequestHandler(dependencies: RouteDependencies) {
           providers: {
             stt: process.env.STT_PROVIDER || "local:stt-unconfigured",
             tts: process.env.TTS_PROVIDER || "local:tts-unconfigured"
-          }
+          },
+          diagnostics
         });
         return;
       }
