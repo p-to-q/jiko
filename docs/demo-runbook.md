@@ -26,11 +26,19 @@ pnpm dev:web -- --host 0.0.0.0
 The default server port is `4317`. The Vite dev server usually uses `5173`.
 When the Pi opens the laptop-hosted page, the web app automatically points API
 requests at `http://<same-laptop-ip>:4317` unless `VITE_API_URL` is set.
+If Vite reports a different port because `5173` is already in use, use that
+printed port for the Pi kiosk URL.
 
 Find the laptop IP on the shared network:
 
 ```sh
 pnpm demo:urls
+```
+
+If Vite moved to another port, pass it explicitly:
+
+```sh
+WEB_PORT=5174 pnpm demo:urls
 ```
 
 If the laptop is not on Wi-Fi, use the interface that is actually shared with
