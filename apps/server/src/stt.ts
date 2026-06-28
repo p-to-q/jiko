@@ -56,11 +56,15 @@ function whisperCppProvider(): SttProvider {
         throw new Error("WHISPER_CPP_BIN and WHISPER_MODEL are required for whisper.cpp STT.");
       }
 
+      // Default to language auto-detect; pin with WHISPER_LANGUAGE=zh for Chinese.
+      const language = process.env.WHISPER_LANGUAGE?.trim() || "auto";
       const { stdout, stderr } = await runProcess(bin, [
         "-m",
         model,
         "-f",
         input.audioPath,
+        "-l",
+        language,
         "-nt",
         "-np"
       ]);
