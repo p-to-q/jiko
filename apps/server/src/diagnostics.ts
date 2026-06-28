@@ -10,6 +10,18 @@ export type DiagnosticCheck = {
   detail?: string;
 };
 
+const requiredClipKeys = [
+  "mixed.no-majority",
+  "minority.maintain",
+  "minority.deviate",
+  "minority.static",
+  "consensus.maintain",
+  "consensus.deviate",
+  "consensus.static"
+];
+
+const clipExtensions = ["wav", "mp3", "m4a", "aiff"];
+
 export async function collectDiagnostics() {
   const [ffmpeg, stt, tts] = await Promise.all([
     checkFfmpeg(),
@@ -93,6 +105,40 @@ async function checkSttProvider(): Promise<DiagnosticCheck> {
     };
   }
 
+  if (provider === "sherpa-onnx" || provider === "sherpa" || provider === "sensevoice") {
+    const python = process.env.SHERPA_ONNX_PYTHON?.trim() || ".venv/bin/python";
+    const model = process.env.SHERPA_ONNX_SENSEVOICE_MODEL?.trim();
+    const tokens = process.env.SHERPA_ONNX_SENSEVOICE_TOKENS?.trim();
+
+    if (!model || !tokens) {
+      return {
+        status: "missing",
+        id: "local:sherpa-onnx-sensevoice",
+        detail: "SHERPA_ONNX_SENSEVOICE_MODEL and SHERPA_ONNX_SENSEVOICE_TOKENS are required."
+      };
+    }
+
+    const [pythonReady, modelReady, tokensReady] = await Promise.all([
+      fileExists(python),
+      fileExists(model),
+      fileExists(tokens)
+    ]);
+
+    if (!pythonReady || !modelReady || !tokensReady) {
+      return {
+        status: "missing",
+        id: "local:sherpa-onnx-sensevoice",
+        detail: `${pythonReady ? "" : "SHERPA_ONNX_PYTHON not found. "}${modelReady ? "" : "SHERPA_ONNX_SENSEVOICE_MODEL not found. "}${tokensReady ? "" : "SHERPA_ONNX_SENSEVOICE_TOKENS not found."}`.trim()
+      };
+    }
+
+    return {
+      status: "ready",
+      id: "local:sherpa-onnx-sensevoice",
+      detail: path.basename(path.dirname(model))
+    };
+  }
+
   return {
     status: "missing",
     id: `local:${provider}`,
@@ -122,9 +168,19 @@ async function checkTtsProvider(): Promise<DiagnosticCheck> {
       };
     }
 
-    return (await fileExists(dir))
+    if (!(await fileExists(dir))) {
+      return { status: "missing", id: "local:clip", detail: "TTS_CLIP_DIR not found." };
+    }
+
+    const missingKeys = await findMissingClipKeys(dir);
+
+    return missingKeys.length === 0
       ? { status: "ready", id: "local:clip", detail: dir }
-      : { status: "missing", id: "local:clip", detail: "TTS_CLIP_DIR not found." };
+      : {
+          status: "missing",
+          id: "local:clip",
+          detail: `Missing clips: ${missingKeys.join(", ")}`
+        };
   }
 
   if (provider === "piper") {
@@ -148,6 +204,23 @@ async function checkTtsProvider(): Promise<DiagnosticCheck> {
     id: `local:${provider}`,
     detail: "Unknown local TTS provider."
   };
+}
+
+async function findMissingClipKeys(dir: string): Promise<string[]> {
+  const missingKeys: string[] = [];
+
+  for (const key of requiredClipKeys) {
+    const candidates = await Promise.all(
+      clipExtensions.map((extension) => fileExists(path.join(dir, `${key}.${extension}`)))
+    );
+    const exists = candidates.some(Boolean);
+
+    if (!exists) {
+      missingKeys.push(key);
+    }
+  }
+
+  return missingKeys;
 }
 
 async function fileExists(filePath: string): Promise<boolean> {

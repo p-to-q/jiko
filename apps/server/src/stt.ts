@@ -38,6 +38,10 @@ function getConfiguredProvider(): SttProvider {
     return funasrHttpProvider(process.env.FUNASR_ENDPOINT.trim());
   }
 
+  if (provider === "sherpa-onnx" || provider === "sherpa" || provider === "sensevoice") {
+    return sherpaSenseVoiceProvider();
+  }
+
   return unavailableProvider(provider ? `local:${provider}` : "local:stt-unconfigured");
 }
 
@@ -96,6 +100,49 @@ function funasrHttpProvider(endpoint: string): SttProvider {
         language: text ? guessLanguage(text) : undefined,
         provider: "local:funasr-http",
         confidence: confidenceValue(payload) ?? (text ? 0.74 : 0.2)
+      };
+    }
+  };
+}
+
+function sherpaSenseVoiceProvider(): SttProvider {
+  return {
+    id: "local:sherpa-onnx-sensevoice",
+    async transcribe(input) {
+      const python = process.env.SHERPA_ONNX_PYTHON?.trim() || ".venv/bin/python";
+      const script = process.env.SHERPA_ONNX_STT_SCRIPT?.trim() || "apps/server/scripts/sherpa-sensevoice-stt.py";
+      const model = process.env.SHERPA_ONNX_SENSEVOICE_MODEL?.trim();
+      const tokens = process.env.SHERPA_ONNX_SENSEVOICE_TOKENS?.trim();
+
+      if (!model || !tokens) {
+        throw new Error("SHERPA_ONNX_SENSEVOICE_MODEL and SHERPA_ONNX_SENSEVOICE_TOKENS are required.");
+      }
+
+      const { stdout } = await runProcess(python, [
+        script,
+        "--audio",
+        input.audioPath,
+        "--model",
+        model,
+        "--tokens",
+        tokens,
+        "--language",
+        process.env.SHERPA_ONNX_LANGUAGE?.trim() || "auto",
+        "--threads",
+        process.env.SHERPA_ONNX_THREADS?.trim() || "4",
+        "--provider",
+        process.env.SHERPA_ONNX_PROVIDER?.trim() || "cpu",
+        ...(truthyEnv(process.env.SHERPA_ONNX_USE_ITN) ? ["--use-itn"] : [])
+      ]);
+      const payload = JSON.parse(stdout) as Partial<TranscriptResult>;
+      const text = typeof payload.text === "string" ? payload.text : "";
+
+      return {
+        text,
+        language: payload.language || (text ? guessLanguage(text) : undefined),
+        provider: "local:sherpa-onnx-sensevoice",
+        confidence: typeof payload.confidence === "number" ? payload.confidence : text ? 0.76 : 0.2,
+        latencyMs: typeof payload.latencyMs === "number" ? payload.latencyMs : undefined
       };
     }
   };
@@ -194,4 +241,10 @@ function stringValue(value: unknown): string | undefined {
 
 function guessLanguage(transcript: string): string {
   return /[\u3400-\u9fff]/.test(transcript) ? "zh" : "en";
+}
+
+function truthyEnv(value: string | undefined): boolean {
+  const normalized = value?.trim().toLowerCase();
+
+  return normalized === "1" || normalized === "true" || normalized === "yes";
 }

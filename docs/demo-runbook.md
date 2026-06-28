@@ -66,6 +66,23 @@ pnpm dev:server
 If playback is disabled or a clip is missing, the result flow should still
 continue and the receipt should say what happened.
 
+## Local STT
+
+For the fastest local setup on this machine, use sherpa-onnx with a compatible
+SenseVoice ONNX model:
+
+```sh
+STT_PROVIDER=sherpa-onnx \
+SHERPA_ONNX_PYTHON=.venv/bin/python \
+SHERPA_ONNX_SENSEVOICE_MODEL=/path/to/model.onnx \
+SHERPA_ONNX_SENSEVOICE_TOKENS=/path/to/tokens.txt \
+pnpm dev:server
+```
+
+FunASR HTTP and whisper.cpp remain supported provider boundaries. If STT is not
+ready, keep browser recording on; the receipt will mark STT unavailable while
+voice and timing features still come from real audio.
+
 ## Pi Kiosk Setup
 
 Put the Pi and laptop on the same network. On the Pi, open Chromium kiosk to:

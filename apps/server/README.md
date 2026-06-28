@@ -58,6 +58,9 @@ configured local tools look reachable enough for a demo.
   local/self-hosted FunASR-compatible HTTP endpoint.
 - `STT_PROVIDER=whisper.cpp` with `WHISPER_CPP_BIN` and `WHISPER_MODEL`: runs a
   local whisper.cpp CLI.
+- `STT_PROVIDER=sherpa-onnx` with `SHERPA_ONNX_SENSEVOICE_MODEL` and
+  `SHERPA_ONNX_SENSEVOICE_TOKENS`: runs a local sherpa-onnx SenseVoice model
+  through `apps/server/scripts/sherpa-sensevoice-stt.py`.
 - If no local STT is configured, the text layer receives an empty transcript
   with provider `local:stt-unconfigured:unavailable`; voice and timing features
   still come from real audio.

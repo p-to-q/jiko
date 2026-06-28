@@ -1,18 +1,22 @@
 import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
+import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 const root = process.cwd();
-const port = process.env.PORT ?? "4397";
-const baseUrl = `http://localhost:${port}`;
+const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+let port = process.env.PORT;
+let baseUrl = "";
 
 await main();
 
 async function main() {
   ensureBuiltServer();
   ensureFfmpeg();
+  port = port ?? String(await getAvailablePort());
+  baseUrl = `http://localhost:${port}`;
 
   const server = spawn(process.execPath, ["apps/server/dist/index.js"], {
     cwd: root,
@@ -92,7 +96,7 @@ async function waitForHealth() {
 }
 
 async function smokeManualTranscript() {
-  const sessionId = "smoke-manual";
+  const sessionId = `smoke-manual-${runId}`;
   await createSession(sessionId);
 
   const response = await fetch(`${baseUrl}/sessions/${sessionId}/manual-transcript`, {
@@ -112,7 +116,7 @@ async function smokeManualTranscript() {
 }
 
 async function smokeAudioUpload() {
-  const sessionId = "smoke-audio";
+  const sessionId = `smoke-audio-${runId}`;
   const tempDir = await mkdtemp(path.join(tmpdir(), "jiko-demo-smoke-"));
   const wavPath = path.join(tempDir, "tone.wav");
 
@@ -170,8 +174,17 @@ async function smokeAudioUpload() {
       throw new Error("Audio smoke did not produce pitch features.");
     }
 
-    if (!session?.transcript?.provider?.includes("unavailable")) {
+    if (!process.env.STT_PROVIDER && !session?.transcript?.provider?.includes("unavailable")) {
       throw new Error("Audio smoke should record local STT unavailable when no provider is configured.");
+    }
+
+    if (process.env.STT_PROVIDER && session?.transcript?.provider?.includes("unavailable")) {
+      throw new Error(`Configured STT provider failed: ${session.transcript.provider}`);
+    }
+
+    const ttsProvider = latestTtsProvider(session);
+    if (process.env.TTS_PROVIDER && isBadProviderId(ttsProvider?.id)) {
+      throw new Error(`Configured TTS provider failed: ${ttsProvider?.id}`);
     }
   } finally {
     await rm(tempDir, { recursive: true, force: true });
@@ -191,6 +204,21 @@ async function createSession(sessionId) {
   });
   const payload = await readJson(response);
   assertOk(response, payload, "create session");
+}
+
+function latestTtsProvider(session) {
+  for (let index = session.events.length - 1; index >= 0; index -= 1) {
+    const event = session.events[index];
+    if (event.type === "tts.finished") {
+      return event.provider;
+    }
+  }
+
+  return undefined;
+}
+
+function isBadProviderId(id) {
+  return !id || id.includes("unavailable") || id.includes("missing") || id.includes("failed");
 }
 
 function assertSessionResult(payload, label) {
@@ -226,5 +254,23 @@ async function readJson(response) {
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
+  });
+}
+
+function getAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        server.close(() => reject(new Error("Unable to allocate a smoke test port.")));
+        return;
+      }
+
+      const selectedPort = address.port;
+      server.close(() => resolve(selectedPort));
+    });
   });
 }
