@@ -91,6 +91,16 @@ controller before forcing a GPIO layout.
 
 ## Smoke Tests
 
+Run the automated local smoke test first:
+
+```sh
+pnpm demo:smoke
+```
+
+This starts a temporary server with receipts disabled, runs one manual
+transcript path, then uploads a synthetic WAV through the real audio pipeline.
+It does not use real speech recordings.
+
 Server health:
 
 ```sh
