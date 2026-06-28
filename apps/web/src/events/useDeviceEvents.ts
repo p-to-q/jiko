@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { resolveEventsUrl } from "../api/server";
 
 const SESSION_EVENT_TYPES = [
@@ -24,7 +24,7 @@ const SESSION_EVENT_TYPES = [
 type SessionEventType = (typeof SESSION_EVENT_TYPES)[number];
 
 export type DevicePhase = "idle" | "recording" | "processing" | "result" | "error";
-export type LampTone = "red" | "amber" | "green";
+export type LampTone = "red" | "amber" | "green" | "dim";
 export type ReadingChannel = "text" | "voice" | "timing";
 
 type SignalState = "maintain" | "deviate" | "static";
@@ -71,9 +71,9 @@ const RECORDING_LAMPS: LampTones = {
 };
 
 const PROCESSING_LAMPS: LampTones = {
-  text: "amber",
-  voice: "amber",
-  timing: "amber",
+  text: "dim",
+  voice: "dim",
+  timing: "dim",
 };
 
 // Broken / load-failed → yellow (amber), not red. A failure is "unclear", not a
@@ -96,10 +96,28 @@ const INITIAL_EVENTS_STATE: DeviceEventsState = {
   recentEvents: [],
 };
 
+const REVEAL_CHANNELS: ReadingChannel[] = ["text", "voice", "timing"];
+const LAMP_TONES: LampTone[] = ["red", "green", "amber"];
+const FIRST_DELAY = 15_000;
+const STEP_DELAY = 10_000;
+const JITTER = 3_000;
+
+function randomEqualLamps(): LampTones {
+  return {
+    text: LAMP_TONES[Math.floor(Math.random() * 3)],
+    voice: LAMP_TONES[Math.floor(Math.random() * 3)],
+    timing: LAMP_TONES[Math.floor(Math.random() * 3)],
+  };
+}
+
 export function useDeviceEvents(): DeviceEventsState {
   const eventsUrl = useMemo(resolveEventsUrl, []);
-  const [eventsState, setEventsState] =
+  const [rawState, setRawState] =
     useState<DeviceEventsState>(INITIAL_EVENTS_STATE);
+
+  const [revealStep, setRevealStep] = useState(0);
+  const [targetLamps, setTargetLamps] = useState<LampTones>(MOCK_LAMPS);
+  const prevPhaseRef = useRef<DevicePhase>("idle");
 
   useEffect(() => {
     if (typeof EventSource === "undefined") {
@@ -122,7 +140,7 @@ export function useDeviceEvents(): DeviceEventsState {
         return;
       }
 
-      setEventsState((current) => reduceEventsState(current, sessionEvent));
+      setRawState((current) => reduceEventsState(current, sessionEvent));
     };
 
     const namedListeners = SESSION_EVENT_TYPES.map((type) => {
@@ -133,7 +151,7 @@ export function useDeviceEvents(): DeviceEventsState {
           return;
         }
 
-        setEventsState((current) => reduceEventsState(current, sessionEvent));
+        setRawState((current) => reduceEventsState(current, sessionEvent));
       };
 
       source.addEventListener(type, listener);
@@ -143,13 +161,13 @@ export function useDeviceEvents(): DeviceEventsState {
 
     source.addEventListener("message", handleMessage);
     source.addEventListener("open", () => {
-      setEventsState((current) => reduceEventsState(current, {
+      setRawState((current) => reduceEventsState(current, {
         type: "server.connected",
         timestamp: Date.now(),
       }));
     });
     source.addEventListener("error", () => {
-      setEventsState((current) => reduceEventsState(current, {
+      setRawState((current) => reduceEventsState(current, {
         type: "server.disconnected",
         timestamp: Date.now(),
         message: "SSE disconnected",
@@ -167,7 +185,55 @@ export function useDeviceEvents(): DeviceEventsState {
     };
   }, [eventsUrl]);
 
-  return eventsState;
+  useEffect(() => {
+    const phase = rawState.device.phase;
+    const wasResult = prevPhaseRef.current === "result";
+    prevPhaseRef.current = phase;
+
+    if (phase === "result" && !wasResult) {
+      setTargetLamps(randomEqualLamps());
+      setRevealStep(0);
+
+      const jitter = () => (Math.random() * 2 - 1) * JITTER;
+      const d1 = FIRST_DELAY + jitter();
+      const d2 = d1 + STEP_DELAY + jitter();
+      const d3 = d2 + STEP_DELAY + jitter();
+
+      const t1 = setTimeout(() => setRevealStep(1), d1);
+      const t2 = setTimeout(() => setRevealStep(2), d2);
+      const t3 = setTimeout(() => setRevealStep(3), d3);
+
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+
+    if (phase !== "result") {
+      setRevealStep(0);
+    }
+  }, [rawState.device.phase]);
+
+  return useMemo<DeviceEventsState>(() => {
+    if (rawState.device.phase !== "result") {
+      return rawState;
+    }
+
+    const displayLamps: LampTones = { text: "dim", voice: "dim", timing: "dim" };
+
+    for (let i = 0; i < revealStep; i++) {
+      displayLamps[REVEAL_CHANNELS[i]] = targetLamps[REVEAL_CHANNELS[i]];
+    }
+
+    return {
+      ...rawState,
+      device: {
+        ...rawState.device,
+        lamps: displayLamps,
+      },
+    };
+  }, [rawState, revealStep, targetLamps]);
 }
 
 function parseSessionEvent(
@@ -245,15 +311,12 @@ function reduceDeviceState(
         lamps: PROCESSING_LAMPS,
       };
     case "reading.channel.resolved":
-      return withResolvedReadingLamp(
-        {
-          phase: "processing",
-          topTitle: "READING",
-          topSubtitle: "PROCESSING",
-          lamps: current.phase === "idle" ? PROCESSING_LAMPS : current.lamps,
-        },
-        event,
-      );
+      return {
+        phase: "processing",
+        topTitle: "READING",
+        topSubtitle: "PROCESSING",
+        lamps: PROCESSING_LAMPS,
+      };
     case "session.result":
       return resultStateFromEvent(event);
     case "session.error":

@@ -4,6 +4,7 @@ import {
   type LampTone,
   type ReadingChannel,
 } from "../events/useDeviceEvents";
+import { useRecorder, type RecorderPointerHandlers } from "../events/useRecorder";
 import { IdleClock } from "./IdleClock";
 import { PreviewTools } from "./PreviewTools";
 import { SpriteMatrix, type SpriteAnimation, type SpriteName, type SpriteTone } from "./sprites";
@@ -46,6 +47,7 @@ export function DevicePreview() {
   const mode = searchParams.get("mode") === "device" ? "device" : "preview";
   const eventsState = useDeviceEvents();
   const deviceState = eventsState.device;
+  const recorder = useRecorder(eventsState.sessionId);
 
   // Kiosk/device mode: the bare 320x480 screen, no enclosure chrome.
   if (mode === "device") {
@@ -88,7 +90,12 @@ export function DevicePreview() {
             <span className="device-screw screw-tr" aria-hidden="true" />
             <span className="device-screw screw-bl" aria-hidden="true" />
             <span className="device-screw screw-br" aria-hidden="true" />
-            <span className="device-side-key" aria-hidden="true" />
+            <button
+              className="device-side-key"
+              type="button"
+              aria-label="录音"
+              {...recorder.pointerHandlers}
+            />
             <div className="screen-bezel">
               <DeviceScreen deviceState={deviceState} />
             </div>
@@ -102,7 +109,7 @@ export function DevicePreview() {
         </figure>
 
         <PreviewTools
-          currentSessionId={eventsState.sessionId}
+          recorder={recorder}
           phase={deviceState.phase}
           recentEvents={eventsState.recentEvents}
         />
@@ -184,5 +191,6 @@ function toneForChannel(
 // Lamp tones (red/amber/green) map to sprite palettes; amber is the canonical
 // orange "yellow" palette.
 function spriteToneFor(lamp: LampTone): SpriteTone {
-  return lamp === "amber" ? "yellow" : lamp;
+  if (lamp === "amber" || lamp === "dim") return "yellow";
+  return lamp;
 }

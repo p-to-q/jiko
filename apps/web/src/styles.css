@@ -242,6 +242,10 @@ body {
 }
 
 .device-side-key {
+  appearance: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   position: absolute;
   top: 50%;
   right: -7px;
@@ -345,14 +349,17 @@ body {
     linear-gradient(#000, #000) right / 18px 100% no-repeat;
 }
 
-.top-strip,
-.reading-window {
+.top-strip {
   position: absolute;
   background: var(--screen);
   border: 1px solid var(--edge);
   box-shadow:
     inset 0 0 16px var(--glow-amber),
     0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+.reading-window {
+  position: absolute;
 }
 
 .top-strip {
@@ -526,37 +533,11 @@ body {
 .reading-window {
   display: grid;
   place-items: center;
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 50% 50%, var(--tone-soft), transparent 48%),
-    linear-gradient(180deg, #100f0d, #060605);
 }
 
-/* Rounded-rectangle sprite screen (replaces the circular lens). */
 .sprite-screen {
-  position: relative;
   display: grid;
   place-items: center;
-  width: 150px;
-  height: 92px;
-  overflow: hidden;
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at 50% 42%, var(--tone-soft), transparent 72%),
-    linear-gradient(150deg, #161412 0%, #060504 62%, #020202 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    inset -14px -12px 26px rgba(0, 0, 0, 0.7),
-    0 0 16px var(--tone-shadow);
-}
-
-.sprite-screen::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 42%);
-  pointer-events: none;
 }
 
 /* Retuned palette: red = oxblood (maintain/hold), green = verdigris
@@ -577,6 +558,12 @@ body {
   --tone: #79bf72;
   --tone-soft: rgba(121, 191, 114, 0.16);
   --tone-shadow: rgba(143, 232, 130, 0.2);
+}
+
+.tone-dim {
+  --tone: #2a2d30;
+  --tone-soft: rgba(42, 45, 48, 0.08);
+  --tone-shadow: rgba(0, 0, 0, 0.1);
 }
 
 .viewport-shell[data-device-state="result"] .top-title-block {
