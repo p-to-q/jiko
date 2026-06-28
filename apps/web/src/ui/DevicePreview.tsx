@@ -1,4 +1,5 @@
 import { useDeviceEvents, type LampTone, type ReadingChannel } from "../events/useDeviceEvents";
+import { PreviewTools } from "./PreviewTools";
 
 const STABLE_LAYOUT = {
   topStrip: { x: 34, y: 24, w: 252, h: 58 },
@@ -35,7 +36,8 @@ function px(value: number) {
 export function DevicePreview() {
   const searchParams = new URLSearchParams(window.location.search);
   const mode = searchParams.get("mode") === "device" ? "device" : "preview";
-  const deviceState = useDeviceEvents();
+  const eventsState = useDeviceEvents();
+  const deviceState = eventsState.device;
 
   return (
     <main
@@ -98,6 +100,13 @@ export function DevicePreview() {
         </div>
         <div className="mask-layer" aria-hidden="true" />
       </section>
+      {mode === "preview" ? (
+        <PreviewTools
+          currentSessionId={eventsState.sessionId}
+          phase={deviceState.phase}
+          recentEvents={eventsState.recentEvents}
+        />
+      ) : null}
     </main>
   );
 }

@@ -27,6 +27,7 @@ export class ReceiptWriter {
       source: session.source,
       input: {
         audio: session.uploadedAudio,
+        normalizedAudio: session.normalizedAudio,
         audioStored: false,
         transcript: session.transcript?.text,
         language: session.transcript?.language

@@ -94,9 +94,9 @@ The Pi path should be thin. It should adapt hardware events into the same protoc
 First device adapter shape:
 
 - Chromium kiosk opens the web app with `/?mode=device`.
-- A small Python daemon reads the side button through `gpiozero`, USB HID, or serial input.
-- The daemon posts `pressed` and `released` events to `apps/server`.
-- The server maps those device events into normal session/input events.
+- A small Python daemon in `apps/device` reads the side button through `gpiozero`, USB HID, or serial input.
+- The first GPIO daemon posts `input.recording.started` and `input.recording.stopped` demo events to `apps/server`, using `source: "device"`.
+- The server treats those device events as normal session/input events.
 - If the MPI3508 touch/power header blocks useful GPIO pins, prefer USB HID or RP2040/Pico serial before forcing a GPIO layout.
 
 ## Adapter Contract

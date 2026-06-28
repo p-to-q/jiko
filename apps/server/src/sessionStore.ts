@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type {
   AudioFeatures,
+  NormalizedAudio,
   Reading,
   RuntimeSource,
   SessionEvent,
@@ -18,6 +19,7 @@ type CreateSessionInput = {
 
 type AnalysisPatch = {
   uploadedAudio?: UploadedAudio;
+  normalizedAudio?: NormalizedAudio;
   transcript?: TranscriptResult;
   features?: AudioFeatures;
   readings?: Reading[];

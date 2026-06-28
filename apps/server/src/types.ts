@@ -1,5 +1,6 @@
 import type {
   AudioFeatures,
+  NormalizedAudio,
   Reading,
   RuntimeSource,
   SessionEvent,
@@ -10,6 +11,7 @@ import type {
 
 export type {
   AudioFeatures,
+  NormalizedAudio,
   Reading,
   RuntimeSource,
   SessionEvent,
@@ -38,6 +40,7 @@ export type SessionRecord = {
   status: SessionStatus;
   source: RuntimeSource;
   uploadedAudio?: UploadedAudio;
+  normalizedAudio?: NormalizedAudio;
   transcript?: TranscriptResult;
   features?: AudioFeatures;
   readings?: Reading[];

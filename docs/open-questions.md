@@ -4,7 +4,7 @@ Use this file for unresolved product and engineering choices. Implementation blo
 
 ## Product
 
-- What is the final product name? Current docs intentionally avoid locking this.
+- Final product name is locked as `jiko`; keep open naming questions focused on roles, copy, and demo language.
 - Should the top narrow window have a permanent name, or should it remain a role rather than a branded object?
 - Should result phrases be mostly Chinese, mostly English, or bilingual?
 - How dark should the Minority Report framing be in the demo script?

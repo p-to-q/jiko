@@ -6,7 +6,7 @@ This map should stay short. It explains where things go without turning the repo
 
 - `README.md`: entrypoint, current direction, and docs map.
 - `apps/web`: Vite/React MPI3508 UI preview. It renders one 320 x 480 device canvas with black outside-page space and layered screen/mask surfaces.
-- `apps/server`: local mock backend with HTTP commands, SSE events, manual transcript loop, shared readings, and dev receipts.
+- `apps/server`: local backend with HTTP commands, SSE events, manual transcript loop, audio upload, ffmpeg normalization, first-pass audio features, local STT/TTS adapter boundaries, shared readings, and dev receipts.
 - `packages/protocol`: shared Zod schemas and TypeScript types for session events, readings, features, transcripts, results, and receipts.
 - `packages/core`: shared session reducer and result composer.
 - `packages/readings`: first transparent text, voice, and timing reading heuristics.
@@ -28,15 +28,13 @@ This map should stay short. It explains where things go without turning the repo
 - `.gitignore`: ignored local files, secrets, recordings, and build output.
 - `AGENTS.md`: local instructions for coding agents.
 
-## Planned Code Paths
-
-- `apps/device`: Raspberry Pi GPIO, audio, and kiosk adapter.
+- `apps/device`: Raspberry Pi thin hardware adapters. The first adapter bridges a GPIO side button into normal jiko session events.
 
 ## Next Code Paths
 
-- Browser recording upload in `apps/web` and `apps/server`.
-- Audio normalization and Python worker boundary for local STT/features.
-- Raspberry Pi `apps/device` event bridge for GPIO/USB/serial button input.
+- Browser recording upload and receipt viewer in `apps/web`.
+- Local STT provider setup and latency measurement.
+- Raspberry Pi 5 hardware smoke test for the `apps/device` GPIO adapter.
 
 ## Not Active Yet
 

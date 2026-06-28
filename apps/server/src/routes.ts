@@ -1,9 +1,11 @@
 import { parseSessionEvent, type RuntimeSource } from "@jiko/protocol";
+import { runAudioPipeline } from "./audioPipeline.js";
 import type { EventBus } from "./eventBus.js";
 import { buildMockFeatures, buildReadings, buildResult } from "./mockPipeline.js";
 import type { ReceiptWriter } from "./receipts.js";
 import { sanitizeSessionId, SessionStore } from "./sessionStore.js";
-import type { JsonValue, SessionEvent, SessionRecord } from "./types.js";
+import { speakLocalResult } from "./tts.js";
+import type { JsonValue, Reading, SessionEvent, SessionRecord, SessionResult } from "./types.js";
 
 type RouteDependencies = {
   bus: EventBus;
@@ -46,14 +48,14 @@ export function createRequestHandler(dependencies: RouteDependencies) {
         sendJson(response, 200, {
           ok: true,
           service: "@jiko/server",
-          mode: "mock",
+          mode: "local",
           uptimeSeconds: Math.round(process.uptime()),
           sessions: dependencies.store.listSessions().length,
           sseClients: dependencies.bus.listenerCount,
           receiptsEnabled: dependencies.receipts.enabled,
           providers: {
-            stt: "local:manual",
-            tts: "local:mock-clip"
+            stt: process.env.STT_PROVIDER || "local:stt-unconfigured",
+            tts: process.env.TTS_PROVIDER || "local:tts-unconfigured"
           }
         });
         return;
@@ -66,6 +68,16 @@ export function createRequestHandler(dependencies: RouteDependencies) {
 
       if (request.method === "POST" && url.pathname === "/sessions") {
         await handleCreateSession(request, response, dependencies);
+        return;
+      }
+
+      if (request.method === "GET" && parts.length === 2 && parts[0] === "sessions") {
+        await handleGetSession(parts[1], response, dependencies);
+        return;
+      }
+
+      if (request.method === "GET" && parts.length === 3 && parts[0] === "sessions" && parts[2] === "receipt") {
+        await handleGetSessionReceipt(parts[1], response, dependencies);
         return;
       }
 
@@ -110,6 +122,26 @@ async function handleCreateSession(request: any, response: any, dependencies: Ro
   });
 }
 
+async function handleGetSession(sessionId: string, response: any, dependencies: RouteDependencies): Promise<void> {
+  const session = dependencies.store.getSession(sessionId);
+  if (!session) {
+    sendJson(response, 404, { error: "Session not found" });
+    return;
+  }
+
+  sendJson(response, 200, { session });
+}
+
+async function handleGetSessionReceipt(sessionId: string, response: any, dependencies: RouteDependencies): Promise<void> {
+  const session = dependencies.store.getSession(sessionId);
+  if (!session) {
+    sendJson(response, 404, { error: "Session not found" });
+    return;
+  }
+
+  sendJson(response, 200, buildDebugReceipt(session));
+}
+
 async function handleAudioUpload(
   sessionId: string,
   request: any,
@@ -132,18 +164,18 @@ async function handleAudioUpload(
     return;
   }
 
-  const byteSize = await readRawBodyByteSize(request, maxAudioBodyBytes);
-  if (byteSize === 0) {
+  const body = await readRawBody(request, maxAudioBodyBytes);
+  if (body.byteLength === 0) {
     sendJson(response, 400, { error: "Expected non-empty audio body" });
     return;
   }
 
   const durationMs = numberValue(url.searchParams.get("durationMs")) ?? numberValue(request.headers?.["x-audio-duration-ms"]);
   const source = sourceValue(url.searchParams.get("source")) ?? "browser";
-  const audio = {
+  const uploadedAudio = {
     source,
     mediaType: contentType,
-    byteSize,
+    byteSize: body.byteLength,
     durationMs
   };
 
@@ -160,21 +192,75 @@ async function handleAudioUpload(
   }
 
   dependencies.store.updateAnalysis(session.id, {
-    uploadedAudio: audio
+    uploadedAudio
   });
 
   events.push(
     await emitSessionEvent(dependencies, session, {
       type: "audio.uploaded",
       source,
-      audio
+      audio: uploadedAudio
     })
   );
 
+  try {
+    const pipeline = await runAudioPipeline({
+      sessionId: session.id,
+      source,
+      mediaType: contentType,
+      body,
+      durationMs
+    });
+
+    dependencies.store.updateAnalysis(session.id, {
+      uploadedAudio: pipeline.uploadedAudio,
+      normalizedAudio: pipeline.normalizedAudio,
+      transcript: pipeline.transcript,
+      features: pipeline.features,
+      readings: pipeline.readings,
+      result: pipeline.result
+    });
+
+    events.push(
+      await emitSessionEvent(dependencies, session, {
+        type: "audio.normalized",
+        source,
+        audio: pipeline.normalizedAudio
+      })
+    );
+
+    events.push(
+      await emitSessionEvent(dependencies, session, {
+        type: "audio.transcribed",
+        source,
+        transcript: pipeline.transcript
+      })
+    );
+
+    events.push(
+      await emitSessionEvent(dependencies, session, {
+        type: "audio.features.extracted",
+        source,
+        features: pipeline.features
+      })
+    );
+
+    await emitReadingsAndResult(dependencies, session, source, pipeline.readings, pipeline.result, events);
+  } catch (error) {
+    events.push(
+      await emitSessionEvent(dependencies, session, {
+        type: "session.error",
+        source: "server",
+        message: error instanceof Error ? error.message : "Audio pipeline failed",
+        code: "audio_pipeline_failed",
+        recoverable: true
+      })
+    );
+  }
+
   sendJson(response, 202, {
     session: dependencies.store.getSession(sessionId),
-    events,
-    next: "audio normalization and local STT are not wired yet"
+    events
   });
 }
 
@@ -305,6 +391,29 @@ async function runManualTranscriptLoop(
     })
   );
 
+  await emitReadingsAndResult(dependencies, session, source, readings, result, events, false);
+
+  return events;
+}
+
+async function emitReadingsAndResult(
+  dependencies: RouteDependencies,
+  session: SessionRecord,
+  source: RuntimeSource,
+  readings: Reading[],
+  result: SessionResult,
+  events: SessionEvent[],
+  emitStarted = true
+): Promise<void> {
+  if (emitStarted) {
+    events.push(
+      await emitSessionEvent(dependencies, session, {
+        type: "reading.started",
+        source
+      })
+    );
+  }
+
   for (const reading of readings) {
     events.push(
       await emitSessionEvent(dependencies, session, {
@@ -323,20 +432,51 @@ async function runManualTranscriptLoop(
     })
   );
 
-  return events;
+  if (result.tts) {
+    events.push(
+      await emitSessionEvent(dependencies, session, {
+        type: "tts.started",
+        source: "server",
+        tts: result.tts
+      })
+    );
+
+    const ttsOutput = await speakLocalResult(result.tts);
+    const ttsFinishedPatch: EventPatch = {
+      type: "tts.finished",
+      source: "server"
+    };
+    if (ttsOutput?.provider) {
+      ttsFinishedPatch.provider = ttsOutput.provider;
+    }
+    events.push(
+      await emitSessionEvent(dependencies, session, ttsFinishedPatch)
+    );
+  }
 }
 
-async function readRawBodyByteSize(request: any, byteLimit: number): Promise<number> {
+async function readRawBody(request: any, byteLimit: number): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
   let totalBytes = 0;
 
   for await (const chunk of request) {
-    totalBytes += chunkByteLength(chunk);
+    const buffer = toUint8Array(chunk);
+    totalBytes += buffer.byteLength;
     if (totalBytes > byteLimit) {
       throw new Error("Audio body is too large");
     }
+    chunks.push(buffer);
   }
 
-  return totalBytes;
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  return body;
 }
 
 async function emitSessionEvent(
@@ -429,7 +569,7 @@ async function readJsonBody(request: any, requireBody: boolean): Promise<ParsedB
 function applyCors(response: any): void {
   response.setHeader("access-control-allow-origin", "*");
   response.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
-  response.setHeader("access-control-allow-headers", "content-type");
+  response.setHeader("access-control-allow-headers", "content-type,x-audio-duration-ms");
 }
 
 function sendJson(response: any, statusCode: number, body: unknown): void {
@@ -437,6 +577,37 @@ function sendJson(response: any, statusCode: number, body: unknown): void {
     "content-type": "application/json; charset=utf-8"
   });
   response.end(`${JSON.stringify(body, null, 2)}\n`);
+}
+
+function buildDebugReceipt(session: SessionRecord): JsonValue {
+  return {
+    sessionId: session.id,
+    startedAt: session.createdAt,
+    updatedAt: session.updatedAt,
+    status: session.status,
+    source: session.source,
+    input: {
+      audio: session.uploadedAudio,
+      normalizedAudio: session.normalizedAudio,
+      audioStored: false,
+      transcript: session.transcript?.text,
+      language: session.transcript?.language
+    },
+    providers: {
+      stt: session.transcript
+        ? {
+            id: session.transcript.provider,
+            latencyMs: session.transcript.latencyMs,
+            remote: false
+          }
+        : undefined
+    },
+    transcript: session.transcript,
+    features: session.features,
+    readings: session.readings,
+    result: session.result,
+    events: session.events
+  } as JsonValue;
 }
 
 function stringValue(value: unknown): string | undefined {
@@ -452,16 +623,16 @@ function contentTypeValue(value: unknown): string | undefined {
   return raw.split(";")[0]?.trim().toLowerCase() || undefined;
 }
 
-function chunkByteLength(value: unknown): number {
-  if (typeof value === "string") {
-    return Buffer.byteLength(value);
+function toUint8Array(value: unknown): Uint8Array {
+  const buffer = Buffer.isBuffer(value) || value instanceof Uint8Array ? value : Buffer.from(String(value));
+  const bytes = buffer as unknown as { length: number; [index: number]: number };
+  const output = new Uint8Array(bytes.length);
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    output[index] = bytes[index];
   }
 
-  if (value && typeof value === "object" && "byteLength" in value && typeof value.byteLength === "number") {
-    return value.byteLength;
-  }
-
-  return Buffer.byteLength(String(value));
+  return output;
 }
 
 function numberValue(value: unknown): number | undefined {

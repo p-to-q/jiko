@@ -1,12 +1,12 @@
-# jiko mock server
+# jiko local server
 
 Prototype-only local backend loop for the first laptop demo.
 
 This app uses Node's built-in HTTP server and has no runtime dependencies. It
-accepts raw audio uploads into the normal event stream, but audio normalization
-and STT/TTS providers are not wired yet. Manual transcripts are treated as local
-demo input and become mock features, three readings, and a `session.result`
-event.
+accepts raw audio uploads into the normal event stream, normalizes them with
+`ffmpeg`, extracts first-pass audio features, calls a local STT adapter when one
+is configured, and emits the same reading/result events as the manual demo path.
+Manual transcripts remain available as a local rehearsal fallback.
 
 ## Run
 
@@ -27,6 +27,8 @@ JIKO_WRITE_RECEIPTS=0 npm --prefix apps/server run dev
 
 - `GET /health`
 - `GET /events`
+- `GET /sessions/:sessionId`
+- `GET /sessions/:sessionId/receipt`
 - `POST /sessions`
 - `POST /sessions/:sessionId/audio`
 - `POST /sessions/:sessionId/manual-transcript`
@@ -34,8 +36,27 @@ JIKO_WRITE_RECEIPTS=0 npm --prefix apps/server run dev
 
 `POST /sessions/:sessionId/audio` expects a raw audio body such as `audio/webm`,
 `audio/ogg`, `audio/wav`, or `audio/mp4`. It emits `input.recording.stopped`
-when `durationMs` is provided, then `audio.uploaded`. It does not store raw
-audio and does not transcribe yet.
+when `durationMs` is provided, then `audio.uploaded`, `audio.normalized`,
+`audio.transcribed`, `audio.features.extracted`, three reading events,
+`session.result`, and TTS lifecycle events.
+
+Raw audio and normalized working audio stay in the OS temp directory and are
+deleted after the request. Receipts store metadata, transcript/provider status,
+features, readings, result, and events, but not raw recordings.
+
+## Local providers
+
+- `FFMPEG_BIN`: defaults to `ffmpeg`.
+- `STT_PROVIDER=funasr` with `FUNASR_ENDPOINT`: posts the normalized WAV to a
+  local/self-hosted FunASR-compatible HTTP endpoint.
+- `STT_PROVIDER=whisper.cpp` with `WHISPER_CPP_BIN` and `WHISPER_MODEL`: runs a
+  local whisper.cpp CLI.
+- If no local STT is configured, the text layer receives an empty transcript
+  with provider `local:stt-unconfigured:unavailable`; voice and timing features
+  still come from real audio.
+- `TTS_PROVIDER=piper` with `PIPER_BIN` and `PIPER_VOICE`: runs Piper locally.
+  If no voice is configured, the server records that in the TTS provider receipt
+  and keeps the result flow moving.
 
 ## Quick check
 
@@ -46,6 +67,7 @@ curl -X POST http://localhost:4317/sessions
 curl -X POST 'http://localhost:4317/sessions/<id>/audio?durationMs=1800' \
   -H 'content-type: audio/webm' \
   --data-binary '@sample.webm'
+curl http://localhost:4317/sessions/<id>/receipt
 curl -X POST http://localhost:4317/sessions/<id>/manual-transcript \
   -H 'content-type: application/json' \
   -d '{"transcript":"我在考虑辞职，但还想先把这件事说清楚。","language":"zh"}'

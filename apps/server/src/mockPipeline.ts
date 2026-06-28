@@ -36,13 +36,14 @@ export function buildMockFeatures(transcript: string): AudioFeatures {
 export function buildReadings(
   transcript: string,
   language: string,
-  features: AudioFeatures
+  features: AudioFeatures,
+  sttConfidence = 0.86
 ): Reading[] {
   return runReadings({
     text: {
       transcript,
       language,
-      sttConfidence: 0.86
+      sttConfidence
     },
     voice: {
       durationMs: features.durationMs,
@@ -93,4 +94,3 @@ function clampNumber(value: number, min: number, max: number): number {
 function round(value: number): number {
   return Number(value.toFixed(3));
 }
-

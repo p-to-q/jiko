@@ -39,7 +39,7 @@ Start here unless a quick spike proves it wrong:
 - Laptop TTS: Piper or pre-generated local audio clips first.
 - Audio features: start with simple duration, silence, RMS, pause, and rough pitch features.
 - Pi display: Chromium kiosk on MPI3508.
-- Pi button: Python `gpiozero`.
+- Pi button: Python `gpiozero` adapter in `apps/device`; hardware smoke test pending.
 - Pi offline STT fallback: Vosk.
 - Pi offline TTS fallback: Piper.
 
@@ -52,10 +52,11 @@ Build the smallest complete path:
 3. `packages/readings`: transparent text, voice, and timing heuristics. Done for the mock loop.
 4. `apps/server`: manual transcript -> mock features -> readings -> result over SSE. Done.
 5. `apps/web`: consume `session.result` from SSE and update the four-window UI. Done.
-6. Browser recording upload and audio normalization.
-7. Local STT provider worker.
-8. Dev debug panel for transcript, features, and readings.
+6. Browser recording upload and audio normalization. Server upload and normalization are done; browser UI wiring is in progress.
+7. Local STT provider worker. Provider boundary is done for FunASR HTTP and whisper.cpp CLI; model setup/benchmarking is still pending.
+8. Dev debug panel for transcript, features, and readings. Server receipt endpoint is done; browser viewer is in progress.
 9. Operator shortcuts that emit normal session events.
+10. Raspberry Pi 5 thin button adapter. Done as a GPIO event bridge; still needs hardware smoke testing on the Pi.
 
 Do not start with the Pi. Do not start with the shell CAD. Do not start with a complex AI agent framework.
 
@@ -65,12 +66,12 @@ The next backend step is to move from manual transcript mock loop to real local 
 
 Priority order:
 
-1. Add browser recording upload and a server audio ingest route. Server raw-audio ingest route is present; browser recording UI still needs wiring.
-2. Normalize uploaded audio to mono 16 kHz WAV with an explicit ffmpeg fallback/error.
-3. Extract minimal real audio features: duration, RMS/energy, silence, and pause hints.
-4. Add one local/free STT adapter behind a provider boundary, while keeping manual transcript fallback.
-5. Persist receipts that show media type, byte size, provider id, latency, transcript, features, readings, and result.
-6. Keep Raspberry Pi 5 as a thin hardware adapter first: side button events should enter the same recording event path as browser/manual controls.
+1. Finish browser recording UI wiring to `POST /sessions/:id/audio`.
+2. Done: server normalizes uploaded audio to mono 16 kHz WAV with an explicit `ffmpeg` error path.
+3. Done: server extracts minimal real audio features: duration, RMS/energy, silence, and pause hints.
+4. Done: server has local/free STT adapters behind a provider boundary, while keeping manual transcript fallback.
+5. Done: receipts show media type, byte size, provider id, latency, transcript, features, readings, and result.
+6. Smoke test the Raspberry Pi 5 thin adapter on hardware: confirm GPIO17 wiring, debounce timing, server reachability, and SSE/UI receipt of `input.recording.started` and `input.recording.stopped`.
 
 This sequence protects the demo: if local STT is slow or fails, the UI, readings, receipts, and operator fallback still exercise the same product protocol.
 
@@ -85,7 +86,7 @@ This sequence protects the demo: if local STT is slow or fails, the UI, readings
 
 ## Confirm During Kickoff
 
-- Which local STT path to spike first: FunASR, faster-whisper, whisper.cpp, or MLX Whisper.
+- Which local STT path to benchmark first on the demo laptop: FunASR local HTTP or whisper.cpp CLI.
 - Whether Piper has an acceptable Chinese voice for the demo.
 - Whether pre-generated audio clips are enough for the result lines.
 - Whether raw recordings should be kept during rehearsal, and where.
@@ -93,7 +94,6 @@ This sequence protects the demo: if local STT is slow or fails, the UI, readings
 
 ## Can Wait
 
-- Final product name.
 - Final role names for the four windows.
 - Final demo script.
 - Final shell material and finish.
@@ -107,7 +107,7 @@ Do these only if they affect the first build:
 
 - Measure local STT latency on the demo laptop.
 - Test Piper or pre-generated local clips for result-line playback.
-- Test browser `MediaRecorder` output format compatibility with the chosen backend.
+- Test browser `MediaRecorder` output format compatibility with the server `ffmpeg` path.
 - Test whether PixiJS is necessary or plain Canvas is enough for the block UI.
 - Confirm Pi screen resolution and orientation.
 - Confirm USB mic availability and noise level in the demo room.
@@ -117,7 +117,7 @@ Do these only if they affect the first build:
 The next phase is complete when:
 
 - A user can press/hold or click to record.
-- The app transcribes one sentence.
+- The app transcribes one sentence through a configured local STT provider, or records an explicit local-STT-unavailable receipt.
 - The app extracts basic audio/timing features.
 - Three readings resolve to signal states.
 - The four-window UI animates and locks into a result.

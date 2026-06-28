@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-
-const DEFAULT_EVENTS_URL = "http://localhost:4317/events";
+import { resolveEventsUrl } from "../api/server";
 
 const SESSION_EVENT_TYPES = [
   "session.created",
@@ -42,6 +41,19 @@ type IncomingSessionEvent = {
   [key: string]: unknown;
 };
 
+export type DeviceEventSummary = {
+  type: string;
+  sessionId?: string;
+  timestamp?: number;
+  message?: string;
+};
+
+export type DeviceEventsState = {
+  device: DeviceState;
+  sessionId?: string;
+  recentEvents: DeviceEventSummary[];
+};
+
 const MOCK_LAMPS: LampTones = {
   text: "red",
   voice: "amber",
@@ -73,9 +85,15 @@ const IDLE_DEVICE_STATE: DeviceState = {
   lamps: MOCK_LAMPS,
 };
 
-export function useDeviceEvents(): DeviceState {
+const INITIAL_EVENTS_STATE: DeviceEventsState = {
+  device: IDLE_DEVICE_STATE,
+  recentEvents: [],
+};
+
+export function useDeviceEvents(): DeviceEventsState {
   const eventsUrl = useMemo(resolveEventsUrl, []);
-  const [deviceState, setDeviceState] = useState<DeviceState>(IDLE_DEVICE_STATE);
+  const [eventsState, setEventsState] =
+    useState<DeviceEventsState>(INITIAL_EVENTS_STATE);
 
   useEffect(() => {
     if (typeof EventSource === "undefined") {
@@ -98,7 +116,7 @@ export function useDeviceEvents(): DeviceState {
         return;
       }
 
-      setDeviceState((current) => reduceDeviceState(current, sessionEvent));
+      setEventsState((current) => reduceEventsState(current, sessionEvent));
     };
 
     const namedListeners = SESSION_EVENT_TYPES.map((type) => {
@@ -109,7 +127,7 @@ export function useDeviceEvents(): DeviceState {
           return;
         }
 
-        setDeviceState((current) => reduceDeviceState(current, sessionEvent));
+        setEventsState((current) => reduceEventsState(current, sessionEvent));
       };
 
       source.addEventListener(type, listener);
@@ -130,13 +148,7 @@ export function useDeviceEvents(): DeviceState {
     };
   }, [eventsUrl]);
 
-  return deviceState;
-}
-
-function resolveEventsUrl() {
-  const configuredUrl = import.meta.env.VITE_EVENTS_URL?.trim();
-
-  return configuredUrl || DEFAULT_EVENTS_URL;
+  return eventsState;
 }
 
 function parseSessionEvent(
@@ -224,6 +236,26 @@ function reduceDeviceState(
     default:
       return current;
   }
+}
+
+function reduceEventsState(
+  current: DeviceEventsState,
+  event: IncomingSessionEvent,
+): DeviceEventsState {
+  return {
+    device: reduceDeviceState(current.device, event),
+    sessionId: getSessionId(event) ?? current.sessionId,
+    recentEvents: [summarizeEvent(event), ...current.recentEvents].slice(0, 12),
+  };
+}
+
+function summarizeEvent(event: IncomingSessionEvent): DeviceEventSummary {
+  return {
+    type: event.type,
+    sessionId: getSessionId(event),
+    timestamp: getTimestamp(event),
+    message: getEventMessage(event),
+  };
 }
 
 function resultStateFromEvent(event: IncomingSessionEvent): DeviceState {
@@ -319,6 +351,22 @@ function getEventMessage(event: IncomingSessionEvent) {
 
   return typeof message === "string" && message.trim()
     ? message.trim().slice(0, 22).toUpperCase()
+    : undefined;
+}
+
+function getSessionId(event: IncomingSessionEvent) {
+  const sessionId = event.sessionId;
+
+  return typeof sessionId === "string" && sessionId.trim()
+    ? sessionId.trim()
+    : undefined;
+}
+
+function getTimestamp(event: IncomingSessionEvent) {
+  const timestamp = event.timestamp;
+
+  return typeof timestamp === "number" && Number.isFinite(timestamp)
+    ? timestamp
     : undefined;
 }
 
