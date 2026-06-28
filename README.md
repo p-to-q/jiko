@@ -1,6 +1,6 @@
 # jiko
 
-jiko is a hackathon prototype for a wearable signal device built around a Raspberry Pi 5, one physical display, a masked four-window hardware shell, microphone input, TTS output, and three independent readings of a spoken intention.
+jiko is a hackathon prototype for a wearable signal device built around a Raspberry Pi 5, one MPI3508 display, a masked four-window hardware shell, laptop-hosted audio/TTS, and three independent readings of a spoken intention.
 
 The current working product shape is not a productivity assistant and not a fortune-telling object. It is a small physical signal instrument: it listens to one intention, separates it into text, voice, and timing readings, then reveals whether the readings agree or diverge.
 
@@ -13,9 +13,9 @@ Repo profile: private `micro+`. Keep the repository light: clear thesis, visible
 ## Current Direction
 
 - Hardware illusion: one vertical screen behind a 3D-printed front mask, visually split into one narrow top strip and three large stacked signal windows.
-- Hardware baseline: Raspberry Pi 5 with MPI3508 display.
-- Input: side thumb button for hold-to-record, plus USB or built-in microphone depending on the prototype environment.
-- Output: screen state changes plus short TTS announcement.
+- Hardware baseline: Raspberry Pi 5 with MPI3508 display, used as a kiosk display shell for the hackathon.
+- Input: laptop microphone or USB microphone first; optional side thumb button for hold-to-record hardware feel.
+- Output: Pi screen state changes plus short local TTS announcement from the laptop or connected speaker.
 - Reading layers: text reading, voice reading, timing reading.
 - Result language: maintain / deviate / static, instead of good / bad / correct / wrong.
 - Demo priority: a complete ritual moment beats a complex but fragile AI system.
@@ -24,14 +24,14 @@ Repo profile: private `micro+`. Keep the repository light: clear thesis, visible
 
 The product should share one UI, one state machine, and one reading core across two runtime shells:
 
-- Laptop app path: the fastest route for the first audio prototype. The laptop handles microphone input, local STT, audio feature extraction, local TTS, and the four-window UI.
-- Raspberry Pi hardware path: the same UI and core logic run in Chromium kiosk mode, while a hardware adapter handles GPIO button input, microphone capture, and local/offline STT/TTS.
+- Laptop app path: the compute and audio core for the hackathon. The laptop handles microphone input, local STT, audio feature extraction, local TTS, receipts, and the web app server.
+- Raspberry Pi hardware path: the object shell for the hackathon. The Pi 5 opens the same UI in Chromium kiosk mode on the MPI3508 display; an optional thin hardware adapter can post side-button events back to the laptop server.
 
-The boundary between the shared core and each runtime adapter is the most important engineering decision in the repo.
+The boundary between the shared core and each runtime adapter is the most important engineering decision in the repo. For this hackathon, Pi-local microphone capture, STT, and TTS are future upgrade paths, not first-success requirements.
 
 ## Immediate Prototype
 
-The immediate prototype should run on a laptop first:
+The immediate prototype should run on a laptop first, with the Pi acting like a small projector/display object:
 
 1. Full-screen web UI with four windows.
 2. Hold-to-record or click-to-record interaction.
@@ -39,8 +39,9 @@ The immediate prototype should run on a laptop first:
 4. Audio feature extraction for volume, silence, speech duration, and rough pitch/energy.
 5. Three reading outputs mapped to red, green, or yellow.
 6. TTS announcement and a short silence afterward.
+7. Pi 5 Chromium kiosk displaying `/?mode=device` from the laptop-hosted web app.
 
-The Raspberry Pi path should stay compatible, but it should not block the first audio prototype.
+The Raspberry Pi path should stay visible and compatible, but it should not block the first audio prototype.
 
 ## Docs
 
@@ -55,6 +56,7 @@ The Raspberry Pi path should stay compatible, but it should not block the first 
 - [Form Factor](docs/form-factor.md)
 - [Hardware Notes](docs/hardware-notes.md)
 - [Hardware Interfaces](docs/hardware-interfaces.md)
+- [Demo Runbook](docs/demo-runbook.md)
 - [Repository Map](docs/repository-map.md)
 - [Next Phase Checklist](docs/next-phase-checklist.md)
 - [Open Questions](docs/open-questions.md)
@@ -66,7 +68,7 @@ Build the laptop prototype as a local web app:
 
 - `apps/web`: Vite + React/TypeScript + Canvas/PixiJS UI.
 - `apps/server`: TypeScript service for recording upload, local transcription, local TTS, and readings.
-- `apps/device`: Raspberry Pi adapter for GPIO, device audio, and kiosk boot behavior.
+- `apps/device`: Raspberry Pi adapter for optional GPIO button events and kiosk boot behavior.
 - `packages/protocol`: shared JSON event and reading schemas.
 - `packages/core`: shared state machine and reading orchestration.
 
@@ -79,6 +81,7 @@ Run the local backend and web UI:
 ```sh
 pnpm dev:server
 pnpm dev:web
+pnpm demo:urls
 ```
 
 Trigger the first non-audio loop:

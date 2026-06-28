@@ -21,8 +21,9 @@ Backend:
 Hardware runtime:
 
 - Raspberry Pi OS with Chromium kiosk mode.
-- Local web app opened full-screen.
-- Python daemon for GPIO button, microphone capture, and local/offline TTS/STT.
+- Laptop-hosted web app opened full-screen on the MPI3508.
+- Optional Python daemon for GPIO button events.
+- Future Python daemon for microphone capture and local/offline TTS/STT only after the laptop loop is stable.
 
 ## System Shape
 
@@ -136,12 +137,12 @@ This is the fastest path for the first prototype because laptop audio and local 
 ## Raspberry Pi Path
 
 1. Pi boots into Chromium kiosk.
-2. Chromium opens `http://localhost:PORT`.
-3. A local daemon handles GPIO and audio.
-4. The daemon sends button/audio events to the app server.
+2. Chromium opens `http://<laptop-ip>:5173/?mode=device`.
+3. The laptop server handles audio, STT, feature extraction, readings, receipts, and TTS.
+4. An optional local daemon handles GPIO button events.
 5. The same UI and reading protocol runs unchanged.
 
-Raspberry Pi has an official kiosk-mode path for full-screen Chromium, and lightweight community examples such as `geerlingguy/pi-kiosk` can be used as references.
+For the hackathon, treat Pi 5 plus MPI3508 as a projector/display shell. Pi-local microphone capture, STT, TTS, and server hosting are future upgrade paths, not first-success criteria. Raspberry Pi has an official kiosk-mode path for full-screen Chromium, and lightweight community examples such as `geerlingguy/pi-kiosk` can be used as references.
 
 ## Manual Demo Override
 
@@ -159,6 +160,6 @@ Manual override should set the same event protocol as the real pipeline. That ke
 - Audio capture differences across browser, Node, Python, and Pi.
 - Chinese STT quality under noise.
 - Pi 5 thermals and power inside a closed shell.
-- Chromium kiosk microphone permissions.
+- LAN reachability between laptop and Pi kiosk.
 - UI performance if block animation uses too many DOM nodes.
 - Product misunderstanding: red/green read as moral instruction.

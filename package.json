@@ -6,6 +6,7 @@
   "scripts": {
     "dev:web": "pnpm --filter @jiko/web dev",
     "dev:server": "pnpm --filter @jiko/server dev",
+    "demo:urls": "node scripts/print-demo-urls.mjs",
     "build": "pnpm --recursive --if-present build",
     "typecheck": "pnpm --recursive --if-present typecheck"
   },

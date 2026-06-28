@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The project needs two execution paths without becoming two products. The laptop path should let the team move fast on the first prototype. The Raspberry Pi path should preserve a clean route into the physical device.
+The project needs two execution paths without becoming two products. The laptop path should carry the hackathon compute and audio loop. The Raspberry Pi path should preserve the physical object by acting as a thin display shell first.
 
 The shared product system is:
 
@@ -61,39 +61,38 @@ Why:
 
 Laptop audio is easier to debug, and a clean laptop demo can already show the entire product ritual.
 
-## Runtime B: Raspberry Pi Hardware
+## Runtime B: Raspberry Pi 5 Projector Shell
 
 Goal:
 
-Run the same UI and product core on the hardware object.
+Make the hardware object visible without moving the audio/model stack onto the Pi.
 
 Responsibilities:
 
 - Boot into Chromium kiosk.
-- Display the same four-window UI.
-- Read side button through GPIO.
-- Capture audio from USB mic or attached mic.
-- Play TTS through speaker/HDMI/USB audio.
-- Run local/offline STT/TTS where feasible.
+- Display the same four-window UI on the MPI3508.
+- Open the laptop-hosted web app at `http://<laptop-ip>:5173/?mode=device`.
+- Optionally read a side button through GPIO, USB HID, or serial and post events to the laptop server.
+- Stay compatible with a future Pi-local audio path without requiring it for the hackathon.
 
-For the first hardware bring-up, keep the Pi thinner than this full list: display plus button event bridge is enough. Do not make Pi-local STT/TTS part of the first success condition.
+For the hackathon bring-up, the Pi is a tiny projector/display object. Do not make Pi-local microphone capture, STT, TTS, or server hosting part of the first success condition.
 
 Suggested stack:
 
 - Raspberry Pi OS.
-- Chromium kiosk opening the local web app.
-- `apps/device`: Python adapter for GPIO/audio, or Node adapter if the team standardizes on TS.
+- Chromium kiosk opening the laptop-hosted web app.
+- `apps/device`: Python adapter for optional GPIO button input.
 - GPIO: `gpiozero` first for button input.
-- STT fallback: Vosk for Pi-compatible offline recognition.
-- TTS fallback: Piper for local neural speech.
+- Future Pi STT fallback: Vosk for Pi-compatible offline recognition.
+- Future Pi TTS fallback: Piper or pre-generated local clips.
 
 Why:
 
-The Pi path should be thin. It should adapt hardware events into the same protocol the laptop app already understands.
+The Pi path should be thin. It should show the same UI and adapt optional hardware events into the protocol the laptop app already understands.
 
 First device adapter shape:
 
-- Chromium kiosk opens the web app with `/?mode=device`.
+- Chromium kiosk opens the laptop web app with `/?mode=device`.
 - A small Python daemon in `apps/device` reads the side button through `gpiozero`, USB HID, or serial input.
 - The first GPIO daemon posts `input.recording.started` and `input.recording.stopped` demo events to `apps/server`, using `source: "device"`.
 - The server treats those device events as normal session/input events.
@@ -166,11 +165,13 @@ Laptop fallback:
 - STT: Vosk or browser/manual transcript for rehearsal.
 - TTS: browser speech synthesis or local system voice.
 
-Pi default for demo:
+Pi default for hackathon:
 
-- Use local services where performance allows; otherwise keep STT on the laptop and let the Pi act as display/device shell.
+- Open the laptop-hosted device UI in Chromium kiosk.
+- Let the laptop handle microphone capture, STT, audio features, TTS, and receipts.
+- Use the Pi button adapter only if it is quicker than a laptop/browser record control.
 
-Pi fallback:
+Pi future fallback:
 
 - STT: Vosk.
 - TTS: Piper or pre-generated audio clips.

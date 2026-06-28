@@ -21,6 +21,7 @@ This map should stay short. It explains where things go without turning the repo
 - `docs/form-factor.md`: Raspberry Pi 5 physical form and screen-layout direction.
 - `docs/hardware-notes.md`: screen, shell, button, Pi, and mounting notes.
 - `docs/hardware-interfaces.md`: Raspberry Pi 5 and MPI3508 interface notes, with secondary Pi notes.
+- `docs/demo-runbook.md`: hackathon laptop-plus-Pi setup, smoke tests, and fallback ladder.
 - `docs/next-phase-checklist.md`: readiness check and decisions before implementation.
 - `docs/open-questions.md`: unresolved questions.
 - `docs/repository-setup.md`: private GitHub setup notes.

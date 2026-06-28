@@ -11,7 +11,7 @@ The important boundaries are now clear enough:
 - The product is a wearable signal instrument, not an AI advisor.
 - The prototype has one shared core and two runtime shells.
 - The first runnable version should be laptop-first.
-- The Raspberry Pi 5 path is preserved through a thin hardware adapter.
+- The Raspberry Pi 5 path is preserved as a thin kiosk display shell with optional button events.
 - The repo is private and intentionally light.
 
 ## Locked For Implementation
@@ -38,10 +38,10 @@ Start here unless a quick spike proves it wrong:
 - Laptop STT: FunASR local service first; faster-whisper, whisper.cpp, or MLX Whisper as local fallbacks.
 - Laptop TTS: pre-generated local audio clips first; Piper remains the dynamic fallback.
 - Audio features: start with simple duration, silence, RMS, pause, and rough pitch features.
-- Pi display: Chromium kiosk on MPI3508.
-- Pi button: Python `gpiozero` adapter in `apps/device`; hardware smoke test pending.
-- Pi offline STT fallback: Vosk.
-- Pi offline TTS fallback: Piper.
+- Pi display: Chromium kiosk on MPI3508, opening the laptop-hosted device UI.
+- Pi button: optional Python `gpiozero` adapter in `apps/device`; hardware smoke test pending.
+- Pi offline STT fallback: future Vosk path, not a hackathon dependency.
+- Pi offline TTS fallback: future Piper or local clips path, not a hackathon dependency.
 
 ## What To Build First
 
@@ -56,22 +56,25 @@ Build the smallest complete path:
 7. Local STT provider worker. Provider boundary is done for FunASR HTTP and whisper.cpp CLI; model setup/benchmarking is still pending.
 8. Dev debug panel for transcript, features, and readings. Server receipt endpoint is done; browser viewer is in progress.
 9. Operator shortcuts that emit normal session events.
-10. Raspberry Pi 5 thin button adapter. Done as a GPIO event bridge; still needs hardware smoke testing on the Pi.
+10. Raspberry Pi 5 kiosk display shell. UI exists; still needs MPI3508 kiosk smoke testing.
+11. Raspberry Pi 5 thin button adapter. Done as a GPIO event bridge; optional hardware smoke test if the display/header leaves a safe input path.
 
-Do not start with the Pi. Do not start with the shell CAD. Do not start with a complex AI agent framework.
+Do not move the audio stack onto the Pi for the hackathon. Do not start with shell CAD before the device UI and laptop loop are stable. Do not start with a complex AI agent framework.
 
-## Immediate Backend Work
+## Hackathon Run Order
 
-The next backend step is to move from manual transcript mock loop to real local audio receipts without changing the shared event protocol.
+The next step is to stabilize the laptop loop, then use the Pi 5 and MPI3508 as the visible hardware shell.
 
 Priority order:
 
-1. Finish browser recording UI wiring to `POST /sessions/:id/audio`.
-2. Done: server normalizes uploaded audio to mono 16 kHz WAV with an explicit `ffmpeg` error path.
-3. Done: server extracts minimal real audio features: duration, RMS/energy, silence, and pause hints.
-4. Done: server has local/free STT adapters behind a provider boundary, while keeping manual transcript fallback.
-5. Done: receipts show media type, byte size, provider id, latency, transcript, features, readings, and result.
-6. Smoke test the Raspberry Pi 5 thin adapter on hardware: confirm GPIO17 wiring, debounce timing, server reachability, and SSE/UI receipt of `input.recording.started` and `input.recording.stopped`.
+1. Stabilize laptop server and web recording: `POST /sessions/:id/audio` should produce events, readings, result, and receipt.
+2. Confirm `ffmpeg` normalization on the demo laptop: uploaded browser audio should become mono 16 kHz WAV.
+3. Pick and benchmark one local STT path: FunASR local HTTP or whisper.cpp CLI first.
+4. Generate local TTS clips and test playback with `TTS_PROVIDER=clip`.
+5. Launch the web UI on the LAN and open `http://<laptop-ip>:5173/?mode=device` from the Pi 5 Chromium kiosk.
+6. Confirm MPI3508 orientation, 320 x 480 layout, and physical mask alignment.
+7. Optionally smoke test the Pi side button: confirm server reachability and SSE/UI receipt of `input.recording.started` and `input.recording.stopped`.
+8. Rehearse the fallback ladder: real audio plus STT, real audio with STT unavailable, manual transcript, then operator event.
 
 This sequence protects the demo: if local STT is slow or fails, the UI, readings, receipts, and operator fallback still exercise the same product protocol.
 
@@ -110,6 +113,7 @@ Do these only if they affect the first build:
 - Test browser `MediaRecorder` output format compatibility with the server `ffmpeg` path.
 - Test whether PixiJS is necessary or plain Canvas is enough for the block UI.
 - Confirm Pi screen resolution and orientation.
+- Confirm Pi and laptop LAN setup, with USB/network sharing as fallback if Wi-Fi is unstable.
 - Confirm USB mic availability and noise level in the demo room.
 
 ## Exit Criteria For Next Phase

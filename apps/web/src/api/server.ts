@@ -34,6 +34,12 @@ export function resolveApiBaseUrl() {
     return inferApiBaseUrl(configuredEventsUrl);
   }
 
+  const browserHostUrl = inferApiBaseUrlFromWindow();
+
+  if (browserHostUrl) {
+    return browserHostUrl;
+  }
+
   return DEFAULT_API_BASE_URL;
 }
 
@@ -221,6 +227,22 @@ function inferApiBaseUrl(rawEventsUrl: string) {
   } catch {
     return DEFAULT_API_BASE_URL;
   }
+}
+
+function inferApiBaseUrlFromWindow() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  const { hostname, protocol } = window.location;
+
+  if (!hostname || hostname === "localhost" || hostname === "127.0.0.1") {
+    return undefined;
+  }
+
+  const apiProtocol = protocol === "https:" ? "https:" : "http:";
+
+  return `${apiProtocol}//${hostname}:4317`;
 }
 
 function withoutTrailingSlash(value: string) {

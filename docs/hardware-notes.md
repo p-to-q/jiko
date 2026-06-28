@@ -86,7 +86,13 @@ For laptop demo:
 - Use laptop microphone or USB microphone.
 - Use laptop speakers or Bluetooth/USB speaker.
 
-For Pi demo:
+For the hackathon Pi shell:
+
+- Treat Pi 5 and MPI3508 as the display object.
+- Keep microphone capture, STT, audio features, TTS, and receipts on the laptop.
+- Add Pi audio only after the laptop loop and kiosk display are stable.
+
+For a later Pi-local demo:
 
 - Prefer USB microphone over analog hacks.
 - Use HDMI audio, USB speaker, or small amplified speaker module.
@@ -107,19 +113,21 @@ Include:
 
 Raspberry Pi's official kiosk guide uses Chromium full-screen/kiosk launch through desktop autostart. Community references like `geerlingguy/pi-kiosk` show a minimal systemd-style kiosk service.
 
-For this project, the Pi should run:
+For the hackathon, the Pi should run:
 
-- Local app server.
 - Chromium kiosk UI.
-- GPIO/audio daemon.
+- Optional GPIO button daemon.
 
-The laptop prototype can use the same frontend and protocol, so Pi integration becomes packaging and device IO rather than a full rewrite.
+The laptop should run the app server, audio pipeline, local STT/TTS providers, and receipts. The Pi opens the laptop-hosted device UI, for example `http://<laptop-ip>:5173/?mode=device`, and behaves like a small projector inside the hardware shell.
+
+Later, the Pi can host more of the stack if performance and setup time justify it. That should be treated as an upgrade, not a first demo dependency.
 
 ## Open Hardware Risks
 
 - Final software resolution and screen rotation still need confirmation.
 - Pi 5 RAM variant is not confirmed.
 - MPI3508 may occupy GPIO for touch/power, affecting the side button plan.
+- LAN or USB-network setup between laptop and Pi still needs a smoke test.
 - Battery requirements are not defined.
 - Speaker volume in a hackathon room may be weak.
 - Cable routing may define the real enclosure thickness.

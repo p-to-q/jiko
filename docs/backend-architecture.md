@@ -73,7 +73,7 @@ Recommended packages and apps:
 - `packages/core`: session state machine, event reducer, reading orchestration, and result composition.
 - `packages/readings`: first rule-based text, voice, and timing readings.
 - `apps/server`: local HTTP server, event stream, upload handling, provider adapters, receipts, and TTS trigger.
-- `apps/device`: Raspberry Pi GPIO/audio/kiosk adapter. It should emit the same events as the laptop path.
+- `apps/device`: Raspberry Pi GPIO/kiosk adapter. It should emit the same events as the laptop path.
 
 The shared core must not know whether input came from browser `MediaRecorder`, Raspberry Pi GPIO/audio, a Python worker, or an operator shortcut.
 
@@ -308,13 +308,14 @@ The Pi path should be an adapter, not a second product.
 
 First Pi responsibilities:
 
-- Start Chromium kiosk on `/?mode=device`.
-- Read the side button through `gpiozero`.
+- Start Chromium kiosk on the laptop-hosted `/?mode=device` UI.
+- Read the side button through `gpiozero` only if that helps the demo.
 - Send `pressed` and `released` events to `apps/server`.
+- Keep microphone capture, STT, TTS, and receipts on the laptop for the hackathon.
 - Optionally capture audio through USB mic later.
 - Optionally play TTS through local speaker/HDMI later.
 
-If Pi audio or Pi STT is slow, keep STT on the laptop and let the Pi act as the object shell. That is still architecturally valid as long as the event protocol is shared.
+For the hackathon, keep STT and TTS on the laptop and let the Pi act as the object shell. That is architecturally valid as long as the event protocol is shared.
 
 ## Work Breakdown
 
