@@ -1,0 +1,14 @@
+Glow Sans SC (未来荧黑) — Condensed, Medium
+Copyright (c) 2021, Welai (https://github.com/welai/glow-sans), with Reserved
+Font Name "Glow Sans". Derived from Source Han Sans / Noto Sans CJK.
+
+This font is licensed under the SIL Open Font License, Version 1.1.
+License: https://scripts.sil.org/OFL
+Upstream: https://github.com/welai/glow-sans (release v0.93)
+
+NOTE: The bundled file `GlowSansSC-Condensed.subset.woff2` is a SUBSET of the
+Condensed Medium weight, reduced to the characters used by the jiko UI (the fixed
+result-copy pool in packages/core, the Chinese UI labels, Latin, and
+punctuation). To extend coverage, re-subset from the upstream weight. The OFL
+permits subsetting and redistribution under the same license; the font must not
+be sold by itself and the Reserved Font Name rules of the OFL apply.

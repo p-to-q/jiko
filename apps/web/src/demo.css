@@ -1,0 +1,155 @@
+/* Standalone demo page (demo.html): the bare-hardware idle face on a black stage.
+   ?only=clock|king|tree|oracle lifts a single module out for per-box capture. */
+
+.demo-stage {
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  min-height: 100vh;
+  padding: 40px;
+  /* Cover-glass strength — bump for more of a tinted screen over the LEDs. */
+  --cover: 0.04;
+  background: #000;
+}
+
+/* Body goes black: it sinks into the page, leaving only the lit modules and the
+   physical key. No gradient, no ring — the black slab carries the hardware. */
+.demo-stage .device-canvas {
+  background: #000;
+  box-shadow: none;
+  overflow: visible;
+}
+
+/* Clock readout: plain dots, no bezel / border / glow. */
+.demo-stage .top-strip {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* A reading window is just a square LED module: flat black, a plain thin frame,
+   no glow / gradient / inner shadow. The dots keep their own LED bloom. */
+.demo-led {
+  display: grid;
+  place-items: center;
+  width: 108px;
+  height: 108px;
+  background: #000;
+  border: 1px solid #262628;
+  border-radius: 3px;
+}
+
+/* Faint optional cover glass over the panel (not the key). */
+.demo-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    128% 86% at 50% 8%,
+    rgba(255, 255, 255, var(--cover)),
+    transparent 56%
+  );
+}
+
+/* ----- Right-edge rocker key: long lever, lens-shaped mid, central pivot screw.
+   Brushed-metal finish so it reads as a physical control on the black body. ----- */
+.demo-side-key {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  z-index: 3;
+  width: 20px;
+  height: 214px;
+  transform: translateY(-50%);
+}
+
+.key-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 10px;
+  transform: translateX(-50%);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(90deg, #3a3a36 0%, #7f7e76 26%, #c8c6bd 50%, #74736b 74%, #2f2e2b 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    0 3px 8px rgba(0, 0, 0, 0.6);
+}
+
+.key-bulge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 84px;
+  transform: translate(-50%, -50%);
+  border-radius: 11px / 44px;
+  background:
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
+    linear-gradient(90deg, #34332f 0%, #86857d 30%, #cbc9c0 52%, #6f6e66 76%, #2b2a27 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 2px 7px rgba(0, 0, 0, 0.55);
+}
+
+.key-pivot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #c9c7be, #6c6b64 55%, #2a2a27);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.key-pivot::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3.5px;
+  height: 3.5px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #1c1c19;
+}
+
+/* ----- Isolated single-module views (?only=...) ----- */
+.demo-stage[data-only]:not([data-only="all"]) {
+  padding: 0;
+}
+
+.demo-isolate {
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  border-radius: 18px;
+  background: #000;
+}
+
+/* Lift the clock strip out of the absolute screen layout into normal flow. */
+.demo-isolate .top-strip {
+  position: static;
+  inset: auto;
+}
+
+.demo-strip {
+  width: 252px;
+  height: 76px;
+}
+
+/* Deterministic capture: hold the clock colon lit instead of letting it blink. */
+.demo-stage .clock-time .dm-glyph[data-char=":"] {
+  animation: none;
+  opacity: 1;
+}

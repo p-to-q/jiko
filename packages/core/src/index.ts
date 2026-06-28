@@ -241,6 +241,73 @@ function getMajorityState(readings: Reading[]): SignalState | undefined {
   return majority?.[0] as SignalState | undefined;
 }
 
+// Copy repository. Each bucket holds a representative English line and a pool of
+// Chinese candidates (from docs/result-copy.md); one zh line is drawn at random
+// per result so the verdict varies. Add lines here to extend a bucket.
+const COPY_BUCKETS = {
+  // Tie / unclear / all-static — the yellow state.
+  static: {
+    lineEn: "The signal will not settle.",
+    lineZh: [
+      "信号没有站稳。\n这一轮先别相信。",
+      "这页被风吹乱了。\n稍后再看。",
+      "灯还没形成方向。\n不要急着读它。",
+      "声音没有落地。\n再靠近一点。",
+      "这一轮太短。\n答案还没醒。"
+    ]
+  },
+  // A minority diverges from the majority.
+  minority: {
+    lineEn: "A side signal remains.",
+    lineZh: [
+      "路的另一边有信号。\n它还没有熄灭。",
+      "有个答案站了起来。\n偏离不是错误。",
+      "不是所有灯都看向同处。\n你身上仍有回声。",
+      "有一盏没有归队。\n先别急着按下它。",
+      "小路亮了一下。\n不代表你要走，但它在。",
+      "另一种你没有消失。\n它只是比较小声。"
+    ]
+  },
+  // Unanimous — all readings agree.
+  unanimous: {
+    lineEn: "All answers rose. You remain.",
+    lineZh: [
+      "太一致了。\n但一致不等于答案。",
+      "三盏灯看向同处。\n这不是许可。",
+      "这次没有异声。\n系统合上了，你没有。",
+      "答案太整齐了。\n它们都同意，但你还在。",
+      "没有反对声。\n但这不等于通过。",
+      "路面很平。\n脚还在你这里。"
+    ]
+  },
+  // All readings hold / maintain — inertia.
+  maintain: {
+    lineEn: "The familiar path lit first.",
+    lineZh: [
+      "熟路先亮了。\n但熟悉不是答案。",
+      "旧答案回来了。\n它很会发光。",
+      "你正在靠近原路。\n先别把省力当作同意。",
+      "系统看见了惯性。\n你还可以不照做。",
+      "多数选择维持。\nNOT FIXED。"
+    ]
+  }
+} as const;
+
+function pickLine(pool: readonly string[]): string {
+  return pool[Math.floor(Math.random() * pool.length)] ?? pool[0];
+}
+
+function topWindowFromBucket(
+  status: SessionResult["topWindow"]["status"],
+  bucket: keyof typeof COPY_BUCKETS
+): SessionResult["topWindow"] {
+  return {
+    status,
+    lineEn: COPY_BUCKETS[bucket].lineEn,
+    lineZh: pickLine(COPY_BUCKETS[bucket].lineZh)
+  };
+}
+
 function buildTopWindow(
   majorityState: SignalState | undefined,
   minorityStates: SignalState[],
@@ -254,43 +321,24 @@ function buildTopWindow(
     };
   }
 
+  // Tie: no state holds a majority — the yellow / unsettled verdict.
   if (!majorityState) {
-    return {
-      status: "mixed",
-      lineEn: "The signal will not settle.",
-      lineZh: "信号没有站稳。\n这一轮先别相信。"
-    };
+    return topWindowFromBucket("mixed", "static");
   }
 
   if (minorityStates.length > 0) {
-    return {
-      status: "minority_exists",
-      lineEn: "A side signal remains.",
-      lineZh: "路的另一边有信号。\n它还没有熄灭。"
-    };
+    return topWindowFromBucket("minority_exists", "minority");
   }
 
   if (majorityState === "maintain") {
-    return {
-      status: "consensus_maintain",
-      lineEn: "Too aligned is not an answer.",
-      lineZh: "太一致了。\n但一致不等于答案。"
-    };
+    return topWindowFromBucket("consensus_maintain", "maintain");
   }
 
   if (majorityState === "deviate") {
-    return {
-      status: "consensus_deviate",
-      lineEn: "All answers rose. You remain.",
-      lineZh: "答案太整齐了。\n它们都同意，但你还在。"
-    };
+    return topWindowFromBucket("consensus_deviate", "unanimous");
   }
 
-  return {
-    status: "consensus_static",
-    lineEn: "The system closed. You did not.",
-    lineZh: "这次没有异声。\n系统合上了，你没有。"
-  };
+  return topWindowFromBucket("consensus_static", "static");
 }
 
 function buildTts(

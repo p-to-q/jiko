@@ -56,16 +56,18 @@ export type DeviceEventsState = {
   recentEvents: DeviceEventSummary[];
 };
 
+// amber = the canonical "yellow" sprite palette (orange). Used as the resting /
+// pre-verdict state for all three windows.
 const MOCK_LAMPS: LampTones = {
-  text: "red",
+  text: "amber",
   voice: "amber",
-  timing: "green",
+  timing: "amber",
 };
 
 const RECORDING_LAMPS: LampTones = {
-  text: "red",
-  voice: "red",
-  timing: "red",
+  text: "amber",
+  voice: "amber",
+  timing: "amber",
 };
 
 const PROCESSING_LAMPS: LampTones = {
@@ -74,10 +76,12 @@ const PROCESSING_LAMPS: LampTones = {
   timing: "amber",
 };
 
+// Broken / load-failed → yellow (amber), not red. A failure is "unclear", not a
+// "disagree" verdict.
 const ERROR_LAMPS: LampTones = {
-  text: "red",
-  voice: "red",
-  timing: "red",
+  text: "amber",
+  voice: "amber",
+  timing: "amber",
 };
 
 const IDLE_DEVICE_STATE: DeviceState = {
@@ -396,13 +400,15 @@ function getTimestamp(event: IncomingSessionEvent) {
     : undefined;
 }
 
+// Per the product brief and sprite palette: red = maintain / hold / inertia,
+// green = deviate / growth / open path, yellow(amber) = static / unformed.
 function toneForSignalState(state: SignalState): LampTone {
   if (state === "maintain") {
-    return "green";
+    return "red";
   }
 
   if (state === "deviate") {
-    return "red";
+    return "green";
   }
 
   return "amber";

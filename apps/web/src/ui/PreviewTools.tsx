@@ -30,6 +30,22 @@ const PREFERRED_AUDIO_TYPES = [
 
 type RecordingStatus = "idle" | "requesting" | "recording" | "uploading" | "error";
 
+const STATUS_LABELS: Record<RecordingStatus, string> = {
+  idle: "待机",
+  requesting: "请求中",
+  recording: "录音中",
+  uploading: "上传中",
+  error: "错误",
+};
+
+const PHASE_LABELS: Record<string, string> = {
+  idle: "待机",
+  recording: "录音",
+  processing: "处理中",
+  result: "结果",
+  error: "错误",
+};
+
 type RecordingControlState = {
   status: RecordingStatus;
   error?: string;
@@ -411,12 +427,17 @@ export function PreviewTools({
   }, [debugRefreshKey, refreshDebugSnapshot, sessionId]);
 
   return (
-    <aside className="preview-tools" aria-label="Browser controls and debug">
-      <section className="record-panel" aria-label="Browser recording">
+    <aside className="preview-tools" aria-label="预览控制台">
+      <header className="tools-head">
+        <span className="tools-title">jiko</span>
+        <span className="tools-subtitle">预览控制台</span>
+      </header>
+
+      <section className="record-panel" aria-label="录音">
         <div className="panel-header">
-          <span>Browser</span>
+          <span>录音</span>
           <span className={`status-pill status-${recording.status}`}>
-            {recording.status}
+            {STATUS_LABELS[recording.status]}
           </span>
         </div>
         <button
@@ -429,19 +450,19 @@ export function PreviewTools({
           onPointerUp={handlePointerUp}
           type="button"
         >
-          {recording.status === "recording" ? "Stop" : "Record"}
+          {recording.status === "recording" ? "停止" : "按住录音"}
         </button>
         <dl className="session-facts">
           <div>
-            <dt>Session</dt>
-            <dd>{sessionId ?? "none"}</dd>
+            <dt>会话</dt>
+            <dd>{sessionId ?? "—"}</dd>
           </div>
           <div>
-            <dt>Phase</dt>
-            <dd>{phase}</dd>
+            <dt>阶段</dt>
+            <dd>{PHASE_LABELS[phase] ?? phase}</dd>
           </div>
           <div>
-            <dt>Duration</dt>
+            <dt>时长</dt>
             <dd>{formatDuration(recording.lastDurationMs)}</dd>
           </div>
         </dl>
@@ -475,9 +496,9 @@ export function PreviewTools({
         {manualStatus.error ? <p className="panel-error">{manualStatus.error}</p> : null}
       </section>
 
-      <section className="debug-panel" aria-label="Session debug">
+      <section className="debug-panel" aria-label="调试">
         <div className="panel-header">
-          <span>Debug</span>
+          <span>调试</span>
           <button
             className="mini-button"
             disabled={!sessionId}
@@ -488,7 +509,7 @@ export function PreviewTools({
             }}
             type="button"
           >
-            Refresh
+            刷新
           </button>
         </div>
         <RecentEvents events={recentEvents} />
@@ -501,7 +522,7 @@ export function PreviewTools({
 function RecentEvents({ events }: { events: DeviceEventSummary[] }) {
   return (
     <div className="events-block">
-      <h2>Events</h2>
+      <h2>事件</h2>
       {events.length ? (
         <ol className="event-list">
           {events.map((event, index) => (
@@ -512,7 +533,7 @@ function RecentEvents({ events }: { events: DeviceEventSummary[] }) {
           ))}
         </ol>
       ) : (
-        <p className="empty-note">No events yet.</p>
+        <p className="empty-note">暂无事件</p>
       )}
     </div>
   );
@@ -520,11 +541,11 @@ function RecentEvents({ events }: { events: DeviceEventSummary[] }) {
 
 function DebugSnapshot({ snapshot }: { snapshot: SessionDebugSnapshot }) {
   if (snapshot.status === "idle") {
-    return <p className="empty-note">No session selected.</p>;
+    return <p className="empty-note">未选择会话</p>;
   }
 
   if (snapshot.status === "loading") {
-    return <p className="empty-note">Loading debug receipt...</p>;
+    return <p className="empty-note">载入回执…</p>;
   }
 
   if (snapshot.status === "missing" || snapshot.status === "error") {
@@ -571,23 +592,23 @@ function getDebugFields(payload: unknown) {
 
   return [
     {
-      label: "Transcript",
-      value: stringValue(transcript?.text) ?? "pending",
+      label: "转写",
+      value: stringValue(transcript?.text) ?? "待生成",
     },
     {
-      label: "Features",
+      label: "特征",
       value: summarizeFeatures(features),
     },
     {
-      label: "Readings",
+      label: "读数",
       value: summarizeReadings(readings),
     },
     {
-      label: "Result",
+      label: "结果",
       value: summarizeResult(result),
     },
     {
-      label: "TTS",
+      label: "语音",
       value: summarizeTts(result, providers),
     },
   ];
@@ -607,7 +628,7 @@ function unwrapSessionLikePayload(payload: unknown) {
 
 function summarizeFeatures(features: Record<string, unknown> | undefined) {
   if (!features) {
-    return "pending";
+    return "待生成";
   }
 
   const visibleKeys = [
@@ -627,12 +648,12 @@ function summarizeFeatures(features: Record<string, unknown> | undefined) {
     })
     .filter(Boolean);
 
-  return parts.length ? parts.join(" / ") : "pending";
+  return parts.length ? parts.join(" / ") : "待生成";
 }
 
 function summarizeReadings(readings: unknown[] | undefined) {
   if (!readings?.length) {
-    return "pending";
+    return "待生成";
   }
 
   const parts = readings
@@ -648,12 +669,12 @@ function summarizeReadings(readings: unknown[] | undefined) {
     })
     .filter(Boolean);
 
-  return parts.length ? parts.join(" / ") : "pending";
+  return parts.length ? parts.join(" / ") : "待生成";
 }
 
 function summarizeResult(result: Record<string, unknown> | undefined) {
   if (!result) {
-    return "pending";
+    return "待生成";
   }
 
   if (isRecord(result.topWindow)) {
@@ -661,10 +682,10 @@ function summarizeResult(result: Record<string, unknown> | undefined) {
     const lineEn = stringValue(result.topWindow.lineEn);
     const status = stringValue(result.topWindow.status);
 
-    return lineZh ?? lineEn ?? status ?? "available";
+    return lineZh ?? lineEn ?? status ?? "已生成";
   }
 
-  return "available";
+  return "已生成";
 }
 
 function summarizeTts(
@@ -677,7 +698,7 @@ function summarizeTts(
   const providerId = stringValue(provider?.id);
 
   if (!clipKey && !providerId) {
-    return "pending";
+    return "待生成";
   }
 
   return [clipKey ? `clip ${clipKey}` : undefined, providerId]
@@ -687,7 +708,7 @@ function summarizeTts(
 
 function formatDuration(durationMs: number | undefined) {
   if (durationMs === undefined) {
-    return "none";
+    return "—";
   }
 
   return `${(durationMs / 1000).toFixed(1)}s`;

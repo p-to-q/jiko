@@ -7,6 +7,14 @@ const PREVIEW_PORT = 4173;
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        demo: "demo.html",
+      },
+    },
+  },
   server: {
     host: WEB_HOST,
     open: "/?mode=preview",

@@ -1,33 +1,41 @@
-import { useDeviceEvents, type LampTone, type ReadingChannel } from "../events/useDeviceEvents";
+import {
+  useDeviceEvents,
+  type DeviceState,
+  type LampTone,
+  type ReadingChannel,
+} from "../events/useDeviceEvents";
+import { IdleClock } from "./IdleClock";
 import { PreviewTools } from "./PreviewTools";
+import { SpriteMatrix, type SpriteAnimation, type SpriteName, type SpriteTone } from "./sprites";
 
+// Vertical rhythm: taller top strip (per form-factor's 70-90px guidance) so the
+// idle clock can breathe, three equal King/Tree/Oracle windows below with uniform
+// 16px gaps.
 const STABLE_LAYOUT = {
-  topStrip: { x: 34, y: 24, w: 252, h: 58 },
+  topStrip: { x: 34, y: 24, w: 252, h: 76 },
   windows: [
-    { x: 42, y: 98, w: 236, h: 104, label: "TEXT", channel: "text" },
-    { x: 42, y: 218, w: 236, h: 104, label: "VOICE", channel: "voice" },
-    { x: 42, y: 338, w: 236, h: 104, label: "PACE", channel: "timing" },
+    { x: 42, y: 116, w: 236, h: 102, channel: "text", character: "king" },
+    { x: 42, y: 234, w: 236, h: 102, channel: "voice", character: "tree" },
+    { x: 42, y: 352, w: 236, h: 102, channel: "timing", character: "oracle" },
   ],
-  lensDiameter: 98,
 } as const;
 
-const DOTS = [
-  [0, 0],
-  [1, 0],
-  [2, 0],
-  [0, 1],
-  [2, 1],
-  [0, 2],
-  [1, 2],
-  [2, 2],
-  [0, 3],
-  [2, 3],
-  [0, 4],
-  [2, 4],
-  [0, 5],
-  [1, 5],
-  [2, 5],
-];
+const PHASE_TAGS: Record<DeviceState["phase"], string> = {
+  idle: "待机",
+  recording: "录音",
+  processing: "处理中",
+  result: "结果",
+  error: "错误",
+};
+
+// Device phase drives which sprite scene the King/Tree/Oracle play.
+const PHASE_ANIMATIONS: Record<DeviceState["phase"], SpriteAnimation> = {
+  idle: "idle",
+  recording: "listening",
+  processing: "reading",
+  result: "locked",
+  error: "sleep",
+};
 
 function px(value: number) {
   return `${value}px`;
@@ -39,44 +47,108 @@ export function DevicePreview() {
   const eventsState = useDeviceEvents();
   const deviceState = eventsState.device;
 
+  // Kiosk/device mode: the bare 320x480 screen, no enclosure chrome.
+  if (mode === "device") {
+    return (
+      <main
+        className="viewport-shell"
+        data-mode="device"
+        data-device-state={deviceState.phase}
+        aria-label="MPI3508 device canvas"
+      >
+        <DeviceScreen deviceState={deviceState} />
+      </main>
+    );
+  }
+
+  // Preview mode: the screen seated in a rendered physical enclosure, beside the
+  // console, under one page header that ties them together.
   return (
     <main
       className="viewport-shell"
-      data-mode={mode}
+      data-mode="preview"
       data-device-state={deviceState.phase}
-      aria-label="MPI3508 device preview"
+      aria-label="jiko desktop preview"
     >
-      <section className="device-canvas" aria-label="320 by 480 device canvas">
-        <div className="panel-layer" />
-        <div className="glass-layer" aria-hidden="true" />
-        <div className="screen-layer">
-          <div
-            className="top-strip"
-            style={{
-              left: px(STABLE_LAYOUT.topStrip.x),
-              top: px(STABLE_LAYOUT.topStrip.y),
-              width: px(STABLE_LAYOUT.topStrip.w),
-              height: px(STABLE_LAYOUT.topStrip.h),
-            }}
-          >
-            <div className="status-dots" aria-hidden="true">
-              <span />
-              <span />
-              <span />
+      <header className="preview-topbar">
+        <div className="brandmark">
+          <span className="brand-name">jiko</span>
+          <span className="brand-desc">信号仪 · 桌面预览</span>
+        </div>
+        <span className="phase-tag" data-device-state={deviceState.phase}>
+          {PHASE_TAGS[deviceState.phase]}
+        </span>
+      </header>
+
+      <div className="preview-body">
+        <figure className="device-stage">
+          <div className="device-body">
+            <span className="device-strap" aria-hidden="true" />
+            <span className="device-screw screw-tl" aria-hidden="true" />
+            <span className="device-screw screw-tr" aria-hidden="true" />
+            <span className="device-screw screw-bl" aria-hidden="true" />
+            <span className="device-screw screw-br" aria-hidden="true" />
+            <span className="device-side-key" aria-hidden="true" />
+            <div className="screen-bezel">
+              <DeviceScreen deviceState={deviceState} />
             </div>
+            <span className="device-wordmark" aria-hidden="true">
+              jiko
+            </span>
+          </div>
+          <figcaption className="device-caption">
+            MPI3508 · 320 × 480 · 旋转竖屏
+          </figcaption>
+        </figure>
+
+        <PreviewTools
+          currentSessionId={eventsState.sessionId}
+          phase={deviceState.phase}
+          recentEvents={eventsState.recentEvents}
+        />
+      </div>
+    </main>
+  );
+}
+
+function DeviceScreen({ deviceState }: { deviceState: DeviceState }) {
+  const animation = PHASE_ANIMATIONS[deviceState.phase];
+
+  return (
+    <section className="device-canvas" aria-label="320 by 480 device canvas">
+      <div className="panel-layer" />
+      <div className="glass-layer" aria-hidden="true" />
+      <div className="screen-layer">
+        <div
+          className="top-strip"
+          style={{
+            left: px(STABLE_LAYOUT.topStrip.x),
+            top: px(STABLE_LAYOUT.topStrip.y),
+            width: px(STABLE_LAYOUT.topStrip.w),
+            height: px(STABLE_LAYOUT.topStrip.h),
+          }}
+        >
+          <div className="status-dots" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          {deviceState.phase === "idle" ? (
+            <IdleClock />
+          ) : (
             <div className="top-title-block">
               <span className="top-title">{deviceState.topTitle}</span>
               <span className="top-subtitle">{deviceState.topSubtitle}</span>
             </div>
-          </div>
+          )}
+        </div>
 
-          {STABLE_LAYOUT.windows.map((window, index) => (
+        {STABLE_LAYOUT.windows.map((window) => {
+          const lamp = toneForChannel(deviceState.lamps, window.channel);
+          return (
             <div
-              className={`reading-window tone-${toneForChannel(
-                deviceState.lamps,
-                window.channel,
-              )}`}
-              key={window.label}
+              className={`reading-window tone-${lamp}`}
+              key={window.character}
               style={{
                 left: px(window.x),
                 top: px(window.y),
@@ -84,30 +156,21 @@ export function DevicePreview() {
                 height: px(window.h),
               }}
             >
-              <div className="window-bezel">
-                <div
-                  className={`lens lens-${index + 1}`}
-                  style={{
-                    width: px(STABLE_LAYOUT.lensDiameter),
-                    height: px(STABLE_LAYOUT.lensDiameter),
-                  }}
-                >
-                  <PixelMark label={window.label} />
-                </div>
+              <div className="sprite-screen">
+                <SpriteMatrix
+                  name={window.character as SpriteName}
+                  tone={spriteToneFor(lamp)}
+                  animation={animation}
+                  cell={8}
+                  gap={2}
+                />
               </div>
             </div>
-          ))}
-        </div>
-        <div className="mask-layer" aria-hidden="true" />
-      </section>
-      {mode === "preview" ? (
-        <PreviewTools
-          currentSessionId={eventsState.sessionId}
-          phase={deviceState.phase}
-          recentEvents={eventsState.recentEvents}
-        />
-      ) : null}
-    </main>
+          );
+        })}
+      </div>
+      <div className="mask-layer" aria-hidden="true" />
+    </section>
   );
 }
 
@@ -118,21 +181,8 @@ function toneForChannel(
   return lamps[channel];
 }
 
-function PixelMark({ label }: { label: string }) {
-  return (
-    <div className="pixel-mark" aria-label={label}>
-      <div className="pixel-grid" aria-hidden="true">
-        {DOTS.map(([x, y], index) => (
-          <span
-            key={`${x}-${y}-${index}`}
-            style={{
-              gridColumn: x + 2,
-              gridRow: y + 2,
-            }}
-          />
-        ))}
-      </div>
-      <span>{label}</span>
-    </div>
-  );
+// Lamp tones (red/amber/green) map to sprite palettes; amber is the canonical
+// orange "yellow" palette.
+function spriteToneFor(lamp: LampTone): SpriteTone {
+  return lamp === "amber" ? "yellow" : lamp;
 }
