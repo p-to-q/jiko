@@ -57,6 +57,10 @@ features, readings, result, and events, but not raw recordings.
 - `TTS_PROVIDER=clip` with `TTS_CLIP_DIR`: looks for a pre-generated local clip
   by `tts.clipKey`, such as `minority.maintain.wav` or
   `consensus.static.wav`.
+- Generate local rehearsal clips with
+  `pnpm --filter @jiko/server generate:clips -- --voice Tingting`.
+  The generator defaults to macOS `say`; set `TTS_GENERATE_COMMAND=piper` for
+  Piper, or `TTS_GENERATE_COMMAND=copy TTS_GENERATE_EXTENSION=txt` for a dry run.
 - Set `TTS_PLAY_AUDIO=1` to let the server play a found clip with
   `TTS_PLAY_COMMAND` or the platform default (`afplay` on macOS, `aplay` on Pi).
   When playback is disabled, the server records clip readiness in the receipt.
