@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 88" width="88" height="88" role="img" aria-label="jiko oracle sprite">
+  <title>jiko oracle orange</title>
+  <g>
+      <circle cx="44" cy="4" r="4" fill="#f09035"/>
+      <circle cx="24" cy="14" r="4" fill="#f09035"/>
+      <circle cx="34" cy="14" r="4" fill="#f09035"/>
+      <circle cx="44" cy="14" r="4" fill="#f09035"/>
+      <circle cx="54" cy="14" r="4" fill="#f09035"/>
+      <circle cx="64" cy="14" r="4" fill="#f09035"/>
+      <circle cx="14" cy="24" r="4" fill="#f09035"/>
+      <circle cx="24" cy="24" r="4" fill="#f09035"/>
+      <circle cx="64" cy="24" r="4" fill="#f09035"/>
+      <circle cx="74" cy="24" r="4" fill="#f09035"/>
+      <circle cx="4" cy="34" r="4" fill="#f09035"/>
+      <circle cx="14" cy="34" r="4" fill="#f09035"/>
+      <circle cx="74" cy="34" r="4" fill="#f09035"/>
+      <circle cx="84" cy="34" r="4" fill="#f09035"/>
+      <circle cx="4" cy="44" r="4" fill="#f09035"/>
+      <circle cx="14" cy="44" r="4" fill="#f09035"/>
+      <circle cx="24" cy="44" r="4" fill="#f09035"/>
+      <circle cx="34" cy="44" r="4" fill="#eee6d2"/>
+      <circle cx="44" cy="44" r="4" fill="#eee6d2"/>
+      <circle cx="54" cy="44" r="4" fill="#eee6d2"/>
+      <circle cx="64" cy="44" r="4" fill="#f09035"/>
+      <circle cx="74" cy="44" r="4" fill="#f09035"/>
+      <circle cx="84" cy="44" r="4" fill="#f09035"/>
+      <circle cx="4" cy="54" r="4" fill="#f09035"/>
+      <circle cx="14" cy="54" r="4" fill="#f09035"/>
+      <circle cx="74" cy="54" r="4" fill="#f09035"/>
+      <circle cx="84" cy="54" r="4" fill="#f09035"/>
+      <circle cx="14" cy="64" r="4" fill="#f09035"/>
+      <circle cx="24" cy="64" r="4" fill="#f09035"/>
+      <circle cx="64" cy="64" r="4" fill="#f09035"/>
+      <circle cx="74" cy="64" r="4" fill="#f09035"/>
+      <circle cx="24" cy="74" r="4" fill="#f09035"/>
+      <circle cx="34" cy="74" r="4" fill="#f09035"/>
+      <circle cx="44" cy="74" r="4" fill="#f09035"/>
+      <circle cx="54" cy="74" r="4" fill="#f09035"/>
+      <circle cx="64" cy="74" r="4" fill="#f09035"/>
+      <circle cx="44" cy="84" r="4" fill="#f09035"/>
+  </g>
+</svg>

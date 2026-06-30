@@ -206,8 +206,9 @@ function boardBody(tone) {
   const palette = PALETTES[tone];
   const toneIds = ids(tone);
   const { x, y, w, h, r } = SCREEN;
+  const stroke = tone === "orange" ? "rgba(244,202,112,0.30)" : palette.halo;
   return `  <!-- board / bezel -->
-  <rect x="0.5" y="0.5" width="${WIN.w - 1}" height="${WIN.h - 1}" rx="${WIN.r}" fill="url(#${toneIds.board})" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
+  <rect x="0.5" y="0.5" width="${WIN.w - 1}" height="${WIN.h - 1}" rx="${WIN.r}" fill="url(#${toneIds.board})" stroke="${stroke}" stroke-width="1"/>
   <rect x="6.5" y="6.5" width="${WIN.w - 13}" height="${WIN.h - 13}" rx="${WIN.r - 5}" fill="url(#${toneIds.ambient})"/>
   <!-- outer screen halo -->
   <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${palette.halo}" opacity="0.18" filter="url(#${toneIds.screenHalo})"/>
