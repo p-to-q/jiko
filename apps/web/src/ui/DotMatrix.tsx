@@ -13,6 +13,7 @@ type DotMatrixProps = {
   color?: string;
   className?: string;
   ariaLabel?: string;
+  "data-colon"?: "on" | "off";
 };
 
 type CSSVars = CSSProperties & Record<string, string>;
@@ -25,6 +26,7 @@ export function DotMatrix({
   color,
   className,
   ariaLabel,
+  "data-colon": colon,
 }: DotMatrixProps) {
   const style: CSSVars = {
     "--dot": `${dot}px`,
@@ -40,6 +42,7 @@ export function DotMatrix({
     <span
       className={["dot-matrix", className].filter(Boolean).join(" ")}
       style={style}
+      data-colon={colon}
       role="img"
       aria-label={ariaLabel ?? text}
     >

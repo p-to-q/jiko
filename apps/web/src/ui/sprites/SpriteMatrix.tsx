@@ -19,6 +19,8 @@ type SpriteMatrixProps = {
   playing?: boolean;
   showOffDots?: boolean;
   className?: string;
+  fpsOverride?: number;
+  frameIndexOverride?: number;
 };
 
 type CSSVars = CSSProperties & Record<string, string>;
@@ -34,12 +36,18 @@ function useSpriteFrame(
   name: SpriteName,
   animation: SpriteAnimation,
   playing: boolean,
+  fpsOverride?: number,
+  frameIndexOverride?: number,
 ): readonly string[] {
   const sequence = sequenceFor(name, animation);
-  const fps = animations[animation].fps;
+  const fps = fpsOverride ?? animations[animation].fps;
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (frameIndexOverride !== undefined) {
+      return;
+    }
+
     setIndex(0);
 
     if (!playing || sequence.length <= 1) {
@@ -52,10 +60,11 @@ function useSpriteFrame(
     );
 
     return () => window.clearInterval(id);
-  }, [name, animation, playing, fps, sequence.length]);
+  }, [name, animation, playing, fps, sequence.length, frameIndexOverride]);
 
   const table = frames[name] as Record<string, readonly string[]>;
-  return table[sequence[index % sequence.length]] ?? Object.values(table)[0];
+  const resolvedIndex = frameIndexOverride ?? index;
+  return table[sequence[resolvedIndex % sequence.length]] ?? Object.values(table)[0];
 }
 
 // King / Tree / Oracle pixel sprite, rendered as round LED dots. Colors come from
@@ -69,8 +78,10 @@ export function SpriteMatrix({
   playing = true,
   showOffDots = true,
   className = "",
+  fpsOverride,
+  frameIndexOverride,
 }: SpriteMatrixProps) {
-  const rows = useSpriteFrame(name, animation, playing);
+  const rows = useSpriteFrame(name, animation, playing, fpsOverride, frameIndexOverride);
   const palette = palettes[tone];
 
   const style: CSSVars = {
