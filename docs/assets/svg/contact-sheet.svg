@@ -1,31 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 292 722" width="292" height="722" role="img" aria-label="jiko asset contact sheet">
   <rect width="292" height="722" rx="20" fill="#0a0b0d"/>
   <defs>
-    <linearGradient id="board" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="board-orange" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#100f0d"/>
       <stop offset="1" stop-color="#060605"/>
     </linearGradient>
-    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#161412"/>
-      <stop offset="0.62" stop-color="#060504"/>
+    <linearGradient id="screen-orange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080805"/>
+      <stop offset="0.62" stop-color="#050403"/>
       <stop offset="1" stop-color="#020202"/>
     </linearGradient>
-    <radialGradient id="ambient" cx="0.5" cy="0.42" r="0.62">
+    <radialGradient id="ambient-orange" cx="0.5" cy="0.42" r="0.62">
       <stop offset="0" stop-color="#f09035" stop-opacity="0.16"/>
       <stop offset="0.72" stop-color="#f09035" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="vignette" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="vignette-orange" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0.4" stop-color="#000000" stop-opacity="0"/>
       <stop offset="1" stop-color="#000000" stop-opacity="0.55"/>
     </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="sheen-orange" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#ffffff" stop-opacity="0.07"/>
       <stop offset="0.42" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
-    <filter id="screen-halo" x="-30%" y="-30%" width="160%" height="160%">
+    <filter id="screen-halo-orange" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="8"/>
     </filter>
-    <filter id="led-glow" x="-120%" y="-120%" width="340%" height="340%">
+    <filter id="led-glow-orange" x="-120%" y="-120%" width="340%" height="340%">
       <feGaussianBlur stdDeviation="2.6" result="b"/>
       <feMerge>
         <feMergeNode in="b"/>
@@ -136,14 +136,14 @@
       <circle cx="54" cy="74" r="4" fill="#f09035"/>
       <circle cx="64" cy="74" r="4" fill="#f09035"/>
       <circle cx="44" cy="84" r="4" fill="#f09035"/></g>
-  <g transform="translate(28 142)"><!-- board / bezel -->
-  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
-  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient)"/>
+  <g transform="translate(28 142)">  <!-- board / bezel -->
+  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board-orange)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
+  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient-orange)"/>
   <!-- outer screen halo -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo-orange)"/>
   <!-- recessed screen -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen-orange)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient-orange)"/>
   <!-- dim dot grid (九宫格) -->
   <g>
       <circle cx="78" cy="11" r="4" fill="#2a2418" opacity="0.5"/>
@@ -191,16 +191,16 @@
       <circle cx="138" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
       <circle cx="158" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
   </g>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette)"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen)"/></g>
-  <g transform="translate(28 270)"><!-- board / bezel -->
-  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
-  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette-orange)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen-orange)"/></g>
+  <g transform="translate(28 270)">  <!-- board / bezel -->
+  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board-orange)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
+  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient-orange)"/>
   <!-- outer screen halo -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo-orange)"/>
   <!-- recessed screen -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen-orange)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient-orange)"/>
   <!-- dot field: dim grid + lit sprite -->
   <g>
       <circle cx="78" cy="11" r="4" fill="#2a2418" opacity="0.5"/>
@@ -247,7 +247,7 @@
       <circle cx="128" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
       <circle cx="138" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
       <circle cx="158" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
-      <g filter="url(#led-glow)">
+      <g filter="url(#led-glow-orange)">
       <circle cx="108" cy="11" r="4" fill="#f09035"/>
       <circle cx="118" cy="11" r="4" fill="#f09035"/>
       <circle cx="128" cy="11" r="4" fill="#f09035"/>
@@ -287,16 +287,16 @@
       <circle cx="148" cy="91" r="4" fill="#f09035"/>
     </g>
   </g>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette)"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen)"/></g>
-  <g transform="translate(28 398)"><!-- board / bezel -->
-  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
-  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette-orange)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen-orange)"/></g>
+  <g transform="translate(28 398)">  <!-- board / bezel -->
+  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board-orange)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
+  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient-orange)"/>
   <!-- outer screen halo -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo-orange)"/>
   <!-- recessed screen -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen-orange)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient-orange)"/>
   <!-- dot field: dim grid + lit sprite -->
   <g>
       <circle cx="78" cy="11" r="4" fill="#2a2418" opacity="0.5"/>
@@ -351,7 +351,7 @@
       <circle cx="138" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
       <circle cx="148" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
       <circle cx="158" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
-      <g filter="url(#led-glow)">
+      <g filter="url(#led-glow-orange)">
       <circle cx="118" cy="11" r="4" fill="#f09035"/>
       <circle cx="108" cy="21" r="4" fill="#f09035"/>
       <circle cx="118" cy="21" r="4" fill="#f09035"/>
@@ -383,16 +383,16 @@
       <circle cx="128" cy="91" r="4" fill="#f09035"/>
     </g>
   </g>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette)"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen)"/></g>
-  <g transform="translate(28 526)"><!-- board / bezel -->
-  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
-  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette-orange)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen-orange)"/></g>
+  <g transform="translate(28 526)">  <!-- board / bezel -->
+  <rect x="0.5" y="0.5" width="235" height="101" rx="22" fill="url(#board-orange)" stroke="rgba(244,202,112,0.30)" stroke-width="1"/>
+  <rect x="6.5" y="6.5" width="223" height="89" rx="17" fill="url(#ambient-orange)"/>
   <!-- outer screen halo -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="#f09035" opacity="0.18" filter="url(#screen-halo-orange)"/>
   <!-- recessed screen -->
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#screen-orange)" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#ambient-orange)"/>
   <!-- dot field: dim grid + lit sprite -->
   <g>
       <circle cx="78" cy="11" r="4" fill="#2a2418" opacity="0.5"/>
@@ -439,7 +439,7 @@
       <circle cx="138" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
       <circle cx="148" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
       <circle cx="158" cy="91" r="4" fill="#2a2418" opacity="0.5"/>
-      <g filter="url(#led-glow)">
+      <g filter="url(#led-glow-orange)">
       <circle cx="118" cy="11" r="4" fill="#f09035"/>
       <circle cx="98" cy="21" r="4" fill="#f09035"/>
       <circle cx="108" cy="21" r="4" fill="#f09035"/>
@@ -479,6 +479,6 @@
       <circle cx="118" cy="91" r="4" fill="#f09035"/>
     </g>
   </g>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette)"/>
-  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen)"/></g>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#vignette-orange)"/>
+  <rect x="43" y="5" width="150" height="92" rx="16" fill="url(#sheen-orange)"/></g>
 </svg>
