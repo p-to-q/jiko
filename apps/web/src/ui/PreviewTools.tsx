@@ -1,34 +1,13 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type PointerEvent,
-} from "react";
-import {
-  createBrowserSession,
   fetchSessionDebugSnapshot,
-  postRecordingStarted,
   resolveApiBaseUrl,
   submitManualTranscript,
   toErrorMessage,
-  uploadSessionAudio,
   type SessionDebugSnapshot,
 } from "../api/server";
 import type { DeviceEventSummary } from "../events/useDeviceEvents";
-
-const HOLD_TO_STOP_MS = 360;
-const PREFERRED_AUDIO_TYPES = [
-  "audio/webm;codecs=opus",
-  "audio/webm",
-  "audio/ogg;codecs=opus",
-  "audio/ogg",
-  "audio/mp4",
-] as const;
-
-type RecordingStatus = "idle" | "requesting" | "recording" | "uploading" | "error";
+import type { RecorderControls, RecordingStatus } from "../events/useRecorder";
 
 const STATUS_LABELS: Record<RecordingStatus, string> = {
   idle: "待机",
@@ -46,50 +25,33 @@ const PHASE_LABELS: Record<string, string> = {
   error: "错误",
 };
 
-type RecordingControlState = {
-  status: RecordingStatus;
+type PanelStatus = "idle" | "requesting" | "uploading" | "error";
+
+type PanelControlState = {
+  status: PanelStatus;
   error?: string;
-  lastDurationMs?: number;
 };
 
 export function PreviewTools({
-  currentSessionId,
+  recorder,
   phase,
   recentEvents,
 }: {
-  currentSessionId?: string;
+  recorder: RecorderControls;
   phase: string;
   recentEvents: DeviceEventSummary[];
 }) {
   const apiBaseUrl = useMemo(resolveApiBaseUrl, []);
-  const [recording, setRecording] = useState<RecordingControlState>({
-    status: "idle",
-  });
-  const [localSessionId, setLocalSessionId] = useState<string>();
   const [debugSnapshot, setDebugSnapshot] = useState<SessionDebugSnapshot>({
     status: "idle",
   });
   const [manualTranscript, setManualTranscript] = useState("");
-  const [manualStatus, setManualStatus] = useState<RecordingControlState>({
+  const [manualStatus, setManualStatus] = useState<PanelControlState>({
     status: "idle",
   });
-  const recorderRef = useRef<MediaRecorder>();
-  const streamRef = useRef<MediaStream>();
-  const chunksRef = useRef<Blob[]>([]);
-  const startedAtRef = useRef<number>();
-  const sessionIdRef = useRef<string>();
-  const pointerStartedAtRef = useRef<number>();
-  const activePointerIdRef = useRef<number>();
-  const pendingStopAfterStartRef = useRef(false);
-  const recordingStatusRef = useRef<RecordingStatus>("idle");
-  const unmountingRef = useRef(false);
   const debugRefreshKey = `${recentEvents[0]?.timestamp ?? ""}:${recentEvents[0]?.type ?? ""}`;
-  const sessionId = localSessionId ?? currentSessionId;
-
-  const setRecordingStatus = useCallback((next: RecordingControlState) => {
-    recordingStatusRef.current = next.status;
-    setRecording(next);
-  }, []);
+  const sessionId = recorder.sessionId;
+  const recording = recorder.recording;
 
   const refreshDebugSnapshot = useCallback(
     async (targetSessionId: string, signal?: AbortSignal) => {
@@ -116,250 +78,6 @@ export function PreviewTools({
     [apiBaseUrl],
   );
 
-  const ensureSession = useCallback(async () => {
-    const existingSessionId =
-      sessionIdRef.current ?? localSessionId ?? currentSessionId;
-
-    if (existingSessionId) {
-      sessionIdRef.current = existingSessionId;
-      setLocalSessionId(existingSessionId);
-      return existingSessionId;
-    }
-
-    const createdSessionId = await createBrowserSession(apiBaseUrl);
-    sessionIdRef.current = createdSessionId;
-    setLocalSessionId(createdSessionId);
-    return createdSessionId;
-  }, [apiBaseUrl, currentSessionId, localSessionId]);
-
-  const cleanupMedia = useCallback(() => {
-    for (const track of streamRef.current?.getTracks() ?? []) {
-      track.stop();
-    }
-
-    streamRef.current = undefined;
-    recorderRef.current = undefined;
-  }, []);
-
-  const handleRecordedBlob = useCallback(
-    async (blob: Blob, durationMs: number, targetSessionId: string) => {
-      setRecordingStatus({
-        status: "uploading",
-        lastDurationMs: durationMs,
-      });
-
-      try {
-        await uploadSessionAudio(apiBaseUrl, targetSessionId, blob, durationMs);
-        setRecordingStatus({
-          status: "idle",
-          lastDurationMs: durationMs,
-        });
-        await refreshDebugSnapshot(targetSessionId);
-      } catch (error) {
-        setRecordingStatus({
-          status: "error",
-          error: toErrorMessage(error),
-          lastDurationMs: durationMs,
-        });
-      }
-    },
-    [apiBaseUrl, refreshDebugSnapshot, setRecordingStatus],
-  );
-
-  const stopRecording = useCallback(() => {
-    const recorder = recorderRef.current;
-
-    if (!recorder || recorder.state === "inactive") {
-      cleanupMedia();
-      if (recordingStatusRef.current === "recording") {
-        setRecordingStatus({ status: "idle" });
-      }
-      return;
-    }
-
-    pendingStopAfterStartRef.current = false;
-    recorder.stop();
-  }, [cleanupMedia, setRecordingStatus]);
-
-  const startRecording = useCallback(async () => {
-    if (
-      recordingStatusRef.current === "requesting" ||
-      recordingStatusRef.current === "recording" ||
-      recordingStatusRef.current === "uploading"
-    ) {
-      return;
-    }
-
-    if (!canRecordAudio()) {
-      setRecordingStatus({
-        status: "error",
-        error: "Browser audio recording is unavailable.",
-      });
-      return;
-    }
-
-    setRecordingStatus({ status: "requesting" });
-    chunksRef.current = [];
-
-    try {
-      const targetSessionId = await ensureSession();
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = getSupportedAudioType();
-      const recorder = new MediaRecorder(
-        stream,
-        mimeType ? { mimeType } : undefined,
-      );
-
-      streamRef.current = stream;
-      recorderRef.current = recorder;
-      sessionIdRef.current = targetSessionId;
-
-      recorder.addEventListener("dataavailable", (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      });
-
-      recorder.addEventListener("stop", () => {
-        if (unmountingRef.current) {
-          cleanupMedia();
-          return;
-        }
-
-        const durationMs = Math.max(
-          0,
-          performance.now() - (startedAtRef.current ?? performance.now()),
-        );
-        const recordedType = recorder.mimeType || mimeType || "audio/webm";
-        const blob = new Blob(chunksRef.current, { type: recordedType });
-
-        cleanupMedia();
-
-        if (blob.size === 0) {
-          setRecordingStatus({
-            status: "error",
-            error: "Recording was empty.",
-            lastDurationMs: durationMs,
-          });
-          return;
-        }
-
-        void handleRecordedBlob(blob, durationMs, targetSessionId);
-      });
-
-      await postRecordingStarted(apiBaseUrl, targetSessionId);
-
-      startedAtRef.current = performance.now();
-      recorder.start();
-      setRecordingStatus({ status: "recording" });
-
-      if (pendingStopAfterStartRef.current) {
-        stopRecording();
-      }
-    } catch (error) {
-      cleanupMedia();
-      setRecordingStatus({
-        status: "error",
-        error: toErrorMessage(error),
-      });
-    }
-  }, [
-    apiBaseUrl,
-    cleanupMedia,
-    ensureSession,
-    handleRecordedBlob,
-    setRecordingStatus,
-    stopRecording,
-  ]);
-
-  const handlePointerDown = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
-      if (event.button !== 0) {
-        return;
-      }
-
-      if (recordingStatusRef.current === "recording") {
-        stopRecording();
-        return;
-      }
-
-      if (
-        recordingStatusRef.current !== "idle" &&
-        recordingStatusRef.current !== "error"
-      ) {
-        return;
-      }
-
-      activePointerIdRef.current = event.pointerId;
-      pointerStartedAtRef.current = performance.now();
-      event.currentTarget.setPointerCapture(event.pointerId);
-      void startRecording();
-    },
-    [startRecording, stopRecording],
-  );
-
-  const handlePointerUp = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
-      if (activePointerIdRef.current !== event.pointerId) {
-        return;
-      }
-
-      const elapsedMs =
-        performance.now() - (pointerStartedAtRef.current ?? performance.now());
-
-      activePointerIdRef.current = undefined;
-      pointerStartedAtRef.current = undefined;
-
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-
-      if (elapsedMs < HOLD_TO_STOP_MS) {
-        return;
-      }
-
-      if (recordingStatusRef.current === "requesting") {
-        pendingStopAfterStartRef.current = true;
-        return;
-      }
-
-      stopRecording();
-    },
-    [stopRecording],
-  );
-
-  const handlePointerCancel = useCallback(
-    (event: PointerEvent<HTMLButtonElement>) => {
-      if (activePointerIdRef.current !== event.pointerId) {
-        return;
-      }
-
-      activePointerIdRef.current = undefined;
-      pointerStartedAtRef.current = undefined;
-      pendingStopAfterStartRef.current = true;
-      stopRecording();
-    },
-    [stopRecording],
-  );
-
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLButtonElement>) => {
-      if (event.key !== "Enter" && event.key !== " ") {
-        return;
-      }
-
-      event.preventDefault();
-
-      if (recordingStatusRef.current === "recording") {
-        stopRecording();
-        return;
-      }
-
-      void startRecording();
-    },
-    [startRecording, stopRecording],
-  );
-
   const handleManualSubmit = useCallback(async () => {
     const transcript = manualTranscript.trim();
 
@@ -370,7 +88,7 @@ export function PreviewTools({
     setManualStatus({ status: "requesting" });
 
     try {
-      const targetSessionId = await ensureSession();
+      const targetSessionId = await recorder.ensureSession();
       await submitManualTranscript(apiBaseUrl, targetSessionId, transcript);
       setManualStatus({ status: "idle" });
       await refreshDebugSnapshot(targetSessionId);
@@ -382,35 +100,11 @@ export function PreviewTools({
     }
   }, [
     apiBaseUrl,
-    ensureSession,
+    recorder,
     manualStatus.status,
     manualTranscript,
     refreshDebugSnapshot,
   ]);
-
-  useEffect(() => {
-    unmountingRef.current = false;
-
-    return () => {
-      unmountingRef.current = true;
-      const recorder = recorderRef.current;
-      if (recorder && recorder.state !== "inactive") {
-        recorder.ondataavailable = null;
-        recorder.onstop = null;
-        recorder.stop();
-      }
-      cleanupMedia();
-    };
-  }, [cleanupMedia]);
-
-  useEffect(() => {
-    if (!currentSessionId) {
-      return;
-    }
-
-    sessionIdRef.current = currentSessionId;
-    setLocalSessionId((existingSessionId) => existingSessionId ?? currentSessionId);
-  }, [currentSessionId]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -433,9 +127,9 @@ export function PreviewTools({
         <span className="tools-subtitle">预览控制台</span>
       </header>
 
-      <section className="record-panel" aria-label="录音">
+      <section className="record-panel" aria-label="说话">
         <div className="panel-header">
-          <span>录音</span>
+          <span>说话</span>
           <span className={`status-pill status-${recording.status}`}>
             {STATUS_LABELS[recording.status]}
           </span>
@@ -444,13 +138,10 @@ export function PreviewTools({
           className="record-button"
           data-recording-state={recording.status}
           disabled={recording.status === "uploading"}
-          onKeyDown={handleKeyDown}
-          onPointerCancel={handlePointerCancel}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
+          {...recorder.pointerHandlers}
           type="button"
         >
-          {recording.status === "recording" ? "停止" : "按住录音"}
+          {recording.status === "recording" ? "停止" : "按住说话"}
         </button>
         <dl className="session-facts">
           <div>
@@ -734,20 +425,6 @@ function formatDebugValue(value: number | string) {
 
 function formatJson(value: unknown) {
   return JSON.stringify(value, null, 2) ?? "";
-}
-
-function canRecordAudio() {
-  const mediaDevices = globalThis.navigator?.mediaDevices;
-
-  return Boolean(
-    mediaDevices &&
-      "getUserMedia" in mediaDevices &&
-      typeof MediaRecorder !== "undefined",
-  );
-}
-
-function getSupportedAudioType() {
-  return PREFERRED_AUDIO_TYPES.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
 function stringValue(value: unknown) {

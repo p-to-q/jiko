@@ -4,20 +4,21 @@ import {
   type LampTone,
   type ReadingChannel,
 } from "../events/useDeviceEvents";
-import { useRecorder, type RecorderPointerHandlers } from "../events/useRecorder";
-import { IdleClock } from "./IdleClock";
+import { useRecorder } from "../events/useRecorder";
+import { DeviceDemo } from "./DeviceDemo";
 import { PreviewTools } from "./PreviewTools";
+import "../demo.css";
+import { IdleClock } from "./IdleClock";
 import { SpriteMatrix, type SpriteAnimation, type SpriteName, type SpriteTone } from "./sprites";
 
-// Vertical rhythm: taller top strip (per form-factor's 70-90px guidance) so the
-// idle clock can breathe, three equal King/Tree/Oracle windows below with uniform
-// 16px gaps.
+// Hardware-screen rhythm: same bare glass face as demo.html, with a large top
+// dot-matrix strip and three centered square LED modules.
 const STABLE_LAYOUT = {
   topStrip: { x: 34, y: 24, w: 252, h: 76 },
   windows: [
-    { x: 42, y: 116, w: 236, h: 102, channel: "text", character: "king" },
-    { x: 42, y: 234, w: 236, h: 102, channel: "voice", character: "tree" },
-    { x: 42, y: 352, w: 236, h: 102, channel: "timing", character: "oracle" },
+    { x: 106, y: 113, w: 108, h: 108, channel: "text", character: "king" },
+    { x: 106, y: 231, w: 108, h: 108, channel: "voice", character: "tree" },
+    { x: 106, y: 349, w: 108, h: 108, channel: "timing", character: "oracle" },
   ],
 } as const;
 
@@ -63,8 +64,7 @@ export function DevicePreview() {
     );
   }
 
-  // Preview mode: the screen seated in a rendered physical enclosure, beside the
-  // console, under one page header that ties them together.
+  // Preview mode: the bare hardware screen sits beside the operator console.
   return (
     <main
       className="viewport-shell"
@@ -83,30 +83,9 @@ export function DevicePreview() {
       </header>
 
       <div className="preview-body">
-        <figure className="device-stage">
-          <div className="device-body">
-            <span className="device-strap" aria-hidden="true" />
-            <span className="device-screw screw-tl" aria-hidden="true" />
-            <span className="device-screw screw-tr" aria-hidden="true" />
-            <span className="device-screw screw-bl" aria-hidden="true" />
-            <span className="device-screw screw-br" aria-hidden="true" />
-            <button
-              className="device-side-key"
-              type="button"
-              aria-label="录音"
-              {...recorder.pointerHandlers}
-            />
-            <div className="screen-bezel">
-              <DeviceScreen deviceState={deviceState} />
-            </div>
-            <span className="device-wordmark" aria-hidden="true">
-              jiko
-            </span>
-          </div>
-          <figcaption className="device-caption">
-            MPI3508 · 320 × 480 · 旋转竖屏
-          </figcaption>
-        </figure>
+        <section className="preview-demo-pane" aria-label="demo.html bare device UI">
+          <DeviceDemo embedded recorder={recorder} />
+        </section>
 
         <PreviewTools
           recorder={recorder}

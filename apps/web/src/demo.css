@@ -7,17 +7,130 @@
   width: 100vw;
   min-height: 100vh;
   padding: 40px;
-  /* Cover-glass strength — bump for more of a tinted screen over the LEDs. */
-  --cover: 0.04;
+  --cover: 0.085;
   background: #000;
 }
 
-/* Body goes black: it sinks into the page, leaving only the lit modules and the
-   physical key. No gradient, no ring — the black slab carries the hardware. */
-.demo-stage .device-canvas {
+.demo-stage[data-embedded="true"] {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.demo-presentation {
+  display: contents;
+}
+
+.demo-stage[data-demo-mode="dance"] {
+  padding: 34px 70px;
   background: #000;
-  box-shadow: none;
+}
+
+.demo-stage[data-demo-mode="dance"] .demo-presentation {
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: min(100%, 900px);
+  min-height: calc(var(--device-h) * 1.22);
+}
+
+.demo-stage[data-demo-mode="dance"] .device-canvas {
+  transform: scale(1.22);
+  transform-origin: center;
+}
+
+.demo-stage[data-demo-mode="dance"] .top-strip {
+  transform: translateY(-14px);
+}
+
+.demo-stage[data-demo-mode="dance"] .demo-led {
+  transform: translateY(-4px);
+}
+
+.demo-logo-panel {
+  position: fixed;
+  top: clamp(30px, 5vw, 64px);
+  right: clamp(30px, 5vw, 72px);
+  display: grid;
+  place-items: center;
+  width: 146px;
+  height: 118px;
+  padding: 17px;
+  border-radius: 18px;
+  background: #000;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.045),
+    0 18px 60px rgba(0, 0, 0, 0.42);
+}
+
+.demo-logo-mark {
+  display: block;
+  width: 110px;
+  max-height: 78px;
+  object-fit: contain;
+  opacity: 0.96;
+}
+
+@media (min-width: 1600px) {
+  .demo-stage[data-demo-mode="dance"] {
+    padding: 51px 105px;
+  }
+
+  .demo-stage[data-demo-mode="dance"] .demo-presentation {
+    width: min(100%, 1350px);
+    min-height: calc(var(--device-h) * 1.83);
+  }
+
+  .demo-stage[data-demo-mode="dance"] .device-canvas {
+    transform: scale(1.83);
+  }
+
+  .demo-logo-panel {
+    top: 64px;
+    right: 72px;
+    width: 218px;
+    height: 176px;
+    padding: 26px;
+    border-radius: 28px;
+  }
+
+  .demo-logo-mark {
+    width: 164px;
+    max-height: 116px;
+  }
+}
+
+/* Black glass slab: still quiet, but with enough edge and top glare to read as
+   a physical screen surface instead of transparent page black. */
+.demo-stage .device-canvas {
   overflow: visible;
+  border-radius: 32px;
+  background:
+    radial-gradient(125% 32% at 50% -14%, rgba(255, 255, 255, 0.068), transparent 66%),
+    radial-gradient(125% 32% at 50% 114%, rgba(255, 255, 255, 0.068), transparent 66%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 13%),
+    #020202;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.045),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.018),
+    inset 0 -26px 52px rgba(0, 0, 0, 0.92),
+    0 0 0 1px rgba(255, 255, 255, 0.018),
+    0 22px 70px rgba(0, 0, 0, 0.72);
+}
+
+.demo-stage .device-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024), transparent 24%, transparent 76%, rgba(255, 255, 255, 0.014)),
+    radial-gradient(100% 24% at 50% -12%, rgba(255, 255, 255, 0.055), transparent 78%),
+    radial-gradient(100% 24% at 50% 112%, rgba(255, 255, 255, 0.055), transparent 78%);
+  mix-blend-mode: screen;
 }
 
 /* Clock readout: plain dots, no bezel / border / glow. */
@@ -34,67 +147,88 @@
   place-items: center;
   width: 108px;
   height: 108px;
-  background: #000;
-  border: 1px solid #262628;
+  background:
+    radial-gradient(80% 62% at 48% 18%, rgba(255, 255, 255, 0.035), transparent 44%),
+    #020202;
+  border: 1px solid #2f3033;
   border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.016),
+    0 0 18px rgba(0, 0, 0, 0.46);
 }
 
-/* Faint optional cover glass over the panel (not the key). */
+.demo-led.is-dancing {
+  filter: saturate(1.3) brightness(1.08);
+}
+
+/* Faint cover glass over the panel. The upper bloom is deliberately stronger:
+   this is the milky hardware-screen glare in the reference image. */
 .demo-cover {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: radial-gradient(
-    128% 86% at 50% 8%,
-    rgba(255, 255, 255, var(--cover)),
-    transparent 56%
-  );
+  border-radius: inherit;
+  background:
+    radial-gradient(105% 18% at 50% -8%, rgba(255, 255, 255, var(--cover)), transparent 78%),
+    radial-gradient(105% 18% at 50% 108%, rgba(255, 255, 255, var(--cover)), transparent 78%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 16%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024), transparent 22%, transparent 78%, rgba(255, 255, 255, 0.012)),
+    radial-gradient(92% 36% at 50% 100%, rgba(255, 255, 255, 0.025), transparent 70%);
 }
 
 /* ----- Right-edge rocker key: long lever, lens-shaped mid, central pivot screw.
    Brushed-metal finish so it reads as a physical control on the black body. ----- */
 .demo-side-key {
+  appearance: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: -28px;
   z-index: 3;
-  width: 20px;
-  height: 214px;
+  width: 32px;
+  height: 238px;
   transform: translateY(-50%);
+  border-radius: 16px;
+  background: linear-gradient(90deg, #020202, #08090a 42%, #030303);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.055),
+    inset 0 0 0 3px rgba(0, 0, 0, 0.88),
+    0 8px 18px rgba(0, 0, 0, 0.72);
 }
 
 .key-bar {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: 8px;
+  bottom: 8px;
   left: 50%;
-  width: 10px;
+  width: 8px;
   transform: translateX(-50%);
   border-radius: 6px;
   background:
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
-    linear-gradient(90deg, #3a3a36 0%, #7f7e76 26%, #c8c6bd 50%, #74736b 74%, #2f2e2b 100%);
+    linear-gradient(90deg, #202124 0%, #53565b 31%, #b3b5b7 50%, #4b4d52 72%, #17181a 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    0 3px 8px rgba(0, 0, 0, 0.6);
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.65),
+    0 0 7px rgba(255, 255, 255, 0.08);
 }
 
 .key-bulge {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 20px;
-  height: 84px;
+  width: 22px;
+  height: 92px;
   transform: translate(-50%, -50%);
-  border-radius: 11px / 44px;
+  border-radius: 12px / 48px;
   background:
-    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px),
-    linear-gradient(90deg, #34332f 0%, #86857d 30%, #cbc9c0 52%, #6f6e66 76%, #2b2a27 100%);
+    linear-gradient(90deg, #18191c 0%, #3c3f45 24%, #777b82 49%, #34373d 72%, #111214 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 2px 7px rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset -5px 0 9px rgba(0, 0, 0, 0.46),
+    0 2px 8px rgba(0, 0, 0, 0.68);
 }
 
 .key-pivot {
@@ -105,11 +239,11 @@
   height: 14px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%, #c9c7be, #6c6b64 55%, #2a2a27);
+  background: radial-gradient(circle at 38% 32%, #bfc0c0, #5b5d61 55%, #17181a);
   box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.45),
-    inset 0 1px 1px rgba(255, 255, 255, 0.5),
-    0 1px 2px rgba(0, 0, 0, 0.6);
+    inset 0 0 0 1px rgba(0, 0, 0, 0.62),
+    inset 0 1px 1px rgba(255, 255, 255, 0.38),
+    0 1px 3px rgba(0, 0, 0, 0.76);
 }
 
 .key-pivot::after {
@@ -148,8 +282,22 @@
   height: 76px;
 }
 
-/* Deterministic capture: hold the clock colon lit instead of letting it blink. */
-.demo-stage .clock-time .dm-glyph[data-char=":"] {
-  animation: none;
-  opacity: 1;
+@keyframes sprite-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.09);
+  }
+}
+
+@keyframes dot-strobe {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.45);
+  }
 }

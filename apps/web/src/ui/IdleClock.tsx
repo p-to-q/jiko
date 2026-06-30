@@ -27,8 +27,10 @@ type BatteryState = {
 // This is the device's resting machine-state. During recording, processing, and
 // result the strip reverts to its title/status role.
 export function IdleClock() {
-  const now = useClock();
+  const [clockStart] = useState(resolveClockStart);
+  const now = useClock(clockStart, resolveClockNow());
   const battery = useBattery();
+  const colon = resolveColonState();
 
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
@@ -44,6 +46,7 @@ export function IdleClock() {
         gap={1}
         tracking={1}
         ariaLabel={`${hours}:${minutes}`}
+        data-colon={colon}
       />
       <div className="clock-meta">
         <DotMatrix className="clock-weekday" text={weekday} dot={2} gap={0} tracking={1} />
@@ -82,15 +85,49 @@ function BatteryGlyph({ level, charging }: { level: number; charging: boolean })
 
 // Ticks once per second so minute and date rollovers land within ~1s. The colon
 // blink is handled in CSS, so re-renders stay cheap.
-function useClock(): Date {
-  const [now, setNow] = useState(() => new Date());
+function useClock(start?: Date, fixed?: Date): Date {
+  const [now, setNow] = useState(() => fixed ?? start ?? new Date());
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    if (fixed) {
+      setNow(fixed);
+      return;
+    }
+
+    const startedAt = Date.now();
+    const id = window.setInterval(
+      () => setNow(start ? new Date(start.getTime() + Date.now() - startedAt) : new Date()),
+      1000,
+    );
     return () => window.clearInterval(id);
-  }, []);
+  }, [start, fixed]);
 
   return now;
+}
+
+function resolveClockStart(): Date | undefined {
+  const value = new URLSearchParams(window.location.search).get("clockStart");
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function resolveClockNow(): Date | undefined {
+  const value = new URLSearchParams(window.location.search).get("clockNow");
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+}
+
+function resolveColonState(): "on" | "off" | undefined {
+  const value = new URLSearchParams(window.location.search).get("colon");
+  return value === "on" || value === "off" ? value : undefined;
 }
 
 // Reads the browser Battery Status API where available (Chromium kiosk on the Pi
