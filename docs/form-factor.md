@@ -4,13 +4,20 @@ This document defines the current physical and screen-layout direction.
 
 ## Hardware Baseline
 
-Use Raspberry Pi 5 as the hardware baseline.
+Use a Raspberry Pi 5-sized object envelope as the hardware baseline, not
+Raspberry Pi 5 identity as the product baseline.
 
-Confirmed display path:
+Current prototype display path:
 
 - Raspberry Pi 5 with MPI3508 3.5-inch HDMI display.
 - The UI should also remain testable on a laptop browser.
-- The enclosure should be sized from the Pi 5 + display stack, not from an abstract phone-like screen.
+- The enclosure should stay compatible with a Pi 5 + display stack for the
+  hackathon, but the final object should be designed from product needs first:
+  it listens, shows four signals, gets warm, needs power, and is held or worn.
+
+Do not copy Raspberry Pi 5 port positions, board cutouts, or case conventions
+onto the final shell unless the actual internal stack requires them. Pi 5 is a
+size and thermal reference, not an external design template.
 
 ## Object Direction
 
@@ -25,7 +32,57 @@ Reference direction:
 - Side thumb control, shaped like a long rail or lever.
 - Shoulder-strap mounting path.
 
-The object can be slightly bulky. Do not hide the thickness too aggressively; Pi 5, display, cable clearance, heat, and mounting hardware all need room.
+The object can be slightly bulky. Do not hide the thickness too aggressively;
+display, battery or power path, cable clearance, heat, and mounting hardware all
+need room.
+
+## First-Principles Enclosure Layout
+
+The front face is the ritual surface: screen, signal, and `free will`. Keep it
+quiet. Microphone holes, vents, screw heads, and power openings should live on
+the edges or back unless a measured acoustic or thermal reason forces a front
+opening.
+
+Required exterior functions:
+
+- Power/data: one USB-C opening, preferably on the bottom edge so the cable
+  exits with gravity and does not compete with the side thumb control.
+- Listening: one or two very small microphone holes, preferably on the top
+  edge where speech can reach the aperture without reading as a front camera.
+- Heat: side or rear venting, biased toward the warmer internal region after
+  measurement. Start with narrow slots, not a decorative round-hole matrix.
+- Assembly: rear screws or heat-set insert access points are acceptable if they
+  make the object feel serviceable and do not intrude on the front face.
+
+Recommended first layout, `Quiet Field Instrument`:
+
+| Surface | Detail |
+| --- | --- |
+| Front | Four-window mask only; no utility holes. |
+| Top edge | Single mic pinhole first; second pinhole only if the microphone module needs it. |
+| Right edge | Long hold-to-record rail. |
+| Left edge | Five to seven narrow vertical thermal slots. |
+| Bottom edge | Centered or slightly right-biased USB-C opening. |
+| Back | Two or four small screw points, clear of the rounded corners. |
+
+Alternative layout, `Recorder-like Listening Object`:
+
+- Top edge: dual microphone holes.
+- Left or rear side wall: more explicit thermal slots.
+- Bottom edge: USB-C.
+- Side: record rail.
+
+Use this only if the object should read more like a dedicated recording
+instrument.
+
+Alternative layout, `Sealed AI Object`:
+
+- Bottom edge: USB-C only.
+- Top edge: one tiny mic pinhole.
+- Rear/side: minimal vents, hidden in the part break.
+
+Use this only if the object should read as more mysterious and less obviously
+listening-capable. The risk is that the user may not believe it can hear.
 
 ## Front Layout
 

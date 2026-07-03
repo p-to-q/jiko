@@ -40,6 +40,15 @@ Three.js and maps the animated 320 x 480 device face onto the front as a live
 canvas texture. It is not the kiosk URL for the Pi; use `/?mode=device` for the
 actual MPI3508 display path.
 
+For the framed official-site study that embeds the same hardware renderer, open:
+
+```text
+http://localhost:5173/site.html
+```
+
+`site.html` is a visual and copy study for the public first viewport. It should
+stay separate from the Pi kiosk path and from the real session UI.
+
 Find the laptop IP on the shared network:
 
 ```sh
