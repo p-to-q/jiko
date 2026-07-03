@@ -12,6 +12,7 @@ export default defineConfig({
       input: {
         main: "index.html",
         demo: "demo.html",
+        site: "site.html",
         showcase: "showcase.html",
       },
     },

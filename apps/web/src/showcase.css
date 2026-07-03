@@ -16,6 +16,18 @@
   isolation: isolate;
 }
 
+.showcase-stage[data-surface="embedded"] {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: transparent;
+}
+
+.showcase-stage[data-surface="embedded"]::before,
+.showcase-stage[data-surface="embedded"]::after {
+  display: none;
+}
+
 .showcase-stage:active {
   cursor: grabbing;
 }

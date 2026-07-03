@@ -19,7 +19,7 @@ type DragState = {
   base: ViewRotation;
 };
 
-export function ShowcaseStage() {
+export function ShowcaseStage({ surface = "standalone" }: { surface?: "standalone" | "embedded" }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HardwareScene>();
   const rotationRef = useRef<ViewRotation>({ ...DEFAULT_ROTATION });
@@ -69,6 +69,7 @@ export function ShowcaseStage() {
   return (
     <main
       className="showcase-stage"
+      data-surface={surface}
       aria-label="jiko hardware material showcase"
       onPointerDown={(event) => beginDrag(event, dragRef, rotationRef, sceneRef)}
       onPointerMove={(event) => updateDrag(event, dragRef, rotationRef, sceneRef)}
