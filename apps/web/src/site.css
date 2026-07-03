@@ -1,0 +1,41 @@
+.site-shell {
+  display: grid;
+  place-items: stretch center;
+  width: 100vw;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #030303;
+}
+
+.site-frame {
+  position: relative;
+  width: min(100vw, 1200px);
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.site-frame::before,
+.site-frame::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 1px;
+  pointer-events: none;
+  background: rgba(237, 237, 237, 0.32);
+}
+
+.site-frame::before {
+  left: 0;
+}
+
+.site-frame::after {
+  right: 0;
+}
+
+@media (max-width: 720px) {
+  .site-frame {
+    width: 100vw;
+  }
+}

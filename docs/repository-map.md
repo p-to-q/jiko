@@ -5,7 +5,11 @@ This map should stay short. It explains where things go without turning the repo
 ## Active Files
 
 - `README.md`: entrypoint, current direction, and docs map.
-- `apps/web`: Vite/React MPI3508 UI preview. It renders one 320 x 480 device canvas with black outside-page space and layered screen/mask surfaces.
+- `apps/web`: Vite/React MPI3508 UI preview. The main app renders one
+  320 x 480 device canvas for Pi/kiosk use, `showcase.html` renders a Three.js
+  hardware study with the device face attached as a live canvas texture rather
+  than a DOM overlay, and `site.html` is the first minimal official-site frame
+  that embeds that hardware study inside a 1200 px centered column.
 - `apps/server`: local backend with HTTP commands, SSE events, manual transcript loop, audio upload, ffmpeg normalization, first-pass audio features, local STT/TTS adapter boundaries, shared readings, and dev receipts.
 - `packages/protocol`: shared Zod schemas and TypeScript types for session events, readings, features, transcripts, results, and receipts.
 - `packages/core`: shared session reducer and result composer.
@@ -23,6 +27,7 @@ This map should stay short. It explains where things go without turning the repo
 - `docs/hardware-interfaces.md`: Raspberry Pi 5 and MPI3508 interface notes, with secondary Pi notes.
 - `docs/demo-runbook.md`: hackathon laptop-plus-Pi setup, smoke tests, and fallback ladder.
 - `docs/next-phase-checklist.md`: readiness check and decisions before implementation.
+- `docs/release-versioning.md`: shared prototype version calculation and naming rule.
 - `docs/open-questions.md`: unresolved questions.
 - `docs/repository-setup.md`: private GitHub setup notes.
 - `.env.example`: environment variable names only.

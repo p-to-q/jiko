@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squircle Gallery — Curve Explorer</title>
+<style>
+:root {
+  --bg: #08080f; --bg1: #0e0e1a; --bg2: #14142a; --bg3: #1a1a30;
+  --fg: #e0e0f0; --fg2: #8890b0; --fg3: #555570;
+  --accent: #6e8eff; --accent2: #a855f7; --green: #4ade80; --amber: #fbbf24;
+  --red: #f87171; --cyan: #22d3ee;
+  --radius: 12px; --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: var(--sans); background: var(--bg); color: var(--fg); line-height:1.6; overflow-x:hidden; }
+::selection { background: rgba(110,142,255,0.3); }
+::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg1); } ::-webkit-scrollbar-thumb { background:var(--fg3); border-radius:3px; }
+
+.container { max-width:1200px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* Header */
+.header { text-align:center; padding:3rem 0 2rem; }
+.header h1 { font-size:36px; font-weight:700; background:linear-gradient(135deg,#6e8eff,#a855f7,#22d3ee); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:0.5rem; }
+.header p { color:var(--fg2); font-size:15px; max-width:600px; margin:0 auto; }
+
+/* Section titles */
+.section-head { display:flex; align-items:center; gap:12px; margin:2.5rem 0 1rem; }
+.section-head h2 { font-size:18px; font-weight:500; color:var(--fg); }
+.section-head .tag { font-size:11px; font-family:var(--mono); padding:2px 8px; border-radius:4px; }
+.tag-math { background:#1a1a2a; color:#818cf8; }
+.tag-design { background:#1a2a1a; color:#4ade80; }
+.tag-css { background:#2a1a1a; color:#f87171; }
+.tag-custom { background:#2a2a1a; color:#fbbf24; }
+
+/* Preset Gallery */
+.gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; }
+.preset-card {
+  background:var(--bg2); border:1px solid var(--bg3); border-radius:16px;
+  padding:20px; text-align:center; cursor:pointer; transition:all 0.25s;
+  position:relative; overflow:hidden;
+}
+.preset-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.preset-card.active { border-color:var(--accent); box-shadow:0 0 20px rgba(110,142,255,0.15); }
+.preset-card svg { display:block; margin:0 auto 12px; }
+.preset-card .name { font-size:13px; font-weight:500; color:var(--fg); }
+.preset-card .desc { font-size:11px; color:var(--fg3); margin-top:2px; }
+.preset-card .params { font-size:10px; font-family:var(--mono); color:var(--fg3); margin-top:6px; opacity:0.7; }
+
+/* Pi case preview */
+.pi-section { display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start; margin:1.5rem 0; }
+@media(max-width:800px) { .pi-section { grid-template-columns:1fr; } }
+.pi-preview {
+  background:var(--bg2); border:1px solid var(--bg3); border-radius:16px;
+  padding:24px; display:flex; justify-content:center; align-items:center; min-height:340px;
+}
+.pi-controls {
+  background:var(--bg2); border:1px solid var(--bg3); border-radius:16px; padding:20px;
+}
+.ctrl-group { margin-bottom:14px; }
+.ctrl-group label { display:flex; justify-content:space-between; font-size:12px; color:var(--fg2); margin-bottom:4px; }
+.ctrl-group label .val { font-family:var(--mono); color:var(--accent); }
+.ctrl-group input[type=range] { width:100%; accent-color:var(--accent); height:4px; }
+.ctrl-group select {
+  width:100%; background:var(--bg3); border:1px solid #2a2a4a; color:var(--fg);
+  padding:6px 10px; border-radius:8px; font-size:12px; font-family:var(--mono);
+}
+
+/* Copy button */
+.copy-row { display:flex; gap:8px; margin-top:16px; }
+.btn {
+  flex:1; padding:8px 0; border:none; border-radius:8px; font-size:12px;
+  font-family:var(--mono); cursor:pointer; transition:all 0.2s;
+}
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:#5a7aee; }
+.btn-secondary { background:var(--bg3); color:var(--fg2); border:1px solid #2a2a4a; }
+.btn-secondary:hover { border-color:var(--accent); color:var(--fg); }
+
+/* Path display */
+.path-display {
+  background:var(--bg1); border:1px solid var(--bg3); border-radius:8px;
+  padding:12px; margin-top:12px; font-family:var(--mono); font-size:10px;
+  color:var(--fg3); max-height:80px; overflow:auto; word-break:break-all;
+  line-height:1.5; user-select:all;
+}
+
+/* Toast */
+.toast {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px);
+  background:var(--accent); color:#fff; padding:10px 24px; border-radius:10px;
+  font-size:13px; font-family:var(--mono); z-index:999; transition:transform 0.3s ease;
+  box-shadow:0 4px 20px rgba(110,142,255,0.3);
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* Comparison strip */
+.compare-strip { display:flex; gap:12px; overflow-x:auto; padding:8px 0; margin:1rem 0; }
+.compare-item {
+  flex:0 0 auto; background:var(--bg2); border:1px solid var(--bg3);
+  border-radius:12px; padding:12px 16px; text-align:center; min-width:140px;
+}
+.compare-item .label { font-size:11px; color:var(--fg3); margin-top:8px; font-family:var(--mono); }
+
+/* Curvature chart */
+.curvature-canvas { display:block; margin:0 auto; }
+
+/* Corner shape demo */
+.corner-demos { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin:1rem 0; }
+.corner-demo {
+  background:var(--bg2); border:1px solid var(--bg3); border-radius:12px;
+  padding:16px; text-align:center;
+}
+.corner-demo .shape { width:80px; height:80px; margin:0 auto 8px; }
+.corner-demo .name { font-size:11px; font-family:var(--mono); color:var(--fg2); }
+
+/* Divider */
+.divider { height:1px; background:var(--bg3); margin:2rem 0; }
+
+/* Info panel */
+.info-panel {
+  background:linear-gradient(135deg, rgba(110,142,255,0.05), rgba(168,85,247,0.05));
+  border:1px solid rgba(110,142,255,0.15); border-radius:12px;
+  padding:16px 20px; margin:1rem 0; font-size:13px; color:var(--fg2); line-height:1.7;
+}
+.info-panel code { font-family:var(--mono); color:var(--accent); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>Squircle Gallery</h1>
+  <p>A collection of smooth corner curves — from math to metal. Pick a preset, tune the parameters, preview on a Raspberry Pi 5 case, and copy the SVG path.</p>
+</div>
+
+<!-- ====== PRESETS ====== -->
+<div class="section-head">
+  <h2>Preset gallery</h2>
+  <span class="tag tag-design">click to apply</span>
+</div>
+
+<div class="gallery" id="gallery"></div>
+
+<!-- ====== PI CASE ====== -->
+<div class="section-head">
+  <h2>Raspberry Pi 5 case preview</h2>
+  <span class="tag tag-custom">98 × 70 mm</span>
+</div>
+
+<div class="pi-section">
+  <div class="pi-preview">
+    <svg id="pi-svg" width="490" height="360" viewBox="0 0 490 360"></svg>
+  </div>
+  <div class="pi-controls">
+    <div class="ctrl-group">
+      <label>Curve family <span class="val" id="family-val"></span></label>
+      <select id="family-sel">
+        <option value="superellipse">Superellipse (Lame)</option>
+        <option value="smooth" selected>Figma smooth</option>
+        <option value="html-squircle">html-squircle</option>
+        <option value="css-native">CSS corner-shape</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Corner radius <span class="val" id="cr-val">16px</span></label>
+      <input type="range" id="cr-slider" min="2" max="45" value="16">
+    </div>
+    <div class="ctrl-group" id="param1-group">
+      <label><span id="p1-label">Smoothing</span> <span class="val" id="p1-val">60%</span></label>
+      <input type="range" id="p1-slider" min="0" max="100" value="60">
+    </div>
+    <div class="ctrl-group" id="param2-group" style="display:none">
+      <label><span id="p2-label">Roundness</span> <span class="val" id="p2-val">0.2</span></label>
+      <input type="range" id="p2-slider" min="0" max="100" value="20">
+    </div>
+    <div class="ctrl-group">
+      <label>Corner detail <span class="val" id="steps-val">80</span></label>
+      <input type="range" id="steps-slider" min="20" max="200" value="80">
+    </div>
+    <div class="copy-row">
+      <button class="btn btn-primary" onclick="copySVG()">Copy SVG path</button>
+      <button class="btn btn-secondary" onclick="copyCSS()">Copy CSS</button>
+    </div>
+    <div class="path-display" id="path-display">Select a preset or adjust parameters…</div>
+  </div>
+</div>
+
+<!-- ====== SIDE-BY-SIDE ====== -->
+<div class="section-head">
+  <h2>All presets at a glance</h2>
+  <span class="tag tag-math">scroll →</span>
+</div>
+<div class="compare-strip" id="compare-strip"></div>
+
+<!-- ====== CSS CORNER-SHAPE ====== -->
+<div class="section-head">
+  <h2>CSS corner-shape keywords</h2>
+  <span class="tag tag-css">Chrome 139+</span>
+</div>
+<div class="info-panel">
+  These are the native CSS <code>corner-shape</code> keywords. They map to specific <code>superellipse(n)</code> values. Currently Chromium-only, but they degrade gracefully to <code>border-radius</code> in other browsers.
+</div>
+<div class="corner-demos" id="corner-demos"></div>
+
+<div class="divider"></div>
+
+<!-- ====== MATH ====== -->
+<div class="section-head">
+  <h2>Superellipse family — exponent sweep</h2>
+  <span class="tag tag-math">n = 1 → 8</span>
+</div>
+<div class="info-panel">
+  The Lame formula <code>|x/a|^n + |y/b|^n = 1</code> produces a continuous family of shapes. n=1 is a diamond, n=2 a circle, n=4 the classic squircle, n→∞ a rectangle. Each shape here is exactly what you'd get by varying the exponent on a Raspberry Pi 5 case outline.
+</div>
+<div class="compare-strip" id="exponent-strip"></div>
+
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+// ===================== GEOMETRY ENGINE =====================
+
+function superellipsePath(cx, cy, a, b, n, steps) {
+  steps = steps || 120;
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = (i / steps) * 2 * Math.PI;
+    const c = Math.cos(t), s = Math.sin(t);
+    pts.push([
+      cx + a * Math.sign(c) * Math.pow(Math.abs(c), 2/n),
+      cy + b * Math.sign(s) * Math.pow(Math.abs(s), 2/n)
+    ]);
+  }
+  return 'M' + pts.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L') + 'Z';
+}
+
+function superellipseRectPath(x, y, w, h, r, n, steps) {
+  steps = steps || 80;
+  r = Math.min(r, w/2, h/2);
+  const pts = [];
+  const segs = Math.floor(steps / 4);
+  function cornerArc(cx, cy, startAngle, endAngle) {
+    for (let i = 0; i <= segs; i++) {
+      const t = startAngle + (i / segs) * (endAngle - startAngle);
+      const cosT = Math.cos(t), sinT = Math.sin(t);
+      pts.push([
+        cx + r * Math.sign(cosT) * Math.pow(Math.abs(cosT), 2/n),
+        cy + r * Math.sign(sinT) * Math.pow(Math.abs(sinT), 2/n)
+      ]);
+    }
+  }
+  // Top edge
+  pts.push([x+r, y]); pts.push([x+w-r, y]);
+  // Top-right corner (center x+w-r, y+r): -PI/2 → 0
+  cornerArc(x+w-r, y+r, -Math.PI/2, 0);
+  // Right edge
+  pts.push([x+w, y+r]); pts.push([x+w, y+h-r]);
+  // Bottom-right corner (center x+w-r, y+h-r): 0 → PI/2
+  cornerArc(x+w-r, y+h-r, 0, Math.PI/2);
+  // Bottom edge
+  pts.push([x+w-r, y+h]); pts.push([x+r, y+h]);
+  // Bottom-left corner (center x+r, y+h-r): PI/2 → PI
+  cornerArc(x+r, y+h-r, Math.PI/2, Math.PI);
+  // Left edge
+  pts.push([x, y+h-r]); pts.push([x, y+r]);
+  // Top-left corner (center x+r, y+r): PI → 3PI/2
+  cornerArc(x+r, y+r, Math.PI, Math.PI*1.5);
+  return 'M' + pts.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L') + 'Z';
+}
+
+function smoothRectPath(x, y, w, h, r, smoothing) {
+  r = Math.min(r, w/2, h/2);
+  const s = smoothing;
+  const p = Math.min(r * (1 + s * 0.68), Math.min(w/2, h/2));
+  const cp1 = r * (1 - s * 0.44);
+  const cp2 = r * (1 - s * 0.86);
+  const a = r * (1 - s * 0.2);
+  return [
+    `M ${x+p} ${y}`, `L ${x+w-p} ${y}`,
+    `C ${x+w-cp1} ${y} ${x+w-cp2} ${y} ${x+w-a} ${y}`,
+    `C ${x+w} ${y} ${x+w} ${y} ${x+w} ${y+a}`,
+    `C ${x+w} ${y+cp2} ${x+w} ${y+cp1} ${x+w} ${y+p}`,
+    `L ${x+w} ${y+h-p}`,
+    `C ${x+w} ${y+h-cp1} ${x+w} ${y+h-cp2} ${x+w} ${y+h-a}`,
+    `C ${x+w} ${y+h} ${x+w} ${y+h} ${x+w-a} ${y+h}`,
+    `C ${x+w-cp2} ${y+h} ${x+w-cp1} ${y+h} ${x+w-p} ${y+h}`,
+    `L ${x+p} ${y+h}`,
+    `C ${x+cp1} ${y+h} ${x+cp2} ${y+h} ${x+a} ${y+h}`,
+    `C ${x} ${y+h} ${x} ${y+h} ${x} ${y+h-a}`,
+    `C ${x} ${y+h-cp2} ${x} ${y+h-cp1} ${x} ${y+h-p}`,
+    `L ${x} ${y+p}`,
+    `C ${x} ${y+cp1} ${x} ${y+cp2} ${x} ${y+a}`,
+    `C ${x} ${y} ${x} ${y} ${x+a} ${y}`,
+    `C ${x+cp2} ${y} ${x+cp1} ${y} ${x+p} ${y}`, 'Z'
+  ].join(' ');
+}
+
+// html-squircle style: curveLength + roundness
+function htmlSquirclePath(x, y, w, h, curveLength, roundness, steps) {
+  steps = steps || 80;
+  const cl = curveLength || Math.min(w, h) * 0.3;
+  const rn = roundness || 0.2;
+  const clClamped = Math.min(cl, w/2, h/2);
+  const r = clClamped;
+  const pts = [];
+
+  function bezierCorner(cx, cy, dx, dy) {
+    const segs = Math.floor(steps / 4);
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      const ct = 1 - t;
+      // quadratic-ish with roundness control
+      const power = 1 + (1 - rn) * 1.5;
+      const px = cx + dx * r * (1 - Math.pow(t, power));
+      const py = cy + dy * r * Math.pow(t, 1/power);
+      pts.push([px, py]);
+    }
+  }
+
+  pts.push([x + clClamped, y]);
+  pts.push([x + w - clClamped, y]);
+  bezierCorner(x + w, y, 0, 0); // approx top-right
+  // Simpler: use superellipse with adjustable exponent based on roundness
+  const n = 2 + (1 - rn) * 6; // roundness 0 → n=8 (very square), roundness 1 → n=2 (circle)
+  return superellipseRectPath(x, y, w, h, clClamped, n, steps);
+}
+
+// ===================== PRESETS =====================
+
+const PRESETS = [
+  { id:'apple-ios', name:'Apple iOS', desc:'App icon standard', family:'smooth', r:22, p1:60, color:'#6e8eff',
+    note:'r≈22.37% width, 60% smoothing' },
+  { id:'figma-default', name:'Figma default', desc:'Corner smoothing 60%', family:'smooth', r:16, p1:60, color:'#a855f7',
+    note:'Figma\'s default corner smoothing' },
+  { id:'figma-full', name:'Figma max', desc:'100% smoothing', family:'smooth', r:16, p1:100, color:'#c084fc',
+    note:'Maximum Figma smoothing' },
+  { id:'squircle-classic', name:'Classic squircle', desc:'n=4 superellipse', family:'superellipse', r:18, p1:40, color:'#22d3ee',
+    note:'|x|^4 + |y|^4 = r^4' },
+  { id:'squircle-tight', name:'Tight squircle', desc:'n=5, more square', family:'superellipse', r:14, p1:50, color:'#06b6d4',
+    note:'Higher exponent → flatter sides' },
+  { id:'squircle-soft', name:'Soft squircle', desc:'n=3, more round', family:'superellipse', r:20, p1:30, color:'#67e8f9',
+    note:'Lower exponent → rounder feel' },
+  { id:'piet-hein', name:'Piet Hein', desc:'n=2.5, the OG', family:'superellipse', r:24, p1:25, color:'#fbbf24',
+    note:'1959 Stockholm roundabout' },
+  { id:'minimal-smooth', name:'Minimal smooth', desc:'Subtle, 30% smoothing', family:'smooth', r:8, p1:30, color:'#4ade80',
+    note:'For cards and small elements' },
+  { id:'bold-smooth', name:'Bold smooth', desc:'Large radius, 80%', family:'smooth', r:32, p1:80, color:'#f87171',
+    note:'Statement piece' },
+  { id:'hardware-cnc', name:'CNC machined', desc:'n=4.5, r=12', family:'superellipse', r:12, p1:45, color:'#94a3b8',
+    note:'Typical CNC aluminum look' },
+  { id:'framer-f1', name:'Framer F1', desc:'Keyboard body', family:'smooth', r:18, p1:60, color:'#818cf8',
+    note:'Framer\'s design language' },
+  { id:'samsung-oneui', name:'Samsung OneUI', desc:'n=3.3, rounder', family:'superellipse', r:20, p1:33, color:'#fb923c',
+    note:'Android icon approximation' },
+  { id:'ultra-square', name:'Ultra square', desc:'n=6, very flat', family:'superellipse', r:10, p1:60, color:'#e879f9',
+    note:'Almost rectangular, still smooth' },
+  { id:'organic-blob', name:'Organic blob', desc:'n=2.2, near circle', family:'superellipse', r:30, p1:22, color:'#34d399',
+    note:'Approaching circular' },
+  { id:'smooth-subtle', name:'Smooth subtle', desc:'40% smooth, small r', family:'smooth', r:6, p1:40, color:'#a78bfa',
+    note:'For input fields and chips' },
+  { id:'watch-face', name:'Watch face', desc:'n=4, large radius', family:'superellipse', r:35, p1:40, color:'#f472b6',
+    note:'Apple Watch style' },
+];
+
+// ===================== STATE =====================
+
+let activePreset = 'framer-f1';
+let currentPath = '';
+
+// Pi 5 case: 98×70mm → 5px/mm → 490×350 viewport, shape inside with padding
+const PI_W = 392, PI_H = 280; // case shape
+const PI_OX = 49, PI_OY = 40; // offset in viewbox
+
+// ===================== RENDER =====================
+
+function getPresetPath(preset, x, y, w, h, steps) {
+  const r = preset.r * (w / 100); // scale radius proportionally
+  if (preset.family === 'smooth') {
+    return smoothRectPath(x, y, w, h, r, preset.p1 / 100);
+  } else {
+    const n = 2 + (preset.p1 / 100) * 6; // map 0-100 → n 2-8
+    return superellipseRectPath(x, y, w, h, r, n, steps || 80);
+  }
+}
+
+function getCurrentPath(x, y, w, h) {
+  const family = document.getElementById('family-sel').value;
+  const cr = +document.getElementById('cr-slider').value;
+  const p1 = +document.getElementById('p1-slider').value;
+  const steps = +document.getElementById('steps-slider').value;
+  const r = cr * (w / 100);
+
+  if (family === 'smooth' || family === 'css-native') {
+    return smoothRectPath(x, y, w, h, r, p1 / 100);
+  } else if (family === 'superellipse') {
+    const n = 2 + (p1 / 100) * 6;
+    return superellipseRectPath(x, y, w, h, r, n, steps);
+  } else { // html-squircle
+    const roundness = (+document.getElementById('p2-slider').value) / 100;
+    const n = 2 + (1 - roundness) * 6;
+    return superellipseRectPath(x, y, w, h, r, n, steps);
+  }
+}
+
+function renderGallery() {
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = PRESETS.map(p => {
+    const sz = 100, pad = 10;
+    const path = getPresetPath(p, pad, pad, sz, sz, 60);
+    return `<div class="preset-card ${p.id === activePreset ? 'active' : ''}" onclick="selectPreset('${p.id}')">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <path d="${path}" fill="none" stroke="${p.color}" stroke-width="2"/>
+        <path d="${path}" fill="${p.color}" fill-opacity="0.08"/>
+      </svg>
+      <div class="name">${p.name}</div>
+      <div class="desc">${p.desc}</div>
+      <div class="params">${p.note}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPiCase() {
+  const svg = document.getElementById('pi-svg');
+  const path = getCurrentPath(PI_OX, PI_OY, PI_W, PI_H);
+  currentPath = path;
+
+  const family = document.getElementById('family-sel').value;
+  const cr = +document.getElementById('cr-slider').value;
+  const p1 = +document.getElementById('p1-slider').value;
+
+  // Accent color based on family
+  const accent = family === 'smooth' ? '#a855f7' : family === 'superellipse' ? '#22d3ee' : family === 'html-squircle' ? '#fbbf24' : '#f87171';
+
+  let html = '';
+
+  // Shadow
+  html += `<path d="${getCurrentPath(PI_OX+3, PI_OY+3, PI_W, PI_H)}" fill="rgba(0,0,0,0.3)"/>`;
+
+  // Main body
+  html += `<path d="${path}" fill="#1a1a2e" stroke="${accent}" stroke-width="2"/>`;
+
+  // Inner border
+  const innerPath = getCurrentPath(PI_OX+6, PI_OY+6, PI_W-12, PI_H-12);
+  html += `<path d="${innerPath}" fill="none" stroke="${accent}" stroke-width="0.5" stroke-opacity="0.3"/>`;
+
+  // Board outline (actual Pi board)
+  html += `<rect x="${PI_OX+24}" y="${PI_OY+20}" width="${368}" height="${224}" rx="4" fill="#0d3320" stroke="#1a5535" stroke-width="0.5"/>`;
+
+  // CPU
+  html += `<rect x="${PI_OX+140}" y="${PI_OY+80}" width="56" height="56" rx="3" fill="#2a2a3a" stroke="#3a3a5a" stroke-width="0.5"/>`;
+  html += `<text x="${PI_OX+168}" y="${PI_OY+112}" text-anchor="middle" font-size="8" fill="#555" font-family="monospace">BCM2712</text>`;
+
+  // RAM
+  html += `<rect x="${PI_OX+220}" y="${PI_OY+90}" width="40" height="36" rx="2" fill="#1a1a2e" stroke="#2a2a4a" stroke-width="0.5"/>`;
+  html += `<text x="${PI_OX+240}" y="${PI_OY+112}" text-anchor="middle" font-size="7" fill="#444" font-family="monospace">8GB</text>`;
+
+  // GPIO header
+  for (let i = 0; i < 20; i++) {
+    for (let j = 0; j < 2; j++) {
+      html += `<circle cx="${PI_OX+34+i*8}" cy="${PI_OY+30+j*8}" r="1.5" fill="#c8a83e"/>`;
+    }
+  }
+
+  // USB ports
+  html += `<rect x="${PI_OX+PI_W-24}" y="${PI_OY+40}" width="30" height="28" rx="2" fill="#1e1e3e" stroke="#3a3a5a" stroke-width="0.5"/>`;
+  html += `<rect x="${PI_OX+PI_W-24}" y="${PI_OY+80}" width="30" height="28" rx="2" fill="#1e1e3e" stroke="#3a3a5a" stroke-width="0.5"/>`;
+
+  // Ethernet
+  html += `<rect x="${PI_OX+PI_W-24}" y="${PI_OY+130}" width="30" height="30" rx="2" fill="#1e1e3e" stroke="#3a3a5a" stroke-width="0.5"/>`;
+
+  // HDMI
+  html += `<rect x="${PI_OX+100}" y="${PI_OY+PI_H-16}" width="24" height="16" rx="2" fill="#1e1e3e" stroke="#3a3a5a" stroke-width="0.5"/>`;
+  html += `<rect x="${PI_OX+140}" y="${PI_OY+PI_H-16}" width="24" height="16" rx="2" fill="#1e1e3e" stroke="#3a3a5a" stroke-width="0.5"/>`;
+
+  // USB-C power
+  html += `<rect x="${PI_OX+50}" y="${PI_OY+PI_H-14}" width="18" height="12" rx="4" fill="#1e1e3e" stroke="#3a3a5a" stroke-width="0.5"/>`;
+
+  // Labels
+  html += `<text x="${PI_OX+PI_W/2}" y="${PI_OY+PI_H+28}" text-anchor="middle" font-size="12" fill="${accent}" font-family="monospace">
+    r=${cr} · ${family === 'smooth' ? 'smooth '+p1+'%' : family === 'superellipse' ? 'n='+(2+p1/100*6).toFixed(1) : family}
+  </text>`;
+
+  // Dimension annotations
+  html += `<text x="${PI_OX+PI_W+16}" y="${PI_OY+PI_H/2+4}" font-size="9" fill="#555" font-family="monospace" transform="rotate(90 ${PI_OX+PI_W+16} ${PI_OY+PI_H/2+4})">70mm</text>`;
+  html += `<text x="${PI_OX+PI_W/2}" y="${PI_OY-10}" text-anchor="middle" font-size="9" fill="#555" font-family="monospace">98mm</text>`;
+
+  svg.innerHTML = html;
+
+  // Update path display
+  const normalizedPath = getCurrentPath(0, 0, 98, 70);
+  document.getElementById('path-display').textContent = normalizedPath;
+}
+
+function renderCompareStrip() {
+  const strip = document.getElementById('compare-strip');
+  strip.innerHTML = PRESETS.map(p => {
+    const sz = 80, pad = 8;
+    const path = getPresetPath(p, pad, pad, sz, sz*0.71, 40); // 98:70 ratio
+    return `<div class="compare-item" onclick="selectPreset('${p.id}')" style="cursor:pointer">
+      <svg width="${sz+16}" height="${sz*0.71+16}" viewBox="0 0 ${sz+16} ${sz*0.71+16}">
+        <path d="${path}" fill="${p.color}" fill-opacity="0.12" stroke="${p.color}" stroke-width="1.5"/>
+      </svg>
+      <div class="label">${p.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCornerDemos() {
+  const demos = document.getElementById('corner-demos');
+  const cornerTypes = [
+    { name:'round', css:'border-radius:20px', desc:'Standard CSS' },
+    { name:'squircle', css:'border-radius:20px;\ncorner-shape:squircle', desc:'superellipse(2)' },
+    { name:'superellipse(3)', css:'border-radius:20px;\ncorner-shape:superellipse(3)', desc:'Between round & squircle' },
+    { name:'superellipse(4)', css:'border-radius:20px;\ncorner-shape:superellipse(4)', desc:'Flatter sides' },
+    { name:'bevel', css:'border-radius:20px;\ncorner-shape:bevel', desc:'Chamfered corner' },
+    { name:'scoop', css:'border-radius:20px;\ncorner-shape:scoop', desc:'Concave inward' },
+  ];
+
+  demos.innerHTML = cornerTypes.map(ct => {
+    let path;
+    if (ct.name === 'round') path = `<rect x="10" y="10" width="80" height="80" rx="20" fill="none" stroke="var(--red)" stroke-width="1.5"/>`;
+    else if (ct.name === 'bevel') {
+      path = `<path d="M 30 10 L 70 10 L 90 30 L 90 70 L 70 90 L 30 90 L 10 70 L 10 30 Z" fill="none" stroke="var(--red)" stroke-width="1.5"/>`;
+    } else if (ct.name === 'scoop') {
+      path = `<path d="M 10 10 Q 30 30 10 50 L 10 50 Q 30 50 50 50 L 90 10 Z" fill="none" stroke="var(--red)" stroke-width="1.5"/>`;
+      // Better scoop: concave corners
+      const scoopPath = `M 30 10 L 70 10 Q 90 10 90 10 Q 76 24 90 30 L 90 70 Q 90 90 90 90 Q 76 76 70 90 L 30 90 Q 10 90 10 90 Q 24 76 10 70 L 10 30 Q 10 10 10 10 Q 24 24 30 10 Z`;
+      path = `<path d="${scoopPath}" fill="none" stroke="var(--red)" stroke-width="1.5"/>`;
+    } else {
+      const n = ct.name === 'squircle' ? 4 : ct.name.includes('3') ? 3 : 4.5;
+      const p = superellipseRectPath(10, 10, 80, 80, 20, n, 60);
+      path = `<path d="${p}" fill="none" stroke="var(--red)" stroke-width="1.5"/>`;
+    }
+    return `<div class="corner-demo">
+      <svg class="shape" viewBox="0 0 100 100">${path}</svg>
+      <div class="name">${ct.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderExponentStrip() {
+  const strip = document.getElementById('exponent-strip');
+  const exponents = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 8];
+  strip.innerHTML = exponents.map(n => {
+    const sz = 80;
+    const path = superellipsePath(sz/2+8, sz/2+8, sz/2, sz/2, n, 80);
+    const hue = 200 + (n - 1) * 20;
+    const color = `hsl(${hue}, 70%, 65%)`;
+    return `<div class="compare-item">
+      <svg width="${sz+16}" height="${sz+16}" viewBox="0 0 ${sz+16} ${sz+16}">
+        <path d="${path}" fill="${color}" fill-opacity="0.12" stroke="${color}" stroke-width="1.5"/>
+      </svg>
+      <div class="label">n = ${n}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===================== INTERACTIONS =====================
+
+function selectPreset(id) {
+  activePreset = id;
+  const p = PRESETS.find(x => x.id === id);
+  if (!p) return;
+
+  // Map preset to controls
+  if (p.family === 'smooth') {
+    document.getElementById('family-sel').value = 'smooth';
+    document.getElementById('p1-slider').value = p.p1;
+  } else {
+    document.getElementById('family-sel').value = 'superellipse';
+    document.getElementById('p1-slider').value = p.p1;
+  }
+  document.getElementById('cr-slider').value = p.r;
+
+  updateLabels();
+  renderGallery();
+  renderPiCase();
+}
+
+function updateLabels() {
+  const family = document.getElementById('family-sel').value;
+  const cr = +document.getElementById('cr-slider').value;
+  const p1 = +document.getElementById('p1-slider').value;
+  const p2 = +document.getElementById('p2-slider').value;
+  const steps = +document.getElementById('steps-slider').value;
+
+  document.getElementById('cr-val').textContent = cr + 'px';
+  document.getElementById('steps-val').textContent = steps;
+  document.getElementById('family-val').textContent = '';
+
+  const p1Group = document.getElementById('param1-group');
+  const p2Group = document.getElementById('param2-group');
+
+  if (family === 'smooth' || family === 'css-native') {
+    document.getElementById('p1-label').textContent = 'Smoothing';
+    document.getElementById('p1-val').textContent = p1 + '%';
+    p2Group.style.display = 'none';
+  } else if (family === 'superellipse') {
+    document.getElementById('p1-label').textContent = 'Exponent n';
+    const n = 2 + (p1/100) * 6;
+    document.getElementById('p1-val').textContent = n.toFixed(1);
+    p2Group.style.display = 'none';
+  } else {
+    document.getElementById('p1-label').textContent = 'Curve length';
+    document.getElementById('p1-val').textContent = p1 + '%';
+    p2Group.style.display = 'block';
+    document.getElementById('p2-label').textContent = 'Roundness';
+    document.getElementById('p2-val').textContent = (p2/100).toFixed(2);
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function copySVG() {
+  const path = getCurrentPath(0, 0, 98, 70);
+  navigator.clipboard.writeText(path).then(() => showToast('SVG path copied!'));
+}
+
+function copyCSS() {
+  const family = document.getElementById('family-sel').value;
+  const cr = +document.getElementById('cr-slider').value;
+  const p1 = +document.getElementById('p1-slider').value;
+  let css;
+  if (family === 'css-native') {
+    css = `border-radius: ${cr}px;\ncorner-shape: squircle;`;
+  } else if (family === 'smooth') {
+    css = `/* Figma-style smooth corners — use clip-path */\nborder-radius: ${cr}px;\n/* For native CSS (Chrome 139+): */\ncorner-shape: superellipse(${(1 + p1/100 * 1.5).toFixed(1)});`;
+  } else if (family === 'superellipse') {
+    const n = 2 + (p1/100) * 6;
+    css = `/* Superellipse n=${n.toFixed(1)} */\nborder-radius: ${cr}px;\n/* Chrome 139+: */\ncorner-shape: superellipse(${(n/2).toFixed(1)});`;
+  } else {
+    css = `/* html-squircle style */\nborder-radius: ${cr}px;\n/* Use clip-path with generated SVG path */`;
+  }
+  navigator.clipboard.writeText(css).then(() => showToast('CSS copied!'));
+}
+
+// ===================== INIT =====================
+
+function onParamChange() {
+  updateLabels();
+  renderPiCase();
+}
+
+['cr-slider','p1-slider','p2-slider','steps-slider'].forEach(id => {
+  document.getElementById(id).addEventListener('input', onParamChange);
+});
+document.getElementById('family-sel').addEventListener('change', () => {
+  updateLabels();
+  renderPiCase();
+});
+
+renderGallery();
+renderCompareStrip();
+renderCornerDemos();
+renderExponentStrip();
+updateLabels();
+selectPreset('framer-f1');
+</script>
+</body>
+</html>

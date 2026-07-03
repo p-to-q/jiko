@@ -16,6 +16,7 @@ const primary = candidates[0];
 
 console.log(`Laptop preview: http://${primary.address}:${webPort}/`);
 console.log(`Pi kiosk URL:   http://${primary.address}:${webPort}/?mode=device`);
+console.log(`Showcase stage: http://${primary.address}:${webPort}/showcase.html`);
 console.log(`Server health:  http://${primary.address}:${serverPort}/health`);
 console.log(`API base:       http://${primary.address}:${serverPort}`);
 

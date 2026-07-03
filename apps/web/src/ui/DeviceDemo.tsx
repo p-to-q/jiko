@@ -151,14 +151,18 @@ function SideKey({ recorder }: { recorder?: RecorderControls }) {
 
 export function DeviceDemo({
   embedded = false,
+  demoMode,
+  showLogo = !embedded,
   recorder,
 }: {
   embedded?: boolean;
+  demoMode?: "idle" | "dance";
+  showLogo?: boolean;
   recorder?: RecorderControls;
 }) {
   const part = embedded ? "all" : resolvePart();
-  const demoMode = resolveDemoMode();
-  const dancing = demoMode === "dance";
+  const resolvedDemoMode = demoMode ?? resolveDemoMode();
+  const dancing = resolvedDemoMode === "dance";
   const danceCycle = useDanceCycle(dancing);
 
   if (part !== "all") {
@@ -171,7 +175,7 @@ export function DeviceDemo({
               <IdleClock />
             </div>
           ) : (
-            <div className="demo-led" data-demo-mode={demoMode}>
+            <div className="demo-led" data-demo-mode={resolvedDemoMode}>
               <LedSquare
                 character={part}
                 tone={danceCycle.tone}
@@ -189,7 +193,7 @@ export function DeviceDemo({
   return (
     <main
       className="demo-stage"
-      data-demo-mode={demoMode}
+      data-demo-mode={resolvedDemoMode}
       data-embedded={embedded ? "true" : undefined}
       data-only="all"
     >
@@ -213,8 +217,8 @@ export function DeviceDemo({
               <div
                 className={["demo-led", dancing ? `is-dancing dance-${index + 1}` : ""]
                   .filter(Boolean)
-                  .join(" ")}
-                data-demo-mode={demoMode}
+                .join(" ")}
+                data-demo-mode={resolvedDemoMode}
                 key={window.character}
                 style={{
                   position: "absolute",
@@ -243,7 +247,7 @@ export function DeviceDemo({
           <div className="demo-cover" aria-hidden="true" />
           {dancing ? null : <SideKey recorder={recorder} />}
         </section>
-        {dancing ? <DemoLogo /> : null}
+        {dancing && showLogo ? <DemoLogo /> : null}
       </div>
     </main>
   );
