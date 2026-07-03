@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Framer F1 Squircle Corner Study</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; background: #0a0a1a; color: #e0e0f0; line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  h1 { font-size: 28px; font-weight: 600; margin-bottom: 0.5rem; background: linear-gradient(135deg, #6e8eff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  h2 { font-size: 18px; font-weight: 500; color: #8890b0; margin: 2rem 0 1rem; }
+  h3 { font-size: 14px; font-weight: 500; color: #6e8eff; margin: 1.5rem 0 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
+  p { color: #999ab0; font-size: 14px; margin-bottom: 1rem; max-width: 700px; }
+  .subtitle { color: #666; font-size: 14px; margin-bottom: 2rem; }
+
+  .comparison-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 1rem 0; }
+  .card { background: #12122a; border: 1px solid #1e1e3a; border-radius: 16px; padding: 24px; text-align: center; transition: border-color 0.2s; }
+  .card:hover { border-color: #3a3a6a; }
+  .card-label { font-size: 13px; font-family: 'SF Mono', monospace; color: #6e8eff; margin-top: 12px; }
+  .card-desc { font-size: 11px; color: #555; margin-top: 4px; }
+
+  .controls { display: flex; gap: 24px; flex-wrap: wrap; background: #12122a; border: 1px solid #1e1e3a; border-radius: 12px; padding: 16px 24px; margin: 1rem 0; }
+  .ctrl { display: flex; align-items: center; gap: 8px; }
+  .ctrl label { font-size: 12px; color: #888; white-space: nowrap; }
+  .ctrl input[type=range] { width: 120px; accent-color: #6e8eff; }
+  .ctrl .val { font-size: 12px; font-family: 'SF Mono', monospace; color: #ccc; min-width: 40px; }
+
+  .keyboard-wrap { background: #12122a; border: 1px solid #1e1e3a; border-radius: 16px; padding: 24px; margin: 1rem 0; overflow-x: auto; }
+  .keyboard-wrap svg { display: block; margin: 0 auto; }
+
+  .code-block { background: #0d0d20; border: 1px solid #1e1e3a; border-radius: 8px; padding: 16px; font-family: 'SF Mono', monospace; font-size: 12px; color: #a0a0c0; overflow-x: auto; margin: 1rem 0; white-space: pre; line-height: 1.8; }
+  .code-block .kw { color: #c792ea; }
+  .code-block .fn { color: #82aaff; }
+  .code-block .str { color: #c3e88d; }
+  .code-block .num { color: #f78c6c; }
+  .code-block .cm { color: #546e7a; }
+
+  .version-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin: 1rem 0; }
+  .version-card { background: #12122a; border: 1px solid #1e1e3a; border-radius: 16px; padding: 20px; }
+  .version-card h4 { font-size: 14px; font-weight: 500; color: #e0e0f0; margin-bottom: 8px; }
+  .version-card p { font-size: 12px; color: #666; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-family: 'SF Mono', monospace; }
+  .badge-css { background: #1a2a1a; color: #4ade80; }
+  .badge-svg { background: #1a1a2a; color: #818cf8; }
+  .badge-js { background: #2a2a1a; color: #fbbf24; }
+
+  .tab-bar { display: flex; gap: 2px; background: #0d0d20; border-radius: 8px; padding: 3px; margin: 1rem 0; width: fit-content; }
+  .tab-btn { padding: 6px 16px; border: none; background: transparent; color: #666; font-size: 13px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: #1e1e3a; color: #e0e0f0; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Squircle Corner Study</h1>
+<p class="subtitle">Framer F1 keyboard corner analysis & implementation</p>
+
+<h3>The problem</h3>
+<p>CSS <code>border-radius</code> creates a circular arc that meets the straight edge at a tangent point. At that junction, curvature jumps discontinuously from 0 (flat) to 1/r (arc) — a G1 join. Your eye detects this as a subtle "pinch" where the curve begins. A squircle (superellipse n=4) uses one continuous equation: curvature flows smoothly from 0 at the midpoint of each side to maximum at the corner. This G2 continuity is what makes Apple's icons, Figma's corner smoothing, and the Framer F1 feel "right."</p>
+
+<h3>Interactive comparison</h3>
+<div class="controls">
+  <div class="ctrl">
+    <label>Corner radius</label>
+    <input type="range" id="r-slider" min="4" max="60" value="24">
+    <span class="val" id="r-val">24px</span>
+  </div>
+  <div class="ctrl">
+    <label>Smoothing</label>
+    <input type="range" id="s-slider" min="0" max="100" value="60">
+    <span class="val" id="s-val">60%</span>
+  </div>
+  <div class="ctrl">
+    <label>Exponent n</label>
+    <input type="range" id="n-slider" min="20" max="80" value="40">
+    <span class="val" id="n-val">4.0</span>
+  </div>
+</div>
+
+<div class="comparison-grid">
+  <div class="card">
+    <svg id="svg-br" width="200" height="200" viewBox="0 0 200 200"></svg>
+    <div class="card-label">border-radius <span class="badge badge-css">CSS</span></div>
+    <div class="card-desc">Circular arc, G1 curvature join</div>
+  </div>
+  <div class="card">
+    <svg id="svg-se" width="200" height="200" viewBox="0 0 200 200"></svg>
+    <div class="card-label">superellipse <span class="badge badge-svg">SVG</span></div>
+    <div class="card-desc">|x/a|^n + |y/b|^n = 1, G2 continuous</div>
+  </div>
+  <div class="card">
+    <svg id="svg-sm" width="200" height="200" viewBox="0 0 200 200"></svg>
+    <div class="card-label">Figma smooth <span class="badge badge-js">JS</span></div>
+    <div class="card-desc">Bézier approximation, cornerSmoothing param</div>
+  </div>
+</div>
+
+<h3>Curvature visualization</h3>
+<p>Below each shape, the colored bar shows curvature magnitude along the perimeter. Notice how border-radius has a sharp transition, while squircle and smooth corners flow gradually.</p>
+<div class="comparison-grid">
+  <div class="card"><canvas id="cv-br" width="200" height="60"></canvas></div>
+  <div class="card"><canvas id="cv-se" width="200" height="60"></canvas></div>
+  <div class="card"><canvas id="cv-sm" width="200" height="60"></canvas></div>
+</div>
+
+<h3>Framer F1 keyboard — full render</h3>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="v1">V1: Smooth 60%</button>
+  <button class="tab-btn" data-tab="v2">V2: Superellipse n=4</button>
+  <button class="tab-btn" data-tab="v3">V3: Superellipse n=5</button>
+</div>
+
+<div class="keyboard-wrap">
+  <svg id="kb-svg" width="720" height="280" viewBox="0 0 720 280"></svg>
+</div>
+
+<h3>Screen module — close-up</h3>
+<div class="comparison-grid">
+  <div class="card">
+    <svg id="scr1" width="240" height="100" viewBox="0 0 240 100"></svg>
+    <div class="card-label">border-radius: 12px</div>
+  </div>
+  <div class="card">
+    <svg id="scr2" width="240" height="100" viewBox="0 0 240 100"></svg>
+    <div class="card-label">squircle n=4, r=12</div>
+  </div>
+  <div class="card">
+    <svg id="scr3" width="240" height="100" viewBox="0 0 240 100"></svg>
+    <div class="card-label">smooth 60%, r=12</div>
+  </div>
+</div>
+
+<h3>Implementation code</h3>
+<div class="version-grid">
+  <div class="version-card">
+    <h4>Method 1: CSS corner-shape <span class="badge badge-css">CSS</span></h4>
+    <p>Chrome 139+. Progressive enhancement — falls back to border-radius in unsupported browsers.</p>
+    <div class="code-block"><span class="cm">/* Native CSS squircle — Chrome 139+ */</span>
+<span class="kw">.squircle</span> {
+  <span class="fn">border-radius</span>: <span class="num">24px</span>;
+  <span class="fn">corner-shape</span>: <span class="fn">squircle</span>;
+}
+
+<span class="cm">/* Custom exponent */</span>
+<span class="kw">.superellipse</span> {
+  <span class="fn">border-radius</span>: <span class="num">24px</span>;
+  <span class="fn">corner-shape</span>: <span class="fn">superellipse</span>(<span class="num">3</span>);
+}</div>
+  </div>
+  <div class="version-card">
+    <h4>Method 2: SVG clip-path <span class="badge badge-svg">SVG</span></h4>
+    <p>Cross-browser. Pre-compute the path and clip any element.</p>
+    <div class="code-block"><span class="cm">/* Use the smoothRectPath() function */</span>
+<span class="kw">const</span> path = <span class="fn">smoothRectPath</span>(
+  <span class="num">0</span>, <span class="num">0</span>,    <span class="cm">// x, y</span>
+  <span class="num">200</span>, <span class="num">80</span>,  <span class="cm">// width, height</span>
+  <span class="num">12</span>,        <span class="cm">// corner radius</span>
+  <span class="num">0.6</span>        <span class="cm">// smoothing (0–1)</span>
+);
+
+el.style.clipPath =
+  <span class="str">`path('${path}')`</span>;</div>
+  </div>
+  <div class="version-card">
+    <h4>Method 3: figma-squircle <span class="badge badge-js">JS</span></h4>
+    <p>NPM package. Same algorithm Figma uses internally.</p>
+    <div class="code-block"><span class="kw">import</span> { getSvgPath }
+  <span class="kw">from</span> <span class="str">'figma-squircle'</span>;
+
+<span class="kw">const</span> path = <span class="fn">getSvgPath</span>({
+  width: <span class="num">200</span>,
+  height: <span class="num">80</span>,
+  cornerRadius: <span class="num">12</span>,
+  cornerSmoothing: <span class="num">0.6</span>
+});
+
+el.style.clipPath =
+  <span class="str">`path('${path}')`</span>;</div>
+  </div>
+  <div class="version-card">
+    <h4>Method 4: Superellipse formula <span class="badge badge-svg">SVG</span></h4>
+    <p>Pure math. |x/a|^n + |y/b|^n = 1. Full control over exponent.</p>
+    <div class="code-block"><span class="cm">// Parametric superellipse</span>
+<span class="kw">function</span> <span class="fn">superellipse</span>(t, a, b, n) {
+  <span class="kw">const</span> c = Math.cos(t);
+  <span class="kw">const</span> s = Math.sin(t);
+  <span class="kw">return</span> [
+    a * Math.sign(c)
+      * Math.pow(Math.abs(c), <span class="num">2</span>/n),
+    b * Math.sign(s)
+      * Math.pow(Math.abs(s), <span class="num">2</span>/n)
+  ];
+}</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ========= CORE GEOMETRY FUNCTIONS =========
+
+function superellipseRectPath(x, y, w, h, r, n, steps) {
+  steps = steps || 80;
+  r = Math.min(r, w/2, h/2);
+  const pts = [];
+  const segs = Math.floor(steps / 4);
+  function cornerArc(cx, cy, startAngle, endAngle) {
+    for (let i = 0; i <= segs; i++) {
+      const t = startAngle + (i / segs) * (endAngle - startAngle);
+      const cosT = Math.cos(t), sinT = Math.sin(t);
+      pts.push([
+        cx + r * Math.sign(cosT) * Math.pow(Math.abs(cosT), 2/n),
+        cy + r * Math.sign(sinT) * Math.pow(Math.abs(sinT), 2/n)
+      ]);
+    }
+  }
+  pts.push([x+r, y]); pts.push([x+w-r, y]);
+  cornerArc(x+w-r, y+r, -Math.PI/2, 0);
+  pts.push([x+w, y+r]); pts.push([x+w, y+h-r]);
+  cornerArc(x+w-r, y+h-r, 0, Math.PI/2);
+  pts.push([x+w-r, y+h]); pts.push([x+r, y+h]);
+  cornerArc(x+r, y+h-r, Math.PI/2, Math.PI);
+  pts.push([x, y+h-r]); pts.push([x, y+r]);
+  cornerArc(x+r, y+r, Math.PI, Math.PI*1.5);
+  return 'M' + pts.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L') + 'Z';
+}
+
+function smoothRectPath(x, y, w, h, r, smoothing) {
+  r = Math.min(r, w/2, h/2);
+  const s = smoothing;
+  const p = Math.min(r * (1 + s * 0.68), Math.min(w/2, h/2));
+  const cp1 = r * (1 - s * 0.44);
+  const cp2 = r * (1 - s * 0.86);
+  const a = r * (1 - s * 0.2);
+  return [
+    `M ${x+p} ${y}`, `L ${x+w-p} ${y}`,
+    `C ${x+w-cp1} ${y} ${x+w-cp2} ${y} ${x+w-a} ${y}`,
+    `C ${x+w} ${y} ${x+w} ${y} ${x+w} ${y+a}`,
+    `C ${x+w} ${y+cp2} ${x+w} ${y+cp1} ${x+w} ${y+p}`,
+    `L ${x+w} ${y+h-p}`,
+    `C ${x+w} ${y+h-cp1} ${x+w} ${y+h-cp2} ${x+w} ${y+h-a}`,
+    `C ${x+w} ${y+h} ${x+w} ${y+h} ${x+w-a} ${y+h}`,
+    `C ${x+w-cp2} ${y+h} ${x+w-cp1} ${y+h} ${x+w-p} ${y+h}`,
+    `L ${x+p} ${y+h}`,
+    `C ${x+cp1} ${y+h} ${x+cp2} ${y+h} ${x+a} ${y+h}`,
+    `C ${x} ${y+h} ${x} ${y+h} ${x} ${y+h-a}`,
+    `C ${x} ${y+h-cp2} ${x} ${y+h-cp1} ${x} ${y+h-p}`,
+    `L ${x} ${y+p}`,
+    `C ${x} ${y+cp1} ${x} ${y+cp2} ${x} ${y+a}`,
+    `C ${x} ${y} ${x} ${y} ${x+a} ${y}`,
+    `C ${x+cp2} ${y} ${x+cp1} ${y} ${x+p} ${y}`, 'Z'
+  ].join(' ');
+}
+
+// ========= COMPARISON SHAPES =========
+
+function drawShapes() {
+  const r = +document.getElementById('r-slider').value;
+  const s = +document.getElementById('s-slider').value / 100;
+  const n = +document.getElementById('n-slider').value / 10;
+  document.getElementById('r-val').textContent = r + 'px';
+  document.getElementById('s-val').textContent = Math.round(s*100) + '%';
+  document.getElementById('n-val').textContent = n.toFixed(1);
+
+  const sz = 140, pad = 30;
+
+  // border-radius
+  const svg1 = document.getElementById('svg-br');
+  svg1.innerHTML = `
+    <rect x="${pad}" y="${pad}" width="${sz}" height="${sz}" rx="${r}" fill="none" stroke="#6e8eff" stroke-width="2"/>
+    <circle cx="${pad}" cy="${pad+r}" r="3" fill="#ff4444"/>
+    <line x1="${pad}" y1="${pad+r}" x2="${pad+16}" y2="${pad+r}" stroke="#ff4444" stroke-width="0.8" stroke-dasharray="3,2"/>
+    <text x="${pad+18}" y="${pad+r+3}" font-size="9" fill="#ff4444" font-family="monospace">G1</text>
+    <rect x="${pad}" y="${pad}" width="${sz}" height="${sz}" rx="${r}" fill="rgba(110,142,255,0.06)" stroke="none"/>
+  `;
+
+  // superellipse
+  const svg2 = document.getElementById('svg-se');
+  const sePath = superellipseRectPath(pad, pad, sz, sz, r, n);
+  svg2.innerHTML = `<path d="${sePath}" fill="rgba(110,142,255,0.06)" stroke="#6e8eff" stroke-width="2"/>`;
+
+  // smooth
+  const svg3 = document.getElementById('svg-sm');
+  const smPath = smoothRectPath(pad, pad, sz, sz, r, s);
+  svg3.innerHTML = `<path d="${smPath}" fill="rgba(110,142,255,0.06)" stroke="#6e8eff" stroke-width="2"/>`;
+
+  drawCurvatureGraphs(r, s, n, sz);
+}
+
+function drawCurvatureGraphs(r, s, n, sz) {
+  // Simplified curvature visualization
+  [['cv-br','br'], ['cv-se','se'], ['cv-sm','sm']].forEach(([id, type]) => {
+    const canvas = document.getElementById(id);
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 200, 60);
+    const steps = 100;
+    for (let i = 0; i < steps; i++) {
+      const t = i / steps;
+      let curv;
+      if (type === 'br') {
+        // border-radius: sharp transition
+        const sideLen = (sz - 2*r) / (sz * 4) * 4;
+        const cornerLen = (Math.PI * r / 2) / (sz * 4) * 4;
+        const normalized = t * 4 % 1; // position within one side
+        if (normalized < (sz-2*r)/(2*(sz-2*r+Math.PI*r/2))) curv = 0;
+        else curv = 1;
+      } else if (type === 'se') {
+        // superellipse: smooth curve
+        const angle = t * 2 * Math.PI;
+        const c = Math.cos(angle), si = Math.sin(angle);
+        curv = Math.pow(Math.abs(c*si), n/2-1) * 0.8;
+        curv = Math.min(curv, 1);
+      } else {
+        // smooth: gradual transition
+        const angle = t * 2 * Math.PI;
+        curv = Math.pow(Math.abs(Math.sin(2*angle)), s * 1.5) * 0.7;
+      }
+      const h = curv * 40;
+      const hue = 220 + curv * 80;
+      ctx.fillStyle = `hsl(${hue}, 70%, ${50 + curv*20}%)`;
+      ctx.fillRect(i * 2, 50 - h, 2, h);
+    }
+    ctx.strokeStyle = '#333';
+    ctx.beginPath(); ctx.moveTo(0, 50); ctx.lineTo(200, 50); ctx.stroke();
+  });
+}
+
+// ========= KEYBOARD RENDER =========
+
+let currentVersion = 'v1';
+
+function drawKeyboard() {
+  const svg = document.getElementById('kb-svg');
+  const kw = 700, kh = 260, kx = 10, ky = 10;
+
+  const cornerFn = currentVersion === 'v1'
+    ? (x,y,w,h,r) => smoothRectPath(x,y,w,h,r,0.6)
+    : currentVersion === 'v2'
+      ? (x,y,w,h,r) => superellipseRectPath(x,y,w,h,r,4)
+      : (x,y,w,h,r) => superellipseRectPath(x,y,w,h,r,5);
+
+  let html = '';
+
+  // Body
+  html += `<path d="${cornerFn(kx, ky, kw, kh, 18)}" fill="#1a1a2e" stroke="#2a2a4a" stroke-width="1"/>`;
+
+  // Inner plate
+  html += `<path d="${cornerFn(kx+8, ky+8, kw-16, kh-16, 14)}" fill="#14142a" stroke="#1e1e3a" stroke-width="0.5"/>`;
+
+  const keyW = 36, keyH = 30, gap = 4;
+  const startX = kx + 18, startY = ky + 18;
+
+  const rows = [
+    { keys: [{l:'esc',w:1},{l:'F1',w:1},{l:'F2',w:1},{l:'F3',w:1},{l:'F4',w:1},{l:'F5',w:1},{l:'F6',w:1},{l:'F7',w:1},{l:'F8',w:1},{l:'F9',w:1},{l:'F10',w:1},{l:'F11',w:1},{l:'F12',w:1},{l:'del',w:1}] },
+    { keys: [{l:'`',w:1},{l:'1',w:1},{l:'2',w:1},{l:'3',w:1},{l:'4',w:1},{l:'5',w:1},{l:'6',w:1},{l:'7',w:1},{l:'8',w:1},{l:'9',w:1},{l:'0',w:1},{l:'-',w:1},{l:'=',w:1},{l:'⌫',w:1.6},{l:'pub',w:1,special:true}] },
+    { keys: [{l:'⇥',w:1.4},{l:'Q',w:1},{l:'W',w:1},{l:'E',w:1},{l:'R',w:1},{l:'T',w:1},{l:'Y',w:1},{l:'U',w:1},{l:'I',w:1},{l:'O',w:1},{l:'P',w:1},{l:'[',w:1},{l:']',w:1},{l:'\\',w:1.2}] },
+    { keys: [{l:'⇪',w:1.6},{l:'A',w:1},{l:'S',w:1},{l:'D',w:1},{l:'F',w:1},{l:'G',w:1},{l:'H',w:1},{l:'J',w:1},{l:'K',w:1},{l:'L',w:1},{l:';',w:1},{l:'\'',w:1},{l:'↵',w:2}] },
+    { keys: [{l:'⇧',w:2},{l:'Z',w:1},{l:'X',w:1},{l:'C',w:1},{l:'V',w:1},{l:'B',w:1},{l:'N',w:1},{l:'M',w:1},{l:',',w:1},{l:'.',w:1},{l:'/',w:1},{l:'⇧',w:1.6}] },
+    { keys: [{l:'fn',w:1},{l:'⌃',w:1},{l:'⌥',w:1},{l:'⌘',w:1.2},{l:'',w:4.5},{l:'⌘',w:1.2},{l:'⌥',w:1},{l:'←',w:1},{l:'↓',w:1},{l:'→',w:1}] }
+  ];
+
+  rows.forEach((row, ri) => {
+    let cx = startX;
+    row.keys.forEach(key => {
+      const w = keyW * key.w + gap * (key.w - 1);
+      const y2 = startY + ri * (keyH + gap);
+      const fill = key.special ? '#3a5aff' : '#1e1e3a';
+      const txtFill = key.special ? '#fff' : '#8890b0';
+      html += `<path d="${cornerFn(cx, y2, w, keyH, 5)}" fill="${fill}" stroke="#2a2a4a" stroke-width="0.5"/>`;
+      if (key.l) {
+        html += `<text x="${cx + w/2}" y="${y2 + keyH/2 + 4}" text-anchor="middle" font-size="${key.l.length > 2 ? 8 : 11}" fill="${txtFill}" font-family="-apple-system, sans-serif">${key.l}</text>`;
+      }
+      cx += w + gap;
+    });
+  });
+
+  // Screen
+  const scrX = kx + kw - 200, scrY = ky + 14;
+  const scrW = 170, scrH = 56;
+  html += `<path d="${cornerFn(scrX, scrY, scrW, scrH, 10)}" fill="#0a0a1a" stroke="#2a2a4a" stroke-width="0.5"/>`;
+  html += `<text x="${scrX+14}" y="${scrY+20}" font-size="9" fill="#6e8eff" font-family="monospace">framer.com/sites</text>`;
+  html += `<text x="${scrX+14}" y="${scrY+36}" font-size="18" fill="#fff" font-weight="500" font-family="-apple-system, sans-serif">1,247</text>`;
+  html += `<text x="${scrX+70}" y="${scrY+36}" font-size="9" fill="#555" font-family="-apple-system, sans-serif">page views</text>`;
+  html += `<text x="${scrX+14}" y="${scrY+48}" font-size="9" fill="#4ade80" font-family="monospace">+12.3% ↑</text>`;
+
+  // Knobs
+  const knobR = 14;
+  const k1x = scrX - 24, k2x = scrX + scrW + 16, kny = scrY + scrH/2;
+  html += `<circle cx="${k1x}" cy="${kny}" r="${knobR}" fill="#1e1e3a" stroke="#2a2a4a" stroke-width="0.5"/>`;
+  html += `<line x1="${k1x}" y1="${kny-7}" x2="${k1x}" y2="${kny-2}" stroke="#555" stroke-width="2" stroke-linecap="round"/>`;
+  html += `<circle cx="${k2x}" cy="${kny}" r="${knobR}" fill="#1e1e3a" stroke="#2a2a4a" stroke-width="0.5"/>`;
+  html += `<line x1="${k2x}" y1="${kny-7}" x2="${k2x}" y2="${kny-2}" stroke="#555" stroke-width="2" stroke-linecap="round"/>`;
+
+  // Version label
+  const vLabel = currentVersion === 'v1' ? 'Smooth 60% (Figma-style)' : currentVersion === 'v2' ? 'Superellipse n=4' : 'Superellipse n=5';
+  html += `<text x="${kx + kw/2}" y="${ky + kh + 4}" text-anchor="middle" font-size="11" fill="#555" font-family="monospace">${vLabel}</text>`;
+
+  svg.innerHTML = html;
+}
+
+// Screen close-ups
+function drawScreens() {
+  const w = 200, h = 70, pad = 20;
+
+  function screenContent(svg, path) {
+    svg.innerHTML = `<path d="${path}" fill="#0a0a1a" stroke="#6e8eff" stroke-width="1.5"/>
+      <text x="${pad+12}" y="${pad+22}" font-size="9" fill="#6e8eff" font-family="monospace">framer.com</text>
+      <text x="${pad+12}" y="${pad+42}" font-size="14" fill="#fff" font-family="-apple-system, sans-serif">1,247 views</text>
+      <text x="${pad+12}" y="${pad+56}" font-size="9" fill="#4ade80" font-family="monospace">+12.3%</text>`;
+  }
+
+  screenContent(document.getElementById('scr1'), `<rect x="${pad}" y="${pad}" width="${w}" height="${h}" rx="12"/>`);
+  screenContent(document.getElementById('scr2'), superellipseRectPath(pad, pad, w, h, 12, 4));
+  screenContent(document.getElementById('scr3'), smoothRectPath(pad, pad, w, h, 12, 0.6));
+}
+
+// ========= EVENT LISTENERS =========
+
+document.getElementById('r-slider').addEventListener('input', drawShapes);
+document.getElementById('s-slider').addEventListener('input', drawShapes);
+document.getElementById('n-slider').addEventListener('input', drawShapes);
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentVersion = btn.dataset.tab;
+    drawKeyboard();
+  });
+});
+
+// Initial render
+drawShapes();
+drawKeyboard();
+drawScreens();
+</script>
+</body>
+</html>

@@ -12,7 +12,7 @@ export default defineConfig({
       input: {
         main: "index.html",
         demo: "demo.html",
-        spriteTool: "sprite-tool.html",
+        showcase: "showcase.html",
       },
     },
   },
