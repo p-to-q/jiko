@@ -558,11 +558,11 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
 
   screwPositions.forEach(([x, y]) => {
     const screw = new THREE.Mesh(new THREE.CircleGeometry(0.026, 28), screwMaterial);
-    screw.position.set(x, y, -bodyDepth * 1.14);
+    screw.position.set(x, y, -bodyDepth * 0.52);
     details.add(screw);
 
     const slot = new THREE.Mesh(new THREE.PlaneGeometry(0.032, 0.005), screwSlotMaterial);
-    slot.position.set(x, y, -bodyDepth * 1.145);
+    slot.position.set(x, y, -bodyDepth * 0.525);
     details.add(slot);
   });
 
