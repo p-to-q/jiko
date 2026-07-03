@@ -1,0 +1,11 @@
+{
+  "buildCommand": "pnpm --filter @jiko/web build && cp apps/web/dist/site.html apps/web/dist/index.html",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/site.html"
+    }
+  ]
+}

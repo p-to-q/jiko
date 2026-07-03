@@ -20,6 +20,24 @@ Repo profile: private `micro+`. Keep the repository light: clear thesis, visible
 - Result language: maintain / deviate / static, instead of good / bad / correct / wrong.
 - Demo priority: a complete ritual moment beats a complex but fragile AI system.
 
+## Product Doctrine
+
+jiko should stay legible as an instrument. It can be strange, warm, and alive,
+but it should not become an answer engine, a chatbot, or a decorative companion.
+The core ritual is: say one intention, let the system separate the signals, then
+leave the final choice with the person.
+
+The product has three surfaces, each with a different job:
+
+- `/?mode=device`: the actual Raspberry Pi / MPI3508 kiosk face.
+- `showcase.html`: a standalone Three.js hardware-material study.
+- `site.html`: the public first-viewport study that embeds the same hardware
+  object inside a quiet framed page.
+
+These surfaces should share the same product language without sharing fake
+runtime paths. Manual demo controls still need to route through the same event
+protocol as real audio.
+
 ## Two Runtime Paths
 
 The product should share one UI, one state machine, and one reading core across two runtime shells:
@@ -56,6 +74,7 @@ The Raspberry Pi path should stay visible and compatible, but it should not bloc
 - [Form Factor](docs/form-factor.md)
 - [Hardware Notes](docs/hardware-notes.md)
 - [Hardware Interfaces](docs/hardware-interfaces.md)
+- [Showcase Design Decisions](docs/showcase-design-decisions.md)
 - [Demo Runbook](docs/demo-runbook.md)
 - [Repository Map](docs/repository-map.md)
 - [Release Versioning](docs/release-versioning.md)
