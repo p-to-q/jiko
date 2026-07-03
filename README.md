@@ -58,6 +58,7 @@ The Raspberry Pi path should stay visible and compatible, but it should not bloc
 - [Hardware Interfaces](docs/hardware-interfaces.md)
 - [Demo Runbook](docs/demo-runbook.md)
 - [Repository Map](docs/repository-map.md)
+- [Release Versioning](docs/release-versioning.md)
 - [Next Phase Checklist](docs/next-phase-checklist.md)
 - [Open Questions](docs/open-questions.md)
 - [Repository Setup](docs/repository-setup.md)
