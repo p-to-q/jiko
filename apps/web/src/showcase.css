@@ -10,8 +10,8 @@
   touch-action: none;
   background:
     radial-gradient(62% 46% at 50% 42%, rgba(255, 255, 255, 0.058), transparent 58%),
-    radial-gradient(52% 34% at 49% 35%, rgba(240, 144, 53, 0.034), transparent 68%),
-    radial-gradient(64% 44% at 50% 118%, rgba(240, 144, 53, 0.07), transparent 70%),
+    radial-gradient(52% 34% at 49% 35%, rgba(130, 154, 184, 0.032), transparent 68%),
+    radial-gradient(64% 44% at 50% 118%, rgba(130, 154, 184, 0.056), transparent 70%),
     linear-gradient(180deg, #060606 0%, #000 72%);
   isolation: isolate;
 }
@@ -44,7 +44,7 @@
   z-index: -2;
   background:
     radial-gradient(72% 36% at 50% 82%, rgba(255, 255, 255, 0.04), transparent 68%),
-    radial-gradient(36% 22% at 48% 24%, rgba(255, 190, 96, 0.052), transparent 72%),
+    radial-gradient(36% 22% at 48% 24%, rgba(170, 186, 206, 0.044), transparent 72%),
     linear-gradient(116deg, transparent 0 43%, rgba(255, 255, 255, 0.026) 43.08% 43.18%, transparent 43.32%),
     repeating-linear-gradient(118deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 46px),
     #030303;

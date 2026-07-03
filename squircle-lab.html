@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squircle Lab — Uncanny Beauty Explorer</title>
+<style>
+:root { --bg:#08080f;--bg1:#0e0e1a;--bg2:#14142a;--bg3:#1a1a30;--fg:#e0e0f0;--fg2:#8890b0;--fg3:#555570;--accent:#6e8eff;--mono:'SF Mono','Fira Code',monospace;--sans:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--sans);background:var(--bg);color:var(--fg);line-height:1.6;}
+::selection{background:rgba(110,142,255,0.3);}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--bg1);}::-webkit-scrollbar-thumb{background:var(--fg3);border-radius:3px;}
+.container{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:32px;font-weight:700;background:linear-gradient(135deg,#6e8eff,#a855f7,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:0.25rem;}
+.sub{text-align:center;color:var(--fg2);font-size:14px;margin-bottom:2rem;}
+h2{font-size:16px;font-weight:500;color:var(--fg);margin:2rem 0 0.25rem;}
+.hint{font-size:12px;color:var(--fg3);margin-bottom:0.75rem;}
+
+/* Gallery */
+.gallery{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:0.5rem 0;}
+.card{background:var(--bg2);border:1.5px solid var(--bg3);border-radius:14px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;min-width:130px;}
+.card:hover{border-color:#444;transform:translateY(-1px);}
+.card.active{border-color:var(--accent);box-shadow:0 0 16px rgba(110,142,255,0.12);}
+.card svg{display:block;margin:0 auto 8px;}
+.card .nm{font-size:12px;font-weight:500;color:var(--fg);}
+.card .ds{font-size:9px;color:var(--fg3);font-family:var(--mono);margin-top:2px;}
+
+/* Main panel */
+.main{display:grid;grid-template-columns:1fr 300px;gap:20px;margin:1.5rem 0;align-items:start;}
+@media(max-width:800px){.main{grid-template-columns:1fr;}}
+.preview{background:var(--bg2);border:1px solid var(--bg3);border-radius:16px;padding:24px;display:flex;flex-direction:column;align-items:center;min-height:380px;}
+.preview svg{display:block;}
+.controls{background:var(--bg2);border:1px solid var(--bg3);border-radius:16px;padding:20px;}
+.ctrl{margin-bottom:12px;}
+.ctrl label{display:flex;justify-content:space-between;font-size:11px;color:var(--fg2);margin-bottom:3px;}
+.ctrl .v{font-family:var(--mono);color:var(--accent);}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent);height:3px;}
+.ctrl select{width:100%;background:var(--bg3);border:1px solid #2a2a4a;color:var(--fg);padding:6px 10px;border-radius:8px;font-size:11px;font-family:var(--mono);}
+
+.sep{height:1px;background:var(--bg3);margin:14px 0;}
+
+.btn-row{display:flex;gap:8px;margin-top:14px;}
+.btn{flex:1;padding:7px;border:none;border-radius:8px;font-size:11px;font-family:var(--mono);cursor:pointer;transition:all 0.2s;}
+.btn-pri{background:var(--accent);color:#fff;}.btn-pri:hover{background:#5a7aee;}
+.btn-sec{background:var(--bg3);color:var(--fg2);border:1px solid #2a2a4a;}.btn-sec:hover{border-color:var(--accent);color:var(--fg);}
+
+.path-box{background:var(--bg1);border:1px solid var(--bg3);border-radius:6px;padding:8px;margin-top:10px;font-family:var(--mono);font-size:9px;color:var(--fg3);max-height:70px;overflow:auto;word-break:break-all;user-select:all;line-height:1.5;}
+
+.info-strip{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px;}
+.tag{font-size:10px;font-family:var(--mono);padding:3px 8px;border-radius:4px;background:var(--bg1);border:0.5px solid var(--bg3);color:var(--fg2);}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--accent);color:#fff;padding:8px 20px;border-radius:10px;font-size:12px;font-family:var(--mono);z-index:99;transition:transform 0.3s;box-shadow:0 4px 16px rgba(110,142,255,0.3);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* Compare */
+.compare{display:flex;gap:8px;overflow-x:auto;padding:8px 0;margin:0.5rem 0;}
+.cmp-item{flex:0 0 auto;text-align:center;padding:8px;background:var(--bg2);border:1px solid var(--bg3);border-radius:10px;}
+.cmp-item .lb{font-size:9px;color:var(--fg3);font-family:var(--mono);margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Squircle Lab</h1>
+<p class="sub">The uncanny beauty explorer — curves that shouldn't exist but do</p>
+
+<!-- ===== A: ASYMMETRIC ===== -->
+<h2>A. Asymmetric exponents</h2>
+<p class="hint">|x/a|^m + |y/b|^n = 1 where m ≠ n. Long sides vs short sides have different curvature — your brain detects it but can't name it.</p>
+<div class="gallery" id="gal-A"></div>
+
+<!-- ===== B: PER-CORNER ===== -->
+<h2>B. Per-corner variation</h2>
+<p class="hint">Each corner has its own personality. Gravity, diagonal tension, or directional energy.</p>
+<div class="gallery" id="gal-B"></div>
+
+<!-- ===== C: SWEET SPOT ===== -->
+<h2>C. The sweet spot (n = 3.8 – 4.6)</h2>
+<p class="hint">Between Framer-warm and too-square. The zone nobody explored.</p>
+<div class="gallery" id="gal-C"></div>
+
+<!-- ===== D: COMPOUND ===== -->
+<h2>D. Compound radius + smoothing</h2>
+<p class="hint">Same visual weight, different character.</p>
+<div class="gallery" id="gal-D"></div>
+
+<!-- ===== MAIN EDITOR ===== -->
+<h2>Live editor — tune any parameter</h2>
+<div class="main">
+  <div class="preview">
+    <svg id="big-svg" width="392" height="280" viewBox="0 0 392 280"></svg>
+    <div class="info-strip" id="info-strip"></div>
+  </div>
+  <div class="controls">
+    <div class="ctrl">
+      <label>Mode <span class="v" id="mode-v"></span></label>
+      <select id="mode-sel">
+        <option value="asym">Asymmetric exponents (m/n)</option>
+        <option value="corner">Per-corner exponents</option>
+        <option value="uniform">Uniform superellipse</option>
+        <option value="smooth">Figma smooth</option>
+      </select>
+    </div>
+
+    <div class="ctrl">
+      <label>Radius <span class="v" id="r-v">12%</span></label>
+      <input type="range" id="r-sl" min="3" max="25" value="12" step="0.5">
+    </div>
+
+    <div class="ctrl" id="g-mx">
+      <label><span id="mx-label">Exponent m (horizontal)</span> <span class="v" id="mx-v">4.2</span></label>
+      <input type="range" id="mx-sl" min="20" max="60" value="42">
+    </div>
+    <div class="ctrl" id="g-ny">
+      <label><span id="ny-label">Exponent n (vertical)</span> <span class="v" id="ny-v">3.8</span></label>
+      <input type="range" id="ny-sl" min="20" max="60" value="38">
+    </div>
+
+    <div class="ctrl" id="g-tr" style="display:none">
+      <label>Top-right n <span class="v" id="tr-v">4.0</span></label>
+      <input type="range" id="tr-sl" min="25" max="55" value="40">
+    </div>
+    <div class="ctrl" id="g-br" style="display:none">
+      <label>Bottom-right n <span class="v" id="br-v">4.0</span></label>
+      <input type="range" id="br-sl" min="25" max="55" value="40">
+    </div>
+    <div class="ctrl" id="g-bl" style="display:none">
+      <label>Bottom-left n <span class="v" id="bl-v">4.0</span></label>
+      <input type="range" id="bl-sl" min="25" max="55" value="40">
+    </div>
+    <div class="ctrl" id="g-tl" style="display:none">
+      <label>Top-left n <span class="v" id="tl-v">4.0</span></label>
+      <input type="range" id="tl-sl" min="25" max="55" value="40">
+    </div>
+
+    <div class="ctrl" id="g-sm" style="display:none">
+      <label>Smoothing <span class="v" id="sm-v">60%</span></label>
+      <input type="range" id="sm-sl" min="0" max="100" value="60">
+    </div>
+
+    <div class="sep"></div>
+    <div class="btn-row">
+      <button class="btn btn-pri" onclick="copyPath()">Copy SVG path</button>
+      <button class="btn btn-sec" onclick="copyCSS()">Copy CSS</button>
+    </div>
+    <div class="path-box" id="path-box">Select a preset or adjust sliders…</div>
+  </div>
+</div>
+
+<!-- ===== FULL COMPARE ===== -->
+<h2>All experiments — side by side</h2>
+<div class="compare" id="full-compare"></div>
+
+</div>
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+// ======== GEOMETRY (FIXED) ========
+function seRect(x,y,w,h,r,n,steps){
+  steps=steps||100;r=Math.min(r,w/2,h/2);const pts=[];const sg=Math.floor(steps/4);
+  function ca(cx,cy,sa,ea){for(let i=0;i<=sg;i++){const t=sa+(i/sg)*(ea-sa);const c=Math.cos(t),s=Math.sin(t);pts.push([cx+r*Math.sign(c)*Math.pow(Math.abs(c),2/n),cy+r*Math.sign(s)*Math.pow(Math.abs(s),2/n)]);}}
+  pts.push([x+r,y]);pts.push([x+w-r,y]);ca(x+w-r,y+r,-Math.PI/2,0);pts.push([x+w,y+r]);pts.push([x+w,y+h-r]);ca(x+w-r,y+h-r,0,Math.PI/2);pts.push([x+w-r,y+h]);pts.push([x+r,y+h]);ca(x+r,y+h-r,Math.PI/2,Math.PI);pts.push([x,y+h-r]);pts.push([x,y+r]);ca(x+r,y+r,Math.PI,Math.PI*1.5);
+  return'M'+pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L')+'Z';
+}
+function asymRect(x,y,w,h,r,mx,ny,steps){
+  steps=steps||100;r=Math.min(r,w/2,h/2);const pts=[];const sg=Math.floor(steps/4);
+  function ca(cx,cy,sa,ea){for(let i=0;i<=sg;i++){const t=sa+(i/sg)*(ea-sa);const c=Math.cos(t),s=Math.sin(t);pts.push([cx+r*Math.sign(c)*Math.pow(Math.abs(c),2/mx),cy+r*Math.sign(s)*Math.pow(Math.abs(s),2/ny)]);}}
+  pts.push([x+r,y]);pts.push([x+w-r,y]);ca(x+w-r,y+r,-Math.PI/2,0);pts.push([x+w,y+r]);pts.push([x+w,y+h-r]);ca(x+w-r,y+h-r,0,Math.PI/2);pts.push([x+w-r,y+h]);pts.push([x+r,y+h]);ca(x+r,y+h-r,Math.PI/2,Math.PI);pts.push([x,y+h-r]);pts.push([x,y+r]);ca(x+r,y+r,Math.PI,Math.PI*1.5);
+  return'M'+pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L')+'Z';
+}
+function perCornerRect(x,y,w,h,r,nTR,nBR,nBL,nTL,steps){
+  steps=steps||100;r=Math.min(r,w/2,h/2);const pts=[];const sg=Math.floor(steps/4);
+  function ca(cx,cy,sa,ea,n){for(let i=0;i<=sg;i++){const t=sa+(i/sg)*(ea-sa);const c=Math.cos(t),s=Math.sin(t);pts.push([cx+r*Math.sign(c)*Math.pow(Math.abs(c),2/n),cy+r*Math.sign(s)*Math.pow(Math.abs(s),2/n)]);}}
+  pts.push([x+r,y]);pts.push([x+w-r,y]);ca(x+w-r,y+r,-Math.PI/2,0,nTR);pts.push([x+w,y+r]);pts.push([x+w,y+h-r]);ca(x+w-r,y+h-r,0,Math.PI/2,nBR);pts.push([x+w-r,y+h]);pts.push([x+r,y+h]);ca(x+r,y+h-r,Math.PI/2,Math.PI,nBL);pts.push([x,y+h-r]);pts.push([x,y+r]);ca(x+r,y+r,Math.PI,Math.PI*1.5,nTL);
+  return'M'+pts.map(p=>p[0].toFixed(2)+','+p[1].toFixed(2)).join(' L')+'Z';
+}
+function smRect(x,y,w,h,r,sm){
+  r=Math.min(r,w/2,h/2);const s=sm,p=Math.min(r*(1+s*0.68),Math.min(w/2,h/2)),c1=r*(1-s*0.44),c2=r*(1-s*0.86),a=r*(1-s*0.2);
+  return[`M ${x+p} ${y}`,`L ${x+w-p} ${y}`,`C ${x+w-c1} ${y} ${x+w-c2} ${y} ${x+w-a} ${y}`,`C ${x+w} ${y} ${x+w} ${y} ${x+w} ${y+a}`,`C ${x+w} ${y+c2} ${x+w} ${y+c1} ${x+w} ${y+p}`,`L ${x+w} ${y+h-p}`,`C ${x+w} ${y+h-c1} ${x+w} ${y+h-c2} ${x+w} ${y+h-a}`,`C ${x+w} ${y+h} ${x+w} ${y+h} ${x+w-a} ${y+h}`,`C ${x+w-c2} ${y+h} ${x+w-c1} ${y+h} ${x+w-p} ${y+h}`,`L ${x+p} ${y+h}`,`C ${x+c1} ${y+h} ${x+c2} ${y+h} ${x+a} ${y+h}`,`C ${x} ${y+h} ${x} ${y+h} ${x} ${y+h-a}`,`C ${x} ${y+h-c2} ${x} ${y+h-c1} ${x} ${y+h-p}`,`L ${x} ${y+p}`,`C ${x} ${y+c1} ${x} ${y+c2} ${x} ${y+a}`,`C ${x} ${y} ${x} ${y} ${x+a} ${y}`,`C ${x+c2} ${y} ${x+c1} ${y} ${x+p} ${y}`,'Z'].join(' ');
+}
+
+// ======== PRESETS ========
+const TW=110,TH=79,TP=4;
+const BW=384,BH=274,BP=4;
+
+const presets = [
+  // A
+  {id:'a1',cat:'A',name:'Tense horizontals',ds:'mx=4.5 ny=3.5',c:'#6e8eff',
+   fn:(x,y,w,h)=>asymRect(x,y,w,h,w*0.13,4.5,3.5),
+   apply:()=>{setMode('asym');setSliders({r:13,mx:45,ny:35})}},
+  {id:'a2',cat:'A',name:'Tense verticals',ds:'mx=3.5 ny=4.5',c:'#818cf8',
+   fn:(x,y,w,h)=>asymRect(x,y,w,h,w*0.13,3.5,4.5),
+   apply:()=>{setMode('asym');setSliders({r:13,mx:35,ny:45})}},
+  {id:'a3',cat:'A',name:'Whisper asymmetry',ds:'mx=4.2 ny=3.8',c:'#a78bfa',
+   fn:(x,y,w,h)=>asymRect(x,y,w,h,w*0.12,4.2,3.8),
+   apply:()=>{setMode('asym');setSliders({r:12,mx:42,ny:38})}},
+  {id:'a4',cat:'A',name:'Bold asymmetry',ds:'mx=4.8 ny=3.2',c:'#c084fc',
+   fn:(x,y,w,h)=>asymRect(x,y,w,h,w*0.14,4.8,3.2),
+   apply:()=>{setMode('asym');setSliders({r:14,mx:48,ny:32})}},
+  {id:'a5',cat:'A',name:'Framer twist',ds:'mx=4.3 ny=3.6',c:'#7c3aed',
+   fn:(x,y,w,h)=>asymRect(x,y,w,h,w*0.12,4.3,3.6),
+   apply:()=>{setMode('asym');setSliders({r:12,mx:43,ny:36})}},
+
+  // B
+  {id:'b1',cat:'B',name:'Gravity',ds:'top=3.6 bot=4.4',c:'#22d3ee',
+   fn:(x,y,w,h)=>perCornerRect(x,y,w,h,w*0.12,3.6,4.4,4.4,3.6),
+   apply:()=>{setMode('corner');setSliders({r:12,tr:36,br:44,bl:44,tl:36})}},
+  {id:'b2',cat:'B',name:'Diagonal tension',ds:'↗4.5 ↙3.5',c:'#06b6d4',
+   fn:(x,y,w,h)=>perCornerRect(x,y,w,h,w*0.12,4.5,3.5,4.5,3.5),
+   apply:()=>{setMode('corner');setSliders({r:12,tr:45,br:35,bl:45,tl:35})}},
+  {id:'b3',cat:'B',name:'Leading edge',ds:'L=3.4 R=4.6',c:'#67e8f9',
+   fn:(x,y,w,h)=>perCornerRect(x,y,w,h,w*0.12,4.6,4.6,3.4,3.4),
+   apply:()=>{setMode('corner');setSliders({r:12,tr:46,br:46,bl:34,tl:34})}},
+  {id:'b4',cat:'B',name:'Soft top',ds:'T=3.2 B=4.0',c:'#0891b2',
+   fn:(x,y,w,h)=>perCornerRect(x,y,w,h,w*0.14,3.2,4.0,4.0,3.2),
+   apply:()=>{setMode('corner');setSliders({r:14,tr:32,br:40,bl:40,tl:32})}},
+
+  // C
+  {id:'c1',cat:'C',name:'n = 3.9',ds:'Just below Apple',c:'#4ade80',
+   fn:(x,y,w,h)=>seRect(x,y,w,h,w*0.13,3.9),
+   apply:()=>{setMode('uniform');setSliders({r:13,mx:39})}},
+  {id:'c2',cat:'C',name:'n = 4.15',ds:'Invisible upgrade',c:'#34d399',
+   fn:(x,y,w,h)=>seRect(x,y,w,h,w*0.12,4.15),
+   apply:()=>{setMode('uniform');setSliders({r:12,mx:42})}},
+  {id:'c3',cat:'C',name:'n = 4.35',ds:'Confident flat',c:'#10b981',
+   fn:(x,y,w,h)=>seRect(x,y,w,h,w*0.11,4.35),
+   apply:()=>{setMode('uniform');setSliders({r:11,mx:44})}},
+  {id:'c4',cat:'C',name:'n = 4.6',ds:'Pre-square limit',c:'#059669',
+   fn:(x,y,w,h)=>seRect(x,y,w,h,w*0.10,4.6),
+   apply:()=>{setMode('uniform');setSliders({r:10,mx:46})}},
+
+  // D
+  {id:'d1',cat:'D',name:'Tight + smooth',ds:'r=6% sm=80%',c:'#fbbf24',
+   fn:(x,y,w,h)=>smRect(x,y,w,h,w*0.06,0.8),
+   apply:()=>{setMode('smooth');setSliders({r:6,sm:80})}},
+  {id:'d2',cat:'D',name:'Bold + crisp',ds:'r=18% sm=30%',c:'#f59e0b',
+   fn:(x,y,w,h)=>smRect(x,y,w,h,w*0.18,0.3),
+   apply:()=>{setMode('smooth');setSliders({r:18,sm:30})}},
+  {id:'d3',cat:'D',name:'Medium + full',ds:'r=12% sm=100%',c:'#d97706',
+   fn:(x,y,w,h)=>smRect(x,y,w,h,w*0.12,1.0),
+   apply:()=>{setMode('smooth');setSliders({r:12,sm:100})}},
+];
+
+let selected = 'a3';
+let currentPath = '';
+
+// ======== RENDER ========
+function renderGallery(elId, cat) {
+  const el = document.getElementById(elId);
+  el.innerHTML = presets.filter(p=>p.cat===cat).map(p => {
+    const path = p.fn(TP,TP,TW,TH);
+    return `<div class="card ${p.id===selected?'active':''}" onclick="selectPreset('${p.id}')">
+      <svg width="${TW+8}" height="${TH+8}" viewBox="0 0 ${TW+8} ${TH+8}">
+        <path d="${path}" fill="${p.c}" fill-opacity="0.08" stroke="${p.c}" stroke-width="1.5"/>
+      </svg>
+      <div class="nm">${p.name}</div>
+      <div class="ds">${p.ds}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderBig() {
+  const svg = document.getElementById('big-svg');
+  const mode = document.getElementById('mode-sel').value;
+  const r = +document.getElementById('r-sl').value;
+  const rPx = BW * r / 100;
+
+  let path;
+  if (mode === 'asym') {
+    const mx = +document.getElementById('mx-sl').value / 10;
+    const ny = +document.getElementById('ny-sl').value / 10;
+    path = asymRect(BP, BP, BW, BH, rPx, mx, ny);
+  } else if (mode === 'corner') {
+    const nTR = +document.getElementById('tr-sl').value / 10;
+    const nBR = +document.getElementById('br-sl').value / 10;
+    const nBL = +document.getElementById('bl-sl').value / 10;
+    const nTL = +document.getElementById('tl-sl').value / 10;
+    path = perCornerRect(BP, BP, BW, BH, rPx, nTR, nBR, nBL, nTL);
+  } else if (mode === 'uniform') {
+    const n = +document.getElementById('mx-sl').value / 10;
+    path = seRect(BP, BP, BW, BH, rPx, n);
+  } else {
+    const sm = +document.getElementById('sm-sl').value / 100;
+    path = smRect(BP, BP, BW, BH, rPx, sm);
+  }
+  currentPath = path;
+
+  // Reference
+  let html = `<rect x="${BP}" y="${BP}" width="${BW}" height="${BH}" rx="${rPx}" fill="none" stroke="#333" stroke-width="0.5" stroke-dasharray="4,3"/>`;
+  html += `<path d="${path}" fill="rgba(110,142,255,0.05)" stroke="#6e8eff" stroke-width="2.5"/>`;
+  html += `<text x="${BW/2+BP}" y="${BH/2+BP+4}" text-anchor="middle" font-size="12" fill="#6e8eff" font-family="monospace" opacity="0.4">98 × 70 mm</text>`;
+  html += `<text x="${BW-10}" y="${BH+BP-4}" text-anchor="end" font-size="8" fill="#444" font-family="monospace">dashed = border-radius</text>`;
+  svg.innerHTML = html;
+
+  // Normalized path for copy
+  const normPath = mode === 'asym'
+    ? asymRect(0, 0, 98, 70, 98*r/100, +document.getElementById('mx-sl').value/10, +document.getElementById('ny-sl').value/10)
+    : mode === 'corner'
+    ? perCornerRect(0,0,98,70,98*r/100, +document.getElementById('tr-sl').value/10, +document.getElementById('br-sl').value/10, +document.getElementById('bl-sl').value/10, +document.getElementById('tl-sl').value/10)
+    : mode === 'uniform'
+    ? seRect(0,0,98,70,98*r/100, +document.getElementById('mx-sl').value/10)
+    : smRect(0,0,98,70,98*r/100, +document.getElementById('sm-sl').value/100);
+  document.getElementById('path-box').textContent = normPath;
+
+  // Info
+  let info = `r=${r}%`;
+  if (mode==='asym') info += ` · mx=${(+document.getElementById('mx-sl').value/10).toFixed(1)} · ny=${(+document.getElementById('ny-sl').value/10).toFixed(1)}`;
+  else if (mode==='corner') info += ` · TR=${(+document.getElementById('tr-sl').value/10).toFixed(1)} BR=${(+document.getElementById('br-sl').value/10).toFixed(1)} BL=${(+document.getElementById('bl-sl').value/10).toFixed(1)} TL=${(+document.getElementById('tl-sl').value/10).toFixed(1)}`;
+  else if (mode==='uniform') info += ` · n=${(+document.getElementById('mx-sl').value/10).toFixed(1)}`;
+  else info += ` · smooth=${document.getElementById('sm-sl').value}%`;
+  document.getElementById('info-strip').innerHTML = `<span class="tag">${mode}</span><span class="tag">${info}</span>`;
+}
+
+function renderCompare() {
+  const el = document.getElementById('full-compare');
+  el.innerHTML = presets.map(p => {
+    const sz=70,h=50,pd=4;
+    const path = p.fn(pd,pd,sz,h);
+    return `<div class="cmp-item" onclick="selectPreset('${p.id}')" style="cursor:pointer">
+      <svg width="${sz+8}" height="${h+8}" viewBox="0 0 ${sz+8} ${h+8}"><path d="${path}" fill="${p.c}" fill-opacity="0.1" stroke="${p.c}" stroke-width="1.2"/></svg>
+      <div class="lb">${p.name}</div>
+    </div>`;
+  }).join('');
+}
+
+// ======== UI LOGIC ========
+function setMode(mode) {
+  document.getElementById('mode-sel').value = mode;
+  updateVisibility();
+}
+
+function setSliders(vals) {
+  if (vals.r !== undefined) document.getElementById('r-sl').value = vals.r;
+  if (vals.mx !== undefined) document.getElementById('mx-sl').value = vals.mx;
+  if (vals.ny !== undefined) document.getElementById('ny-sl').value = vals.ny;
+  if (vals.tr !== undefined) document.getElementById('tr-sl').value = vals.tr;
+  if (vals.br !== undefined) document.getElementById('br-sl').value = vals.br;
+  if (vals.bl !== undefined) document.getElementById('bl-sl').value = vals.bl;
+  if (vals.tl !== undefined) document.getElementById('tl-sl').value = vals.tl;
+  if (vals.sm !== undefined) document.getElementById('sm-sl').value = vals.sm;
+  updateLabels();
+}
+
+function updateVisibility() {
+  const mode = document.getElementById('mode-sel').value;
+  document.getElementById('g-mx').style.display = (mode==='asym'||mode==='uniform') ? '' : 'none';
+  document.getElementById('g-ny').style.display = mode==='asym' ? '' : 'none';
+  document.getElementById('g-tr').style.display = mode==='corner' ? '' : 'none';
+  document.getElementById('g-br').style.display = mode==='corner' ? '' : 'none';
+  document.getElementById('g-bl').style.display = mode==='corner' ? '' : 'none';
+  document.getElementById('g-tl').style.display = mode==='corner' ? '' : 'none';
+  document.getElementById('g-sm').style.display = mode==='smooth' ? '' : 'none';
+
+  document.getElementById('mx-label').textContent = mode==='uniform' ? 'Exponent n' : 'Exponent m (horizontal)';
+}
+
+function updateLabels() {
+  document.getElementById('r-v').textContent = document.getElementById('r-sl').value + '%';
+  document.getElementById('mx-v').textContent = (+document.getElementById('mx-sl').value/10).toFixed(1);
+  document.getElementById('ny-v').textContent = (+document.getElementById('ny-sl').value/10).toFixed(1);
+  document.getElementById('tr-v').textContent = (+document.getElementById('tr-sl').value/10).toFixed(1);
+  document.getElementById('br-v').textContent = (+document.getElementById('br-sl').value/10).toFixed(1);
+  document.getElementById('bl-v').textContent = (+document.getElementById('bl-sl').value/10).toFixed(1);
+  document.getElementById('tl-v').textContent = (+document.getElementById('tl-sl').value/10).toFixed(1);
+  document.getElementById('sm-v').textContent = document.getElementById('sm-sl').value + '%';
+}
+
+window.selectPreset = function(id) {
+  selected = id;
+  const p = presets.find(x=>x.id===id);
+  if (p && p.apply) p.apply();
+  renderAll();
+};
+
+function renderAll() {
+  renderGallery('gal-A','A');
+  renderGallery('gal-B','B');
+  renderGallery('gal-C','C');
+  renderGallery('gal-D','D');
+  updateVisibility();
+  updateLabels();
+  renderBig();
+}
+
+function onSliderChange() { updateLabels(); renderBig(); }
+
+['r-sl','mx-sl','ny-sl','tr-sl','br-sl','bl-sl','tl-sl','sm-sl'].forEach(id => {
+  document.getElementById(id).addEventListener('input', onSliderChange);
+});
+document.getElementById('mode-sel').addEventListener('change', () => { updateVisibility(); renderBig(); });
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500);}
+window.copyPath = function(){
+  const box = document.getElementById('path-box');
+  navigator.clipboard.writeText(box.textContent).then(()=>showToast('SVG path copied!'));
+};
+window.copyCSS = function(){
+  const mode = document.getElementById('mode-sel').value;
+  const r = document.getElementById('r-sl').value;
+  let css = `/* Squircle Lab — ${mode} mode */\nborder-radius: ${r}%;\n/* Use clip-path: path("...") with the SVG path */`;
+  navigator.clipboard.writeText(css).then(()=>showToast('CSS copied!'));
+};
+
+// Init
+renderAll();
+renderCompare();
+</script>
+</body>
+</html>

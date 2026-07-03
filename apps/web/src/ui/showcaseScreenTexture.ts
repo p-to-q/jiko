@@ -7,10 +7,13 @@ import {
   type SpriteName,
   type SpriteTone,
 } from "./sprites";
+import { squircleRectPoints } from "./squircleGeometry";
 
 const CANVAS_W = 320;
 const CANVAS_H = 480;
 const TEXTURE_SCALE = 3;
+const SCREEN_CORNER_RADIUS = 29;
+const SCREEN_CORNER_EXPONENT = 3.5;
 const SQUARE = 108;
 const SQUARE_X = (CANVAS_W - SQUARE) / 2;
 const DANCE_TONES: SpriteTone[] = ["yellow", "red", "green"];
@@ -97,7 +100,16 @@ function drawDeviceScreen(
   context.setTransform(TEXTURE_SCALE, 0, 0, TEXTURE_SCALE, 0, 0);
   context.clearRect(0, 0, CANVAS_W, CANVAS_H);
   context.save();
-  roundedRectPath(context, 0, 0, CANVAS_W, CANVAS_H, 29);
+  squircleRectPath(
+    context,
+    0,
+    0,
+    CANVAS_W,
+    CANVAS_H,
+    SCREEN_CORNER_RADIUS,
+    SCREEN_CORNER_EXPONENT,
+    SCREEN_CORNER_EXPONENT,
+  );
   context.clip();
 
   drawPanel(context);
@@ -126,7 +138,16 @@ function drawDeviceScreen(
 
 function drawPanel(context: CanvasRenderingContext2D) {
   context.fillStyle = "#020202";
-  roundedRectPath(context, 0, 0, CANVAS_W, CANVAS_H, 29);
+  squircleRectPath(
+    context,
+    0,
+    0,
+    CANVAS_W,
+    CANVAS_H,
+    SCREEN_CORNER_RADIUS,
+    SCREEN_CORNER_EXPONENT,
+    SCREEN_CORNER_EXPONENT,
+  );
   context.fill();
 
   const top = context.createRadialGradient(160, -42, 0, 160, -42, 142);
@@ -376,6 +397,34 @@ function roundedRectPath(
   context.quadraticCurveTo(x, y + height, x, y + height - r);
   context.lineTo(x, y + r);
   context.quadraticCurveTo(x, y, x + r, y);
+  context.closePath();
+}
+
+function squircleRectPath(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  exponentX: number,
+  exponentY: number,
+) {
+  const points = squircleRectPoints({
+    x,
+    y,
+    width,
+    height,
+    radius,
+    exponentX,
+    exponentY,
+  });
+
+  context.beginPath();
+  context.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach((point) => {
+    context.lineTo(point.x, point.y);
+  });
   context.closePath();
 }
 

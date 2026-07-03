@@ -31,7 +31,6 @@ Use this file for unresolved product and engineering choices. Implementation blo
 - How noisy is the expected demo environment?
 - Do we need Chinese-only, English-only, or mixed-language transcript handling?
 - Which local STT path wins the first spike: FunASR, faster-whisper, whisper.cpp, or MLX Whisper?
-- Does Piper have an acceptable voice for the demo, or should final lines be pre-generated/recorded locally?
 
 ## Reading Logic
 
@@ -43,11 +42,14 @@ Use this file for unresolved product and engineering choices. Implementation blo
 ## Hardware
 
 - Screen dimensions and cable direction.
+- Actual compute board: Raspberry Pi 5, another Pi-class board, or a custom
+  stack that only shares the Pi 5-sized envelope.
 - Whether MPI3508 is using HDMI-only, HDMI plus USB power, or HDMI plus GPIO touch/power.
 - Whether the side record button can use GPIO or needs USB/serial input because the display occupies the header.
 - Battery or wall-powered demo.
-- USB microphone availability.
-- Speaker path.
+- Microphone module type, aperture count, and final top-edge placement.
+- Thermal slot location after the internal heat source is measured.
+- USB-C opening location and cable bend clearance.
 - Final shoulder strap width target.
 - 3D printer material and tolerance.
 

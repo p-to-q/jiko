@@ -1,17 +1,23 @@
 # Hardware Interfaces
 
-This document captures the current Raspberry Pi and display interface assumptions.
+This document captures the current Pi-class prototype and display interface
+assumptions.
 
 ## Current Boards
 
-Confirmed baseline:
+Current prototype-compatible baseline:
 
 - Raspberry Pi 5.
 - MPI3508 3.5-inch display attached to the Raspberry Pi 5.
 
 Possible secondary hardware:
 
-- One Pi-sized display attached to another Pi-class board, exact model not important for the current baseline.
+- One Pi-sized display attached to another Pi-class board, exact model not
+  important for the product baseline.
+
+The product is not required to expose Raspberry Pi 5 ports or board geometry.
+Treat Raspberry Pi 5 as a known demo stack and size/thermal reference. Exterior
+openings should come from product needs and the actual internal stack.
 
 ## Practical Identification
 
@@ -35,7 +41,7 @@ Likely useful interfaces:
 
 - Full-size HDMI for display.
 - 40-pin GPIO for button and simple electronics.
-- USB-A for microphone, keyboard, speaker, or USB audio.
+- USB-A for microphone, keyboard, or USB audio.
 - 3.5mm AV jack for analog audio output.
 - DSI display connector for compatible display panels.
 - CSI camera connector.
@@ -47,7 +53,7 @@ Likely useful interfaces:
 
 - 2 micro-HDMI outputs.
 - 40-pin GPIO for button and simple electronics.
-- USB-A for microphone, keyboard, speaker, or USB audio.
+- USB-A for microphone, keyboard, or USB audio.
 - 3.5mm AV jack for analog audio output.
 - DSI display connector.
 - CSI camera connector.
@@ -59,13 +65,16 @@ Likely useful interfaces:
 
 - Dual HDMI display output through 2 micro-HDMI ports.
 - 40-pin GPIO for button and simple electronics.
-- USB-A for microphone, keyboard, speaker, or USB audio.
+- USB-A for microphone, keyboard, or USB audio.
 - 2 MIPI camera/display FFC connectors.
 - PCIe FFC connector for fast peripherals through an adapter.
 - USB-C power.
 - Physical power button.
 
-Pi 5 is the hardware baseline. It has stricter power and thermal needs than Pi 4-class boards. Plan for active cooling or a ventilated shell if it is enclosed.
+Pi 5 is the current worst-case prototype reference. It has stricter power and
+thermal needs than Pi 4-class boards. Plan for active cooling or a ventilated
+shell if it is enclosed, but do not let Pi 5 port placement define the final
+exterior unless that board is actually installed.
 
 ## MPI3508 Display
 
@@ -90,6 +99,8 @@ Preferred demo path:
 - Treat all screens as one physical display running Chromium kiosk.
 - Render the four-window UI in software.
 - Let the front mask create the multi-screen illusion.
+- Keep final exterior openings independent from Raspberry Pi port locations
+  until the actual internal board, mic, and power path are chosen.
 
 For MPI3508:
 
@@ -117,6 +128,8 @@ If the display only uses HDMI and USB power:
 Before building the shell:
 
 - Confirm whether the MPI3508 is using HDMI only, HDMI plus USB power, or HDMI plus GPIO touch/power.
+- Confirm the actual compute board and whether it is truly Raspberry Pi 5 or
+  only Pi 5-sized.
 - Confirm whether the side button can use GPIO or should be USB/serial.
 - Confirm screen orientation and final UI resolution.
 - Confirm power supply: Pi 5 should use a strong 5V/5A USB-C supply if possible.
