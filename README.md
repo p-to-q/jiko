@@ -1,67 +1,80 @@
-# jiko
+# [jiko]
 
-jiko is a hackathon prototype for a wearable signal device built around a Raspberry Pi 5, one MPI3508 display, a masked four-window hardware shell, laptop-hosted audio/TTS, and three independent readings of a spoken intention.
+**a traffic light for your own thoughts.**
 
-The current working product shape is not a productivity assistant and not a fortune-telling object. It is a small physical signal instrument: it listens to one intention, separates it into text, voice, and timing readings, then reveals whether the readings agree or diverge.
+---
 
-## Repository Status
+jiko is a small physical signal instrument. it listens to one spoken intention, separates it into three independent readings — text, voice, timing — then reveals whether the readings agree or diverge. it does not tell you what to do. the final choice stays with you.
 
-This is a private, internal prototype repository. It is not an open-source project, and no license is granted by default.
+> pre-release · v0.9 · hardware in design · software prototype functional · [site live](https://jiko-nine.vercel.app)
 
-Repo profile: private `micro+`. Keep the repository light: clear thesis, visible artifact, explicit limitations, short docs map, and only the checks we actually run.
+当所有 AI 都抢着给你答案，jiko 偏不——它把你的念头拆成三个信号灯，然后让你自己看。
 
-## Current Direction
+答案太多的年代，克制是一种激进。
 
-- Hardware illusion: one vertical screen behind a 3D-printed front mask, visually split into one narrow top strip and three large stacked signal windows.
-- Hardware baseline: Raspberry Pi 5 with MPI3508 display, used as a kiosk display shell for the hackathon.
-- Input: laptop microphone or USB microphone first; optional side thumb button for hold-to-record hardware feel.
-- Output: Pi screen state changes plus short local TTS announcement from the laptop or connected speaker.
-- Reading layers: text reading, voice reading, timing reading.
-- Result language: maintain / deviate / static, instead of good / bad / correct / wrong.
-- Demo priority: a complete ritual moment beats a complex but fragile AI system.
+## what it is not
 
-## Product Doctrine
+- not an AI assistant.
+- not a decision recommendation engine.
+- not a therapy chatbot or fortune-telling machine.
+- not a traffic light that says stop / go.
 
-jiko should stay legible as an instrument. It can be strange, warm, and alive,
-but it should not become an answer engine, a chatbot, or a decorative companion.
-The core ritual is: say one intention, let the system separate the signals, then
-leave the final choice with the person.
+the device can reveal signal, disagreement, or unanimity. but the interpretive step belongs to the person.
 
-The product has three surfaces, each with a different job:
+## the ritual
 
-- `/?mode=device`: the actual Raspberry Pi / MPI3508 kiosk face.
-- `showcase.html`: a standalone Three.js hardware-material study.
-- `site.html`: the public first-viewport study that embeds the same hardware
-  object inside a quiet framed page.
+1. hold the side button.
+2. speak one intention — "I'm thinking about quitting" or "I may not go tonight."
+3. three windows animate independently; each locks into a signal state.
+4. the top strip shows a short observation.
+5. the device speaks one line, then stops.
 
-These surfaces should share the same product language without sharing fake
-runtime paths. Manual demo controls still need to route through the same event
-protocol as real audio.
+the silence after speech is part of the product. it gives the decision back.
 
-## Two Runtime Paths
+## signal states
 
-The product should share one UI, one state machine, and one reading core across two runtime shells:
+- **maintain** — the reading sees inertia, a return to the familiar path.
+- **deviate** — the reading sees rupture, movement, a break from pattern.
+- **static** — the reading cannot form a stable signal.
 
-- Laptop app path: the compute and audio core for the hackathon. The laptop handles microphone input, local STT, audio feature extraction, local TTS, receipts, and the web app server.
-- Raspberry Pi hardware path: the object shell for the hackathon. The Pi 5 opens the same UI in Chromium kiosk mode on the MPI3508 display; an optional thin hardware adapter can post side-button events back to the laptop server.
+color mapping: red · yellow · green. never good / bad / correct / wrong.
 
-The boundary between the shared core and each runtime adapter is the most important engineering decision in the repo. For this hackathon, Pi-local microphone capture, STT, and TTS are future upgrade paths, not first-success requirements.
+## hardware direction
 
-## Immediate Prototype
+a thick vertical slab — Raspberry Pi 5, MPI3508 display, masked four-window shell, side thumb button. the form borrows from field instruments and compact signal objects. the interaction is quieter and stranger than an assistant.
 
-The immediate prototype should run on a laptop first, with the Pi acting like a small projector/display object:
+current industrial design uses superellipse (squircle) corner geometry. see `docs/form-factor.md` and `docs/hardware-notes.md`.
 
-1. Full-screen web UI with four windows.
-2. Hold-to-record or click-to-record interaction.
-3. Local STT path using desktop models or a local self-hosted service.
-4. Audio feature extraction for volume, silence, speech duration, and rough pitch/energy.
-5. Three reading outputs mapped to red, green, or yellow.
-6. TTS announcement and a short silence afterward.
-7. Pi 5 Chromium kiosk displaying `/?mode=device` from the laptop-hosted web app.
+## three surfaces
 
-The Raspberry Pi path should stay visible and compatible, but it should not block the first audio prototype.
+- `/?mode=device` — the Raspberry Pi kiosk face. the actual instrument.
+- `showcase.html` — a standalone Three.js hardware-material study.
+- `site.html` — the public first-viewport, embedding the hardware object in a quiet framed page.
 
-## Docs
+same product language, no shared fake runtime paths.
+
+## quickstart
+
+```sh
+pnpm install
+pnpm dev:server
+pnpm dev:web
+pnpm demo:urls
+```
+
+trigger a reading without audio:
+
+```sh
+curl -X POST http://localhost:4317/sessions \
+  -H 'content-type: application/json' \
+  -d '{"sessionId":"demo-001","source":"manual"}'
+
+curl -X POST http://localhost:4317/sessions/demo-001/manual-transcript \
+  -H 'content-type: application/json' \
+  -d '{"transcript":"我在考虑辞职，但还想先把这件事说清楚。","language":"zh"}'
+```
+
+## docs
 
 - [Product Brief](docs/product-brief.md)
 - [Engineering Discipline](docs/engineering-discipline.md)
@@ -80,40 +93,17 @@ The Raspberry Pi path should stay visible and compatible, but it should not bloc
 - [Release Versioning](docs/release-versioning.md)
 - [Next Phase Checklist](docs/next-phase-checklist.md)
 - [Open Questions](docs/open-questions.md)
-- [Repository Setup](docs/repository-setup.md)
 
-## Recommended First Build
+## contributing
 
-Build the laptop prototype as a local web app:
+this is an open hardware-design workflow. issues, questions, and design discussions are welcome.
 
-- `apps/web`: Vite + React/TypeScript + Canvas/PixiJS UI.
-- `apps/server`: TypeScript service for recording upload, local transcription, local TTS, and readings.
-- `apps/device`: Raspberry Pi adapter for optional GPIO button events and kiosk boot behavior.
-- `packages/protocol`: shared JSON event and reading schemas.
-- `packages/core`: shared state machine and reading orchestration.
-
-For the hackathon, keep a manual demo control path available. It should only steer the state machine when the room is too noisy or the network fails; the normal path should still run real audio and real readings.
-
-## Current Mock Loop
-
-Run the local backend and web UI:
-
-```sh
-pnpm dev:server
-pnpm dev:web
-pnpm demo:urls
+```
+https://github.com/p-to-q/jiko/issues
 ```
 
-Trigger the first non-audio loop:
+## license
 
-```sh
-curl -X POST http://localhost:4317/sessions \
-  -H 'content-type: application/json' \
-  -d '{"sessionId":"demo-001","source":"manual"}'
+[CC BY-NC-SA 4.0](./LICENSE). you can read, learn, fork, and contribute — but not commercialize.
 
-curl -X POST http://localhost:4317/sessions/demo-001/manual-transcript \
-  -H 'content-type: application/json' \
-  -d '{"transcript":"我在考虑辞职，但还想先把这件事说清楚。","language":"zh"}'
-```
-
-This emits transcript, mock feature, reading, and result events over SSE. The web app listens to `http://localhost:4317/events` by default.
+a [p to q](https://www.ptoq.io/) project.
