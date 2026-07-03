@@ -1,323 +1,369 @@
 import {
   useEffect,
-  useMemo,
   useRef,
-  useState,
-  type Dispatch,
-  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
   type MutableRefObject,
-  type PointerEvent,
-  type SetStateAction,
 } from "react";
 import * as THREE from "three";
-import { DeviceDemo } from "./DeviceDemo";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { createShowcaseScreenTexture } from "./showcaseScreenTexture";
 
-const SCREEN_W = 320;
-const SCREEN_H = 480;
+const SCREEN_ASPECT = 2 / 3;
+const DEFAULT_ROTATION = { x: -0.08, y: -0.22 };
 
-const VARIANTS = {
-  slim: {
-    label: "薄片",
-    depth: 0.24,
-    yaw: -0.1,
-    pitch: 0.035,
-    roll: -0.012,
-  },
-  balanced: {
-    label: "均衡",
-    depth: 0.38,
-    yaw: -0.15,
-    pitch: 0.052,
-    roll: -0.012,
-  },
-  deep: {
-    label: "厚砖",
-    depth: 0.56,
-    yaw: -0.22,
-    pitch: 0.065,
-    roll: -0.016,
-  },
-} as const;
-
-type ShowcaseVariant = keyof typeof VARIANTS;
-type ShowcaseMotion = "idle" | "dance";
 type ViewRotation = { x: number; y: number };
+type DragState = {
+  id: number;
+  startX: number;
+  startY: number;
+  base: ViewRotation;
+};
 
 export function ShowcaseStage() {
-  const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const variant = resolveVariant(params);
-  const motion = resolveMotion(params);
-  const showLabels = params.get("labels") === "1";
-  const screenRef = useRef<HTMLDivElement>(null);
-  const screenScale = useScreenScale(screenRef);
-  const dragRef = useRef<{ id: number; startX: number; startY: number; base: ViewRotation }>();
-  const [view, setView] = useState<ViewRotation>({ x: 0, y: 0 });
-  const screenTransform = resolveScreenTransform(variant, view);
-  const facing = Math.cos(VARIANTS[variant].yaw + view.y) >= 0 ? "front" : "back";
+  const hostRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<HardwareScene>();
+  const rotationRef = useRef<ViewRotation>({ ...DEFAULT_ROTATION });
+  const dragRef = useRef<DragState>();
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) {
+      return;
+    }
+
+    const scene = createHardwareScene(host, (rotation) => {
+      rotationRef.current = rotation;
+    });
+    sceneRef.current = scene;
+    rotationRef.current = scene.getRotation();
+
+    return () => {
+      sceneRef.current = undefined;
+      scene.dispose();
+    };
+  }, []);
+
+  useEffect(() => {
+    const finishPointer = (event: PointerEvent) => {
+      finishDrag(dragRef, sceneRef, event.pointerId);
+    };
+    const finishAnyPointer = () => {
+      finishDrag(dragRef, sceneRef);
+    };
+
+    window.addEventListener("pointerup", finishPointer);
+    window.addEventListener("pointercancel", finishPointer);
+    window.addEventListener("mouseup", finishAnyPointer);
+    window.addEventListener("touchend", finishAnyPointer);
+    window.addEventListener("blur", finishAnyPointer);
+
+    return () => {
+      window.removeEventListener("pointerup", finishPointer);
+      window.removeEventListener("pointercancel", finishPointer);
+      window.removeEventListener("mouseup", finishAnyPointer);
+      window.removeEventListener("touchend", finishAnyPointer);
+      window.removeEventListener("blur", finishAnyPointer);
+    };
+  }, []);
 
   return (
     <main
       className="showcase-stage"
-      data-variant={variant}
-      aria-label="jiko pure hardware showcase"
-      onPointerDown={(event) => beginDrag(event, dragRef, view)}
-      onPointerMove={(event) => updateDrag(event, dragRef, setView)}
-      onPointerUp={(event) => endDrag(event, dragRef)}
-      onPointerCancel={(event) => endDrag(event, dragRef)}
+      aria-label="jiko hardware material showcase"
+      onPointerDown={(event) => beginDrag(event, dragRef, rotationRef, sceneRef)}
+      onPointerMove={(event) => updateDrag(event, dragRef, rotationRef, sceneRef)}
+      onPointerUp={(event) => endDrag(event, dragRef, sceneRef)}
+      onPointerCancel={(event) => endDrag(event, dragRef, sceneRef)}
+      onLostPointerCapture={(event) => endDrag(event, dragRef, sceneRef)}
     >
-      <div className="showcase-text" aria-label="jiko launching soon">
-        <span className="showcase-kicker">JIKO</span>
-        <h1>Launching Soon</h1>
-        <p>an ambient signal instrument for voice, timing, and small decisions</p>
-      </div>
-
-      <div
-        className="showcase-screen-frame"
-        data-facing={facing}
-        ref={screenRef}
-        aria-label="jiko screen"
-        style={{ transform: screenTransform } as CSSProperties}
-      >
-        <HardwareCanvas variant={variant} />
-        <span className="showcase-depth-rim" aria-hidden="true" />
-        <span className="showcase-side-button" aria-hidden="true">
-          <span className="showcase-key-highlight" />
-        </span>
-        <div
-          className="showcase-screen-scale"
-          style={{ transform: `translateZ(28px) scale(${screenScale})` }}
-        >
-          <DeviceDemo embedded demoMode={motion} showLogo={false} />
-        </div>
-      </div>
-
-      {showLabels ? (
-        <div className="showcase-label">
-          <span>jiko</span>
-          <span>{VARIANTS[variant].label}</span>
-        </div>
-      ) : null}
+      <div className="showcase-renderer" ref={hostRef} aria-hidden="true" />
     </main>
   );
 }
 
-function HardwareCanvas({ variant }: { variant: ShowcaseVariant }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+function createHardwareScene(
+  host: HTMLDivElement,
+  onRotationFrame: (rotation: ViewRotation) => void,
+) {
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true,
+    powerPreference: "high-performance",
+  });
+  renderer.setClearColor(0x000000, 0);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.56;
+  host.append(renderer.domElement);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const host = canvas?.parentElement;
-    if (!canvas || !host) {
-      return;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+  camera.position.set(0, 0.04, 9.2);
+
+  const environmentScene = new RoomEnvironment();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const environment = pmrem.fromScene(environmentScene).texture;
+  scene.environment = environment;
+
+  const screenTexture = createShowcaseScreenTexture();
+  const hardware = buildHardware(screenTexture.texture);
+  hardware.rotation.x = DEFAULT_ROTATION.x;
+  hardware.rotation.y = DEFAULT_ROTATION.y;
+  scene.add(hardware);
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x020202, 0.16));
+
+  const key = new THREE.DirectionalLight(0xffffff, 1.32);
+  key.position.set(-3.6, 5.2, 5.4);
+  scene.add(key);
+
+  const rim = new THREE.DirectionalLight(0xd9f1ff, 0.94);
+  rim.position.set(5.5, 1.4, 3.2);
+  scene.add(rim);
+
+  const warmFloor = new THREE.DirectionalLight(0xffb875, 0.42);
+  warmFloor.position.set(-2.2, -3.8, 4.4);
+  scene.add(warmFloor);
+
+  const amberGlance = new THREE.DirectionalLight(0xffc06a, 0.58);
+  amberGlance.position.set(-4.6, 2.2, 3.8);
+  scene.add(amberGlance);
+
+  const resize = () => {
+    const rect = host.getBoundingClientRect();
+    renderer.setSize(rect.width, rect.height, false);
+    camera.aspect = rect.width / Math.max(1, rect.height);
+    camera.position.z = resolveCameraDistance(camera.aspect, camera.fov);
+    camera.updateProjectionMatrix();
+  };
+
+  const observer = new ResizeObserver(resize);
+  observer.observe(host);
+  resize();
+
+  let frameId = 0;
+  let dragging = false;
+  let lastRotation = { x: Number.NaN, y: Number.NaN };
+
+  const render = (time: number) => {
+    screenTexture.update(time);
+
+    if (!dragging) {
+      hardware.rotation.x = THREE.MathUtils.lerp(hardware.rotation.x, DEFAULT_ROTATION.x, 0.018);
     }
 
-    const spec = VARIANTS[variant];
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
-    renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    if (
+      Math.abs(hardware.rotation.x - lastRotation.x) > 0.0002 ||
+      Math.abs(hardware.rotation.y - lastRotation.y) > 0.0002
+    ) {
+      lastRotation = { x: hardware.rotation.x, y: hardware.rotation.y };
+      onRotationFrame(lastRotation);
+    }
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
-    camera.position.set(0, 0.02, 8.35);
+    renderer.render(scene, camera);
+    frameId = window.requestAnimationFrame(render);
+  };
+  frameId = window.requestAnimationFrame(render);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.36));
-
-    const key = new THREE.DirectionalLight(0xffffff, 2.7);
-    key.position.set(-3.9, 5.2, 6.1);
-    scene.add(key);
-
-    const rim = new THREE.DirectionalLight(0xf1d9b8, 2.35);
-    rim.position.set(5.4, -1.3, 4.2);
-    scene.add(rim);
-
-    const side = new THREE.DirectionalLight(0xffffff, 1.4);
-    side.position.set(5.8, 1.2, 1.5);
-    scene.add(side);
-
-    const hardware = buildHardware(spec);
-    scene.add(hardware);
-
-    const resize = () => {
-      const rect = host.getBoundingClientRect();
-      renderer.setSize(rect.width, rect.height, false);
-      camera.aspect = rect.width / Math.max(1, rect.height);
-      camera.updateProjectionMatrix();
-      renderer.render(scene, camera);
-    };
-
-    const observer = new ResizeObserver(resize);
-    observer.observe(host);
-    resize();
-
-    return () => {
+  return {
+    setRotation(rotation: ViewRotation) {
+      hardware.rotation.x = rotation.x;
+      hardware.rotation.y = rotation.y;
+    },
+    getRotation() {
+      return { x: hardware.rotation.x, y: hardware.rotation.y };
+    },
+    setDragging(value: boolean) {
+      dragging = value;
+    },
+    dispose() {
+      window.cancelAnimationFrame(frameId);
       observer.disconnect();
       scene.remove(hardware);
       disposeObject(hardware);
+      screenTexture.dispose();
+      environment.dispose();
+      environmentScene.dispose();
+      pmrem.dispose();
       renderer.dispose();
-    };
-  }, [variant]);
-
-  return (
-    <div className="showcase-hardware-canvas" aria-hidden="true">
-      <canvas ref={canvasRef} />
-    </div>
-  );
+      renderer.domElement.remove();
+    },
+  };
 }
 
-function buildHardware(spec: (typeof VARIANTS)[ShowcaseVariant]) {
-  const group = new THREE.Group();
-  const bodyW = 3.2;
-  const bodyH = 4.8;
-  const radius = 0.34;
-  const bevel = Math.min(0.07, spec.depth * 0.15);
+type HardwareScene = ReturnType<typeof createHardwareScene>;
 
-  const bodyMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x020202,
-    metalness: 0.48,
-    roughness: 0.26,
-    clearcoat: 1,
-    clearcoatRoughness: 0.13,
-    reflectivity: 0.58,
+function resolveCameraDistance(aspect: number, verticalFov: number) {
+  const verticalRadians = THREE.MathUtils.degToRad(verticalFov);
+  const horizontalFitDistance = 3.72 / (2 * Math.tan(verticalRadians / 2) * aspect);
+  return Math.max(9.2, horizontalFitDistance);
+}
+
+function buildHardware(screenTexture: THREE.Texture) {
+  const group = new THREE.Group();
+  const bodyW = 1.82;
+  const bodyH = bodyW / SCREEN_ASPECT;
+  const bodyDepth = 0.15;
+  const bodyRadius = 0.15;
+
+  const shellMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x010101,
+    metalness: 0.22,
+    roughness: 0.58,
+    clearcoat: 0.24,
+    clearcoatRoughness: 0.44,
+    envMapIntensity: 0.12,
+    reflectivity: 0.18,
   });
 
-  const shell = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(roundedRect(bodyW, bodyH, radius), {
-      depth: spec.depth,
+  const body = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(roundedRect(bodyW, bodyH, bodyRadius), {
+      depth: bodyDepth,
       bevelEnabled: true,
-      bevelSize: bevel,
-      bevelThickness: bevel,
+      bevelSize: 0.038,
+      bevelThickness: 0.038,
       bevelSegments: 18,
-      curveSegments: 30,
+      curveSegments: 34,
     }).center(),
-    bodyMaterial,
+    shellMaterial,
   );
-  shell.position.z = -spec.depth * 0.54;
-  group.add(shell);
+  body.castShadow = true;
+  body.receiveShadow = true;
+  group.add(body);
 
-  const faceGlow = new THREE.Mesh(
-    new THREE.ShapeGeometry(roundedRect(bodyW * 0.995, bodyH * 0.995, radius * 0.96)),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.042,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    }),
-  );
-  faceGlow.position.z = spec.depth * 0.055;
-  group.add(faceGlow);
-
-  const topSweep = new THREE.Mesh(
-    new THREE.PlaneGeometry(bodyW * 0.86, bodyH * 0.2),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.05,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    }),
-  );
-  topSweep.position.set(0, bodyH * 0.43, spec.depth * 0.07);
-  group.add(topSweep);
-
-  const rightRim = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.05, bodyH * 0.92),
-    new THREE.MeshBasicMaterial({
-      color: 0xf3dfbf,
-      transparent: true,
-      opacity: 0.18,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    }),
-  );
-  rightRim.position.set(bodyW / 2 - 0.012, 0, spec.depth * 0.08);
-  group.add(rightRim);
-
-  const sideKey = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(roundedRect(0.2, 2.58, 0.055), {
-      depth: 0.18,
-      bevelEnabled: true,
-      bevelSize: 0.018,
-      bevelThickness: 0.018,
-      bevelSegments: 10,
-      curveSegments: 14,
-    }).center(),
+  const backPlate = new THREE.Mesh(
+    new THREE.ShapeGeometry(roundedRect(bodyW * 0.88, bodyH * 0.88, bodyRadius * 0.62)),
     new THREE.MeshPhysicalMaterial({
-      color: 0x2c2c29,
-      metalness: 0.82,
-      roughness: 0.28,
-      clearcoat: 0.58,
-      clearcoatRoughness: 0.2,
-      reflectivity: 0.48,
+      color: 0x020202,
+      metalness: 0.26,
+      roughness: 0.6,
+      clearcoat: 0.2,
+      clearcoatRoughness: 0.44,
+      envMapIntensity: 0.12,
     }),
   );
-  sideKey.position.set(bodyW / 2 + 0.22, -0.03, -spec.depth * 0.09);
-  sideKey.rotation.y = Math.PI * 0.5;
-  group.add(sideKey);
+  backPlate.position.z = -bodyDepth * 0.515;
+  backPlate.rotation.y = Math.PI;
+  group.add(backPlate);
 
-  const sideKeyGlint = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.035, 2.22),
+  const screenW = bodyW * 0.99;
+  const screenH = screenW / SCREEN_ASPECT;
+
+  const screenPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(screenW, screenH),
+    new THREE.MeshBasicMaterial({
+      map: screenTexture,
+      transparent: true,
+      alphaTest: 0.02,
+      toneMapped: false,
+    }),
+  );
+  screenPlane.position.z = bodyDepth * 0.5 + 0.052;
+  group.add(screenPlane);
+
+  const screenLip = new THREE.Mesh(
+    new THREE.ShapeGeometry(roundedRect(screenW * 1.02, screenH * 1.012, 0.18)),
     new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.012,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     }),
   );
-  sideKeyGlint.position.set(bodyW / 2 + 0.32, -0.03, 0.015);
-  group.add(sideKeyGlint);
+  screenLip.position.z = bodyDepth * 0.5 + 0.057;
+  group.add(screenLip);
 
-  group.scale.setScalar(0.72);
+  const sideButton = buildSideButton(bodyW, bodyH, bodyDepth);
+  group.add(sideButton);
+
+  const baseShadow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.6, 72),
+    new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.38,
+      depthWrite: false,
+    }),
+  );
+  baseShadow.position.set(0.18, -2.28, -0.19);
+  baseShadow.scale.set(1.45, 0.24, 1);
+  group.add(baseShadow);
+
+  group.scale.setScalar(0.9);
   return group;
 }
 
-function resolveScreenTransform(variant: ShowcaseVariant, view: ViewRotation) {
-  const spec = VARIANTS[variant];
-  return [
-    "perspective(1400px)",
-    `rotateX(${toDeg(spec.pitch + view.x)})`,
-    `rotateY(${toDeg(spec.yaw + view.y)})`,
-    `rotateZ(${toDeg(spec.roll + Math.sin(view.y) * 0.012)})`,
-  ].join(" ");
-}
+function buildSideButton(bodyW: number, bodyH: number, bodyDepth: number) {
+  const side = new THREE.Group();
+  const buttonMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x070707,
+    metalness: 0.32,
+    roughness: 0.58,
+    clearcoat: 0.22,
+    clearcoatRoughness: 0.42,
+    envMapIntensity: 0.12,
+    reflectivity: 0.18,
+  });
 
-function toDeg(radians: number) {
-  return `${radians * (180 / Math.PI)}deg`;
+  const rail = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(roundedRect(0.12, bodyH * 0.46, 0.045), {
+      depth: 0.16,
+      bevelEnabled: true,
+      bevelSize: 0.018,
+      bevelThickness: 0.018,
+      bevelSegments: 12,
+      curveSegments: 16,
+    }).center(),
+    buttonMaterial,
+  );
+  rail.rotation.y = Math.PI * 0.5;
+  rail.position.set(bodyW * 0.575, 0.18, bodyDepth * 0.1);
+  side.add(rail);
+
+  const glint = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.018, bodyH * 0.34),
+    new THREE.MeshBasicMaterial({
+      color: 0xffcf8a,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    }),
+  );
+  glint.position.set(bodyW * 0.62, 0.22, bodyDepth * 0.2);
+  side.add(glint);
+
+  return side;
 }
 
 function beginDrag(
-  event: PointerEvent<HTMLElement>,
-  dragRef: MutableRefObject<
-    { id: number; startX: number; startY: number; base: ViewRotation } | undefined
-  >,
-  view: ViewRotation,
+  event: ReactPointerEvent<HTMLElement>,
+  dragRef: MutableRefObject<DragState | undefined>,
+  rotationRef: MutableRefObject<ViewRotation>,
+  sceneRef: MutableRefObject<HardwareScene | undefined>,
 ) {
   if (event.button !== 0) {
     return;
   }
 
   event.currentTarget.setPointerCapture(event.pointerId);
+  rotationRef.current = sceneRef.current?.getRotation() ?? rotationRef.current;
+  sceneRef.current?.setDragging(true);
   dragRef.current = {
     id: event.pointerId,
     startX: event.clientX,
     startY: event.clientY,
-    base: view,
+    base: { ...rotationRef.current },
   };
 }
 
 function updateDrag(
-  event: PointerEvent<HTMLElement>,
-  dragRef: MutableRefObject<
-    { id: number; startX: number; startY: number; base: ViewRotation } | undefined
-  >,
-  setView: Dispatch<SetStateAction<ViewRotation>>,
+  event: ReactPointerEvent<HTMLElement>,
+  dragRef: MutableRefObject<DragState | undefined>,
+  rotationRef: MutableRefObject<ViewRotation>,
+  sceneRef: MutableRefObject<HardwareScene | undefined>,
 ) {
   const drag = dragRef.current;
   if (!drag || drag.id !== event.pointerId) {
@@ -325,58 +371,41 @@ function updateDrag(
   }
 
   const next = {
-    x: clamp(drag.base.x - (event.clientY - drag.startY) / 160, -0.65, 0.65),
-    y: drag.base.y + (event.clientX - drag.startX) / 110,
+    x: clamp(drag.base.x + (event.clientY - drag.startY) / 170, -0.78, 0.78),
+    y: drag.base.y + (event.clientX - drag.startX) / 115,
   };
-  setView(next);
+  rotationRef.current = next;
+  sceneRef.current?.setDragging(true);
+  sceneRef.current?.setRotation(next);
 }
 
 function endDrag(
-  event: PointerEvent<HTMLElement>,
-  dragRef: MutableRefObject<
-    { id: number; startX: number; startY: number; base: ViewRotation } | undefined
-  >,
+  event: ReactPointerEvent<HTMLElement>,
+  dragRef: MutableRefObject<DragState | undefined>,
+  sceneRef: MutableRefObject<HardwareScene | undefined>,
 ) {
-  if (dragRef.current?.id === event.pointerId) {
-    dragRef.current = undefined;
+  finishDrag(dragRef, sceneRef, event.pointerId);
+}
+
+function finishDrag(
+  dragRef: MutableRefObject<DragState | undefined>,
+  sceneRef: MutableRefObject<HardwareScene | undefined>,
+  pointerId?: number,
+) {
+  if (!dragRef.current) {
+    return;
   }
+
+  if (pointerId !== undefined && dragRef.current.id !== pointerId) {
+    return;
+  }
+
+  dragRef.current = undefined;
+  sceneRef.current?.setDragging(false);
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function useScreenScale(ref: React.RefObject<HTMLDivElement>) {
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) {
-      return;
-    }
-
-    const update = () => {
-      const rect = element.getBoundingClientRect();
-      setScale(Math.min(rect.width / SCREEN_W, rect.height / SCREEN_H));
-    };
-
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    update();
-
-    return () => observer.disconnect();
-  }, [ref]);
-
-  return scale;
-}
-
-function resolveVariant(params: URLSearchParams): ShowcaseVariant {
-  const value = params.get("variant");
-  return value === "slim" || value === "deep" || value === "balanced" ? value : "balanced";
-}
-
-function resolveMotion(params: URLSearchParams): ShowcaseMotion {
-  return params.get("motion") === "idle" ? "idle" : "dance";
 }
 
 function roundedRect(width: number, height: number, radius: number) {
@@ -413,5 +442,7 @@ function disposeMaterial(material: THREE.Material | THREE.Material[]) {
     return;
   }
 
+  const mapped = material as THREE.Material & { map?: THREE.Texture | null };
+  mapped.map?.dispose();
   material.dispose();
 }

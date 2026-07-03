@@ -29,6 +29,17 @@ requests at `http://<same-laptop-ip>:4317` unless `VITE_API_URL` is set.
 If Vite reports a different port because `5173` is already in use, use that
 printed port for the Pi kiosk URL.
 
+For hardware-rendering review on the laptop, open:
+
+```text
+http://localhost:5173/showcase.html
+```
+
+`showcase.html` is a visual study surface. It renders the hardware body in
+Three.js and maps the animated 320 x 480 device face onto the front as a live
+canvas texture. It is not the kiosk URL for the Pi; use `/?mode=device` for the
+actual MPI3508 display path.
+
 Find the laptop IP on the shared network:
 
 ```sh

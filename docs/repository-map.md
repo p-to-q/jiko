@@ -5,7 +5,10 @@ This map should stay short. It explains where things go without turning the repo
 ## Active Files
 
 - `README.md`: entrypoint, current direction, and docs map.
-- `apps/web`: Vite/React MPI3508 UI preview. It renders one 320 x 480 device canvas with black outside-page space and layered screen/mask surfaces.
+- `apps/web`: Vite/React MPI3508 UI preview. The main app renders one
+  320 x 480 device canvas for Pi/kiosk use, and `showcase.html` renders a
+  Three.js hardware study with the device face attached as a live canvas
+  texture rather than a DOM overlay.
 - `apps/server`: local backend with HTTP commands, SSE events, manual transcript loop, audio upload, ffmpeg normalization, first-pass audio features, local STT/TTS adapter boundaries, shared readings, and dev receipts.
 - `packages/protocol`: shared Zod schemas and TypeScript types for session events, readings, features, transcripts, results, and receipts.
 - `packages/core`: shared session reducer and result composer.
