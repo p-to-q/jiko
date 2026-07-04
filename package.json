@@ -12,6 +12,9 @@
     "typecheck": "pnpm --recursive --if-present typecheck"
   },
   "packageManager": "pnpm@9.15.0",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1"
+  },
   "devDependencies": {
     "typescript": "^5.5.4"
   }
