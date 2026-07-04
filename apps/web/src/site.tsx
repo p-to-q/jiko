@@ -272,6 +272,36 @@ function Site() {
       window.clearTimeout(fallbackTimer);
     };
   }, [beginSiteReveal]);
+  // Idle nudge: flash waitlist arrow circle green to remind user about waitlist
+  React.useEffect(() => {
+    if (!revealReady || waitlistOpen) return;
+
+    const nudgeIntervals = [8000, 6000, 4000];
+    const steadyInterval = 8000;
+    let round = 0;
+    let timer: number | undefined;
+
+    function scheduleNudge() {
+      const delay = round < nudgeIntervals.length ? nudgeIntervals[round] : steadyInterval;
+      timer = window.setTimeout(() => {
+        const circle = document.querySelector<HTMLElement>(".site-waitlist-arrow-circle");
+        if (!circle) return;
+
+        circle.classList.add("nudge");
+
+        const cleanup = () => {
+          circle.classList.remove("nudge");
+          circle.removeEventListener("animationend", cleanup);
+          round++;
+          scheduleNudge();
+        };
+        circle.addEventListener("animationend", cleanup, { once: true });
+      }, delay);
+    }
+
+    scheduleNudge();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [revealReady, waitlistOpen]);
   const beginFrameBottomArrows = React.useCallback(() => {
     freeWillHoverState.hovering = true;
 
@@ -811,16 +841,11 @@ function WaitlistArrowIcon() {
     <svg
       className="site-waitlist-arrow-icon"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
+      fill="currentColor"
       focusable="false"
       aria-hidden="true"
     >
-      <path d="M12 19V5" />
-      <path d="m5 12 7-7 7 7" />
+      <path d="M11 4.17a1 1 0 0 1 1.41 0l6.72 6.71a1 1 0 0 1-1.42 1.42L13 7.59V19a1 1 0 1 1-2 0V7.59L6.29 12.3a1 1 0 0 1-1.42-1.42L11 4.17Z" />
     </svg>
   );
 }
