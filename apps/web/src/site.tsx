@@ -276,31 +276,41 @@ function Site() {
   React.useEffect(() => {
     if (!revealReady || waitlistOpen) return;
 
+    // Wait for waitlist bar to fully expand (start delay 1.45s + unfold 1.8s)
+    const expandCompleteMs = 3300;
     const nudgeIntervals = [8000, 6000, 4000];
     const steadyInterval = 8000;
     let round = 0;
     let timer: number | undefined;
 
-    function scheduleNudge() {
-      const delay = round < nudgeIntervals.length ? nudgeIntervals[round] : steadyInterval;
-      timer = window.setTimeout(() => {
-        const circle = document.querySelector<HTMLElement>(".site-waitlist-arrow-circle");
-        if (!circle) return;
+    function triggerNudge() {
+      const circle = document.querySelector<HTMLElement>(".site-waitlist-arrow-circle");
+      if (!circle) return;
 
-        circle.classList.add("nudge");
+      circle.classList.add("nudge");
 
-        const cleanup = () => {
-          circle.classList.remove("nudge");
-          circle.removeEventListener("animationend", cleanup);
-          round++;
-          scheduleNudge();
-        };
-        circle.addEventListener("animationend", cleanup, { once: true });
-      }, delay);
+      const cleanup = () => {
+        circle.classList.remove("nudge");
+        circle.removeEventListener("animationend", cleanup);
+        round++;
+        scheduleNudge();
+      };
+      circle.addEventListener("animationend", cleanup, { once: true });
     }
 
-    scheduleNudge();
-    return () => { if (timer) window.clearTimeout(timer); };
+    function scheduleNudge() {
+      const delay = round < nudgeIntervals.length ? nudgeIntervals[round] : steadyInterval;
+      timer = window.setTimeout(triggerNudge, delay);
+    }
+
+    // First nudge right after expand completes
+    timer = window.setTimeout(triggerNudge, expandCompleteMs);
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      const circle = document.querySelector<HTMLElement>(".site-waitlist-arrow-circle");
+      if (circle) circle.classList.remove("nudge");
+    };
   }, [revealReady, waitlistOpen]);
   const beginFrameBottomArrows = React.useCallback(() => {
     freeWillHoverState.hovering = true;

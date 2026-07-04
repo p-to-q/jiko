@@ -147,11 +147,11 @@
 
 @keyframes waitlist-arrow-nudge {
   0%, 100% { border-color: currentColor; color: currentColor; }
-  8%, 28% { border-color: #79bf72; color: #79bf72; }
-  36%, 44% { border-color: currentColor; color: currentColor; }
-  52%, 72% { border-color: #79bf72; color: #79bf72; }
-  80%, 88% { border-color: currentColor; color: currentColor; }
-  92% { border-color: #79bf72; color: #79bf72; }
+  5%, 25% { border-color: #79bf72; color: #79bf72; }
+  33%, 37% { border-color: currentColor; color: currentColor; }
+  42%, 62% { border-color: #79bf72; color: #79bf72; }
+  70%, 74% { border-color: currentColor; color: currentColor; }
+  79%, 95% { border-color: #79bf72; color: #79bf72; }
 }
 
 .site-waitlist-arrow-circle.nudge {
