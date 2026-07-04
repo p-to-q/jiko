@@ -545,7 +545,6 @@
   padding: 0;
   color: var(--site-waitlist-ink);
   caret-color: var(--site-waitlist-hover);
-  caret-shape: block;
   background: transparent;
   outline: 0;
   font-family:
