@@ -89,6 +89,64 @@ function startFrameDotDepart(dot: HTMLSpanElement, flight: FrameDotFlight, start
   };
 }
 
+function startFrameDotFlyThrough(dot: HTMLSpanElement, flight: FrameDotFlight, delay = 0) {
+  const arrow = getFrameDotArrow(dot);
+  if (!arrow || prefersReducedSiteMotion()) {
+    return;
+  }
+
+  // Cancel any existing animations
+  if (flight.approachTimer) {
+    window.clearTimeout(flight.approachTimer);
+    flight.approachTimer = undefined;
+  }
+  flight.approachAnim?.cancel();
+  flight.departAnim?.cancel();
+
+  flight.approachTimer = window.setTimeout(() => {
+    flight.approachTimer = undefined;
+    flight.phase = "depart";
+
+    // Step 1: current arrow exits upward
+    flight.departAnim = arrow.animate(
+      [
+        { transform: frameDotArrowTransform(frameDotArrowMotion.centerY), opacity: 1 },
+        { transform: frameDotArrowTransform(frameDotArrowMotion.exitY), opacity: 0 },
+      ],
+      {
+        duration: 220,
+        easing: frameDotArrowMotion.easing,
+        fill: "forwards",
+      },
+    );
+
+    flight.departAnim.onfinish = () => {
+      flight.departAnim = undefined;
+      flight.phase = "approach";
+
+      // Step 2: new arrow enters from below and settles at center
+      flight.approachAnim = arrow.animate(
+        [
+          { transform: frameDotArrowTransform(frameDotArrowMotion.startY), opacity: 0 },
+          { transform: frameDotArrowTransform(frameDotArrowMotion.centerY), opacity: 1 },
+        ],
+        {
+          duration: 280,
+          easing: frameDotArrowMotion.easing,
+          fill: "forwards",
+        },
+      );
+
+      flight.approachAnim.onfinish = () => {
+        flight.approachAnim = undefined;
+        flight.phase = "centered";
+        arrow.style.transform = frameDotArrowTransform(frameDotArrowMotion.centerY);
+        arrow.style.opacity = "1";
+      };
+    };
+  }, delay);
+}
+
 function startFrameDotApproach(dot: HTMLSpanElement, flight: FrameDotFlight, delay = 0) {
   const arrow = getFrameDotArrow(dot);
   if (!arrow) {
@@ -168,6 +226,16 @@ function Site() {
         freeWillRef.current.style.filter = "";
       }
     }, 1200);
+
+    // Fly-through arrows on each click
+    const leftDot = frameBottomDotLeftRef.current;
+    const rightDot = frameBottomDotRightRef.current;
+    if (leftDot) {
+      startFrameDotFlyThrough(leftDot, frameDotFlightsRef.current.left, 0);
+    }
+    if (rightDot) {
+      startFrameDotFlyThrough(rightDot, frameDotFlightsRef.current.right, frameDotArrowMotion.rightDelayMs);
+    }
 
     // Screen shake every click
     const frame = document.querySelector(".site-frame") as HTMLElement | null;
