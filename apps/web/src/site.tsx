@@ -151,12 +151,14 @@ function Site() {
         }
 
         const result: unknown = await response.json().catch(() => undefined);
-        const nextCount = objectValue(result)?.waitlistCount;
-        if (typeof nextCount === "number") {
-          applyWaitlistCount(nextCount, setWaitlistCount);
+        const payload = objectValue(result);
+        const parsedCount = Number(payload?.waitlistCount);
+
+        if (Number.isInteger(parsedCount) && parsedCount >= 0) {
+          applyWaitlistCount(parsedCount, setWaitlistCount);
         } else if (isLocalWaitlistPreview()) {
           applyLocalWaitlistFallback(setWaitlistCount);
-        } else {
+        } else if (payload?.ok !== true) {
           setWaitlistStatus("error");
           return;
         }
@@ -364,8 +366,14 @@ function formatWaitlistLabel(count: number): string {
 }
 
 function normalizeWaitlistInput(value: string): string | undefined {
-  const normalizedValue = value.trim().replace(/\s+/g, " ").toLowerCase();
-  if (!normalizedValue || normalizedValue.length > 254 || /[\u0000-\u001f\u007f]/.test(normalizedValue)) {
+  const normalizedValue = value
+    .trim()
+    .replace(/^mailto:/i, "")
+    .replace(/[\u0000-\u001f\u007f\u200b-\u200d\ufeff]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+
+  if (!normalizedValue || normalizedValue.length > 254) {
     return undefined;
   }
 

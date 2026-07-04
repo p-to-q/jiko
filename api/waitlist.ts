@@ -190,8 +190,14 @@ function stringValue(value: unknown): string | undefined {
 }
 
 function normalizeWaitlistInput(value: string | undefined): string | undefined {
-  const normalizedValue = value?.trim().replace(/\s+/g, " ").toLowerCase();
-  if (!normalizedValue || normalizedValue.length > 254 || /[\u0000-\u001f\u007f]/.test(normalizedValue)) {
+  const normalizedValue = value
+    ?.trim()
+    .replace(/^mailto:/i, "")
+    .replace(/[\u0000-\u001f\u007f\u200b-\u200d\ufeff]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+
+  if (!normalizedValue || normalizedValue.length > 254) {
     return undefined;
   }
 
