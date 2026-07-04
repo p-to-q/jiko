@@ -146,15 +146,15 @@
 }
 
 @keyframes waitlist-arrow-nudge {
-  0%, 100% { border-color: currentColor; color: currentColor; }
-  5%, 25% { border-color: #79bf72; color: #79bf72; }
-  33%, 37% { border-color: currentColor; color: currentColor; }
-  42%, 62% { border-color: #79bf72; color: #79bf72; }
-  70%, 74% { border-color: currentColor; color: currentColor; }
-  79%, 95% { border-color: #79bf72; color: #79bf72; }
+  0%, 100% { background: var(--site-waitlist-fill); color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent); }
+  5%, 25% { background: #79bf72; color: #1f1e1a; }
+  33%, 37% { background: var(--site-waitlist-fill); color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent); }
+  42%, 62% { background: #79bf72; color: #1f1e1a; }
+  70%, 74% { background: var(--site-waitlist-fill); color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent); }
+  79%, 95% { background: #79bf72; color: #1f1e1a; }
 }
 
-.site-waitlist-arrow-circle.nudge {
+.site-waitlist-front-right.nudge {
   animation: waitlist-arrow-nudge 2.4s ease;
 }
 
@@ -526,6 +526,10 @@
   transition:
     border-color 180ms ease,
     color 180ms ease;
+}
+
+.site-waitlist-front-right.nudge .site-waitlist-arrow-circle {
+  transition: none;
 }
 
 .site-waitlist[data-state="idle"] .site-waitlist-front:hover .site-waitlist-front-right,

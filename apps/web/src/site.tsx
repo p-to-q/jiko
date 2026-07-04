@@ -276,26 +276,26 @@ function Site() {
   React.useEffect(() => {
     if (!revealReady || waitlistOpen) return;
 
-    // Wait for waitlist bar to fully expand (start delay 1.45s + unfold 1.8s)
-    const expandCompleteMs = 3300;
+    // Wait for waitlist bar to fully expand (start delay 1.45s + unfold 1.8s) + 1s extra
+    const expandCompleteMs = 4300;
     const nudgeIntervals = [8000, 6000, 4000];
     const steadyInterval = 8000;
     let round = 0;
     let timer: number | undefined;
 
     function triggerNudge() {
-      const circle = document.querySelector<HTMLElement>(".site-waitlist-arrow-circle");
-      if (!circle) return;
+      const btn = document.querySelector<HTMLElement>(".site-waitlist-front-right");
+      if (!btn) return;
 
-      circle.classList.add("nudge");
+      btn.classList.add("nudge");
 
       const cleanup = () => {
-        circle.classList.remove("nudge");
-        circle.removeEventListener("animationend", cleanup);
+        btn.classList.remove("nudge");
+        btn.removeEventListener("animationend", cleanup);
         round++;
         scheduleNudge();
       };
-      circle.addEventListener("animationend", cleanup, { once: true });
+      btn.addEventListener("animationend", cleanup, { once: true });
     }
 
     function scheduleNudge() {
@@ -308,8 +308,8 @@ function Site() {
 
     return () => {
       if (timer) window.clearTimeout(timer);
-      const circle = document.querySelector<HTMLElement>(".site-waitlist-arrow-circle");
-      if (circle) circle.classList.remove("nudge");
+      const btn = document.querySelector<HTMLElement>(".site-waitlist-front-right");
+      if (btn) btn.classList.remove("nudge");
     };
   }, [revealReady, waitlistOpen]);
   const beginFrameBottomArrows = React.useCallback(() => {
