@@ -48,7 +48,7 @@ current industrial design uses superellipse (squircle) corner geometry. see `doc
 ## three surfaces
 
 - `https://jiko.ptoq.io/` — canonical public website.
-- `https://jiko-showcase.vercel.app/` — Vercel fallback / frontend deployment URL.
+- `https://jiko-eosin.vercel.app/` — Vercel fallback / frontend deployment URL.
 - `/?mode=device` — the Raspberry Pi kiosk face. the actual instrument.
 - `showcase.html` — a standalone Three.js hardware-material study.
 - `site.html` — the public first-viewport, embedding the hardware object in a quiet framed page.
