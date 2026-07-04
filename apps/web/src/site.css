@@ -99,11 +99,11 @@
 }
 
 .site-frame-accent-left {
-  left: calc(var(--site-frame-triangle) * -1);
+  left: calc(var(--site-frame-triangle) * -1 + 2px);
 }
 
 .site-frame-accent-right {
-  right: calc(var(--site-frame-triangle) * -1);
+  right: calc(var(--site-frame-triangle) * -1 + 2px);
 }
 
 .site-frame-accent svg {
