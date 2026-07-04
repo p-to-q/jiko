@@ -545,6 +545,7 @@
   padding: 0;
   color: var(--site-waitlist-ink);
   caret-color: var(--site-waitlist-hover);
+  caret-shape: block;
   background: transparent;
   outline: 0;
   font-family:
@@ -561,6 +562,10 @@
 .site-waitlist-control input::placeholder {
   color: color-mix(in srgb, var(--site-waitlist-ink) 52%, transparent);
   opacity: 1;
+}
+
+.site-waitlist-control input:placeholder-shown {
+  caret-shape: auto;
 }
 
 .site-waitlist-control input:focus {
