@@ -155,8 +155,35 @@ function Site() {
     left: { phase: "idle" },
     right: { phase: "idle" },
   });
+  const comboRef = React.useRef({ count: 0, timer: 0 });
+  const freeWillRef = React.useRef<HTMLButtonElement>(null);
   const triggerCelebration = React.useCallback(() => {
     window.dispatchEvent(new Event("jiko:celebrate"));
+    const combo = comboRef.current;
+    combo.count++;
+    clearTimeout(combo.timer);
+    combo.timer = window.setTimeout(() => {
+      combo.count = 0;
+      if (freeWillRef.current) {
+        freeWillRef.current.style.filter = "";
+      }
+    }, 1200);
+
+    // Screen shake every click
+    const frame = document.querySelector(".site-frame") as HTMLElement | null;
+    if (frame) {
+      const intensity = Math.min(1 + combo.count * 0.4, 4);
+      frame.style.setProperty("--shake-intensity", `${intensity}px`);
+      frame.classList.remove("site-shaking");
+      void frame.offsetWidth; // force reflow to restart animation
+      frame.classList.add("site-shaking");
+    }
+
+    // Blur "free will" — animate toward target blur
+    if (combo.count >= 2 && freeWillRef.current) {
+      const targetBlur = Math.min((combo.count - 1) * 1.2, 8);
+      freeWillRef.current.style.filter = `blur(${targetBlur}px)`;
+    }
   }, []);
   const beginSiteReveal = React.useCallback(() => {
     if (revealStartedRef.current) {
@@ -435,6 +462,7 @@ function Site() {
               <button
                 className="site-free-will"
                 type="button"
+                ref={freeWillRef}
                 onPointerEnter={beginFrameBottomArrows}
                 onPointerLeave={releaseFrameBottomArrows}
                 onFocus={(event) => {
@@ -554,34 +582,23 @@ function Site() {
             </div>
           </div>
         </form>
-        <div className="site-project-credit" aria-label="a p to q project">
+        <a
+          className="site-project-credit"
+          href="https://www.ptoq.io/"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="a p to q project"
+        >
           <span className="site-project-credit-sequence">
-            <a
-              className="site-project-credit-a"
-              href="https://github.com/p-to-q/jiko"
-              target="_blank"
-              rel="noreferrer"
-            >
-              a
-            </a>
-            <a
+            <span className="site-project-credit-a">a</span>
+            <span
               className="site-project-credit-logo site-project-credit-logo-reveal"
-              href="https://www.ptoq.io/"
-              target="_blank"
-              rel="noreferrer"
               style={ptoqLogoStyle}
               aria-label="[p to q]"
             />
-            <a
-              className="site-project-credit-project"
-              href="https://www.ptoq.io/work#jiko"
-              target="_blank"
-              rel="noreferrer"
-            >
-              project
-            </a>
+            <span className="site-project-credit-project">project</span>
           </span>
-        </div>
+        </a>
       </section>
     </main>
   );

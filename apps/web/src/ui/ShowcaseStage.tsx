@@ -35,10 +35,11 @@ const IDLE_ROTATION_POINTS: ViewRotation[] = [
 const CELEBRATION_DURATION_MS = 3600;
 const CELEBRATION_TURNS = Math.PI * 4;
 const CELEBRATION_EVENT = "jiko:celebrate";
-const COMBO_LIFT_PER_CLICK = 0.15;
-const COMBO_MAX_LIFT = 1.2;
-const COMBO_DESCEND_DELAY = 500;
-const DESCEND_DURATION_MS = 800;
+const COMBO_LIFT_PER_CLICK = 0.2;
+const COMBO_MAX_LIFT = 2.0;
+const COMBO_DESCEND_DELAY = 600;
+const DESCEND_DURATION_MS = 420;
+const HOVER_PAUSE_MS = 400; // pause at top before descending
 
 type ViewRotation = { x: number; y: number };
 type DragState = {
@@ -48,7 +49,7 @@ type DragState = {
   base: ViewRotation;
 };
 type CelebrationSpin = {
-  phase: "combo" | "descend";
+  phase: "combo" | "hover" | "descend";
   start: number;
   fromX: number;
   fromY: number;
@@ -229,10 +230,15 @@ function createHardwareScene(
           envelope;
         const lift = envelope;
 
+        // Smoothly rise toward targetLift from wherever we started
+        const riseProgress = clamp((time - celebrationSpin.start) / 400, 0, 1);
+        const riseEased = 1 - Math.pow(1 - riseProgress, 3);
+        const currentLift = celebrationSpin.fromPositionY + (celebrationSpin.targetLift - celebrationSpin.fromPositionY) * riseEased;
+
         hardware.rotation.x = celebrationSpin.fromX - lift * 0.12 + pop * 0.24;
         hardware.rotation.y = celebrationSpin.fromY +
           celebrationSpin.direction * CELEBRATION_TURNS * eased;
-        hardware.position.y = celebrationSpin.baseY + celebrationSpin.targetLift * (1 - Math.pow(1 - clamp((time - celebrationSpin.start) / 300, 0, 1), 3)) + bob + pop;
+        hardware.position.y = currentLift + bob + pop;
 
         if (progress >= 1) {
           const normalizedY = normalizeRotationY(hardware.rotation.y);
@@ -243,22 +249,44 @@ function createHardwareScene(
           idlePausedUntil = 0;
           celebrationSpin = undefined;
         }
-      } else {
-        // descend phase — "天神下凡"
-        const progress = clamp((time - celebrationSpin.start) / DESCEND_DURATION_MS, 0, 1);
-        // ease-in then bounce at bottom
-        const eased = progress < 0.7
-          ? Math.pow(progress / 0.7, 2) * 0.7
-          : 0.7 + (1 - Math.pow(1 - (progress - 0.7) / 0.3, 3)) * 0.3;
-        const bounce = progress > 0.85
-          ? Math.sin((progress - 0.85) / 0.15 * Math.PI) * -0.04 * (1 - progress) / 0.15
-          : 0;
-        const sway = Math.sin(progress * Math.PI * 3) * 0.02 * (1 - progress);
-
-        hardware.position.y = celebrationSpin.fromPositionY * (1 - eased) + bounce;
-        hardware.rotation.y += sway;
+      } else if (celebrationSpin.phase === "hover") {
+        // Hover pause — slight tension wobble at the top before falling
+        const progress = clamp((time - celebrationSpin.start) / HOVER_PAUSE_MS, 0, 1);
+        const wobble = Math.sin(progress * Math.PI * 4) * 0.015 * (1 - progress);
+        hardware.position.y = celebrationSpin.fromPositionY + wobble;
+        // Slight rotation tension
+        hardware.rotation.x += Math.sin(progress * Math.PI * 3) * 0.003;
 
         if (progress >= 1) {
+          celebrationSpin = {
+            ...celebrationSpin,
+            phase: "descend",
+            start: performance.now(),
+            fromPositionY: celebrationSpin.fromPositionY,
+          };
+        }
+      } else {
+        // descend phase — "天神下凡"
+        const bounceDuration = 800;
+        const totalDuration = DESCEND_DURATION_MS + bounceDuration;
+        const elapsed = time - celebrationSpin.start;
+        const fallProgress = clamp(elapsed / DESCEND_DURATION_MS, 0, 1);
+        // Heavy gravity: nearly free-fall
+        const fallEased = Math.pow(fallProgress, 3.2);
+        // Bounce: ball-bounce style (always upward, never below ground)
+        const bounceElapsed = elapsed - DESCEND_DURATION_MS;
+        const bounceT = clamp(bounceElapsed / bounceDuration, 0, 1);
+        const bounce = bounceElapsed > 0
+          ? Math.abs(Math.sin(bounceT * Math.PI * 3)) * 0.25 * Math.pow(1 - bounceT, 2)
+          : 0;
+        const sway = Math.sin(fallProgress * Math.PI * 2) * 0.02 * (1 - fallProgress);
+
+        const height = celebrationSpin.fromPositionY * (1 - fallEased);
+        hardware.position.y = celebrationSpin.baseY + Math.max(0, height) + bounce;
+        hardware.rotation.y += sway * 0.016;
+
+        const totalProgress = clamp(elapsed / totalDuration, 0, 1);
+        if (totalProgress >= 1) {
           hardware.position.y = celebrationSpin.baseY;
           const normalizedY = normalizeRotationY(hardware.rotation.y);
           hardware.rotation.y = normalizedY;
@@ -323,17 +351,23 @@ function createHardwareScene(
     celebrateSpin() {
       const now = performance.now();
 
-      if (celebrationSpin && celebrationSpin.phase === "combo") {
-        // Combo: increment lift with diminishing returns
+      if (celebrationSpin && (celebrationSpin.phase === "combo" || celebrationSpin.phase === "hover")) {
+        // Combo: increment lift with diminishing returns (only lift after 3 clicks)
+        if (celebrationSpin.phase === "hover") {
+          celebrationSpin.phase = "combo";
+        }
         celebrationSpin.comboCount++;
-        const diminish = 1 / (1 + celebrationSpin.comboCount * 0.3);
-        celebrationSpin.targetLift = Math.min(
-          celebrationSpin.targetLift + COMBO_LIFT_PER_CLICK * diminish,
-          COMBO_MAX_LIFT,
-        );
+        if (celebrationSpin.comboCount > 2) {
+          const diminish = 1 / (1 + (celebrationSpin.comboCount - 2) * 0.15);
+          celebrationSpin.targetLift = Math.min(
+            celebrationSpin.targetLift + COMBO_LIFT_PER_CLICK * diminish,
+            COMBO_MAX_LIFT,
+          );
+        }
         celebrationSpin.start = now;
         celebrationSpin.fromX = hardware.rotation.x;
         celebrationSpin.fromY = hardware.rotation.y;
+        celebrationSpin.fromPositionY = hardware.position.y;
         celebrationSpin.direction = Math.random() < 0.5 ? -1 : 1;
         celebrationSpin.pop = randomBetween(0.1, 0.16);
         celebrationSpin.bobPhase = randomBetween(0, Math.PI * 2);
@@ -346,7 +380,7 @@ function createHardwareScene(
           fromY: hardware.rotation.y,
           fromPositionY: hardware.position.y,
           baseY: 0,
-          targetLift: COMBO_LIFT_PER_CLICK,
+          targetLift: 0,
           comboCount: 1,
           direction: Math.random() < 0.5 ? -1 : 1,
           bobAmplitude: randomBetween(0.12, 0.19),
@@ -360,12 +394,14 @@ function createHardwareScene(
       // Reset descend timer
       if (descendTimer) clearTimeout(descendTimer);
       descendTimer = window.setTimeout(() => {
-        if (celebrationSpin && celebrationSpin.phase === "combo") {
+        if (celebrationSpin && celebrationSpin.phase === "combo" && celebrationSpin.comboCount > 2) {
+          // Snap to stable height, enter hover pause before descend
+          hardware.position.y = celebrationSpin.targetLift;
           celebrationSpin = {
             ...celebrationSpin,
-            phase: "descend",
+            phase: "hover",
             start: performance.now(),
-            fromPositionY: hardware.position.y,
+            fromPositionY: celebrationSpin.targetLift,
           };
         }
       }, COMBO_DESCEND_DELAY);
