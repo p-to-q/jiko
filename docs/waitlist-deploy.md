@@ -10,17 +10,20 @@ The public site stores waitlist signups through a Vercel Function and Neon Postg
 
 ## Vercel env
 
-Set these on the `jiko-showcase` project:
+The `jiko` Vercel project (team `moapachas-projects`) gets its database from the
+Vercel-native Neon integration: the `jiko-mailing-list` store is connected to the
+project and injects `DATABASE_URL` (plus `POSTGRES_URL` and friends) into
+production, preview, and development automatically — no manual env setup needed.
 
-- `DATABASE_URL` — Neon connection string
-- `WAITLIST_BASE_COUNT` — optional display offset (default `0`)
+- `DATABASE_URL` — injected by the Neon store connection
+- `WAITLIST_BASE_COUNT` — optional display offset (default `0`), set manually if wanted
 
 ## Verify after deploy
 
 ```sh
-curl https://jiko-showcase.vercel.app/api/waitlist
+curl https://jiko.ptoq.io/api/waitlist
 
-curl -X POST https://jiko-showcase.vercel.app/api/waitlist \
+curl -X POST https://jiko.ptoq.io/api/waitlist \
   -H 'content-type: application/json' \
   -d '{"email":"test@example.com","source":"site"}'
 ```
