@@ -7,20 +7,184 @@ import "./styles.css";
 import "./showcase.css";
 import "./site.css";
 
+const waitlistCountStorageKey = "jiko.waitlistCount";
+
 function Site() {
   const ptoqLogoStyle = {
     "--ptoq-logo": `url(${ptoqLogo})`,
   } as React.CSSProperties;
-  const lastCelebrationAtRef = React.useRef(0);
+  const [email, setEmail] = React.useState("");
+  const [waitlistOpen, setWaitlistOpen] = React.useState(false);
+  const [waitlistStatus, setWaitlistStatus] = React.useState<"idle" | "pending" | "success" | "error">("idle");
+  const [waitlistCount, setWaitlistCount] = React.useState(readInitialWaitlistCount);
+  const [waitlistSuccessText, setWaitlistSuccessText] = React.useState("YOU'RE IN!");
+  const waitlistLabel = formatWaitlistLabel(waitlistCount);
+  const waitlistInputRef = React.useRef<HTMLInputElement>(null);
   const triggerCelebration = React.useCallback(() => {
-    const now = performance.now();
-    if (now - lastCelebrationAtRef.current < 140) {
+    window.dispatchEvent(new Event("jiko:celebrate"));
+  }, []);
+  React.useEffect(() => {
+    if (!waitlistOpen || waitlistStatus === "success") {
       return;
     }
 
-    lastCelebrationAtRef.current = now;
-    window.dispatchEvent(new Event("jiko:celebrate"));
+    const focusTimer = window.setTimeout(() => {
+      waitlistInputRef.current?.focus();
+    }, 520);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+    };
+  }, [waitlistOpen, waitlistStatus]);
+  React.useEffect(() => {
+    if (waitlistStatus !== "success") {
+      return;
+    }
+
+    setWaitlistSuccessText("YOU'RE IN!");
+
+    const thankYouTimer = window.setTimeout(() => {
+      setWaitlistSuccessText("THANK YOU!!");
+    }, 820);
+    const successTimer = window.setTimeout(() => {
+      setWaitlistOpen(false);
+      setWaitlistStatus("idle");
+      setWaitlistSuccessText("YOU'RE IN!");
+    }, 1850);
+
+    return () => {
+      window.clearTimeout(thankYouTimer);
+      window.clearTimeout(successTimer);
+    };
+  }, [waitlistStatus]);
+  React.useEffect(() => {
+    if (waitlistStatus !== "error") {
+      return;
+    }
+
+    const errorTimer = window.setTimeout(() => {
+      setWaitlistStatus("idle");
+    }, 1500);
+
+    return () => {
+      window.clearTimeout(errorTimer);
+    };
+  }, [waitlistStatus]);
+  React.useEffect(() => {
+    let isCurrent = true;
+
+    async function loadWaitlistCount() {
+      try {
+        const response = await fetch("/api/waitlist", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const result: unknown = await response.json().catch(() => undefined);
+        const nextCount = objectValue(result)?.waitlistCount;
+        if (isCurrent) {
+          applyWaitlistCount(nextCount, setWaitlistCount);
+        }
+      } catch {
+        // Local Vite previews do not serve Vercel functions; keep the last known count.
+      }
+    }
+
+    void loadWaitlistCount();
+
+    return () => {
+      isCurrent = false;
+    };
   }, []);
+  const submitWaitlist = React.useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (!waitlistOpen) {
+        setWaitlistOpen(true);
+        return;
+      }
+
+      if (waitlistStatus === "pending") {
+        return;
+      }
+
+      const normalizedEmail = normalizeWaitlistInput(email);
+      if (!normalizedEmail) {
+        setWaitlistStatus("error");
+        return;
+      }
+      const hasValidEmailFormat = isValidWaitlistEmail(normalizedEmail);
+
+      setWaitlistStatus("pending");
+
+      try {
+        const response = await fetch("/api/waitlist", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            source: "site",
+          }),
+        });
+
+        if (!response.ok) {
+          if (isLocalWaitlistPreview()) {
+            completeWaitlistSubmission({
+              hasValidEmailFormat,
+              setWaitlistCount,
+              setWaitlistStatus,
+              setEmail,
+              usePreviewFallback: true,
+            });
+            return;
+          }
+
+          setWaitlistStatus("error");
+          return;
+        }
+
+        const result: unknown = await response.json().catch(() => undefined);
+        const nextCount = objectValue(result)?.waitlistCount;
+        if (typeof nextCount === "number") {
+          applyWaitlistCount(nextCount, setWaitlistCount);
+        } else if (isLocalWaitlistPreview()) {
+          applyLocalWaitlistFallback(setWaitlistCount);
+        } else {
+          setWaitlistStatus("error");
+          return;
+        }
+
+        completeWaitlistSubmission({
+          hasValidEmailFormat,
+          setWaitlistCount,
+          setWaitlistStatus,
+          setEmail,
+          usePreviewFallback: false,
+        });
+      } catch {
+        if (isLocalWaitlistPreview()) {
+          completeWaitlistSubmission({
+            hasValidEmailFormat,
+            setWaitlistCount,
+            setWaitlistStatus,
+            setEmail,
+            usePreviewFallback: true,
+          });
+          return;
+        }
+
+        setWaitlistStatus("error");
+      }
+    },
+    [email, waitlistOpen, waitlistStatus],
+  );
 
   return (
     <main className="site-shell" aria-label="jiko official site study">
@@ -35,6 +199,8 @@ function Site() {
             <path d="M 0 1.8 L 0 36 L 34.2 36 Q 35.2 36 35.65 35.1 Q 36 34.2 35.3 33.5 L 2.5 0.7 Q 1.8 0 0.9 0.35 Q 0 0.8 0 1.8 Z" />
           </svg>
         </span>
+        <span className="site-frame-bottom-dot site-frame-bottom-dot-left" aria-hidden="true" />
+        <span className="site-frame-bottom-dot site-frame-bottom-dot-right" aria-hidden="true" />
         <div className="site-hero-copy">
           <h1>
             <span className="site-title-line site-title-line-brand">
@@ -55,19 +221,7 @@ function Site() {
               <button
                 className="site-free-will"
                 type="button"
-                onPointerDown={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  event.currentTarget.blur();
-                  triggerCelebration();
-                }}
-                onPointerUp={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  triggerCelebration();
-                }}
                 onClick={(event) => {
-                  event.preventDefault();
                   event.stopPropagation();
                   triggerCelebration();
                 }}
@@ -81,6 +235,101 @@ function Site() {
         <div className="site-hardware-stage" aria-label="jiko hardware">
           <ShowcaseStage surface="embedded" />
         </div>
+        <form
+          className="site-waitlist"
+          data-open={waitlistOpen ? "true" : "false"}
+          data-state={waitlistStatus}
+          aria-label="Join the jiko waitlist"
+          noValidate
+          onSubmit={submitWaitlist}
+        >
+          <label className="site-waitlist-label" htmlFor="site-waitlist-email">
+            Email
+          </label>
+          <div className="site-waitlist-flip">
+            <div className="site-waitlist-face site-waitlist-face-front" aria-hidden={waitlistOpen}>
+              <button
+                className="site-waitlist-front"
+                type="button"
+                tabIndex={waitlistOpen ? -1 : 0}
+                onClick={() => {
+                  setWaitlistOpen(true);
+                  setWaitlistStatus("idle");
+                }}
+                aria-label={waitlistLabel}
+              >
+                <span className="site-waitlist-front-left">
+                  <span className="site-waitlist-marquee" aria-hidden="true">
+                    <span>{waitlistLabel}</span>
+                    <span>{waitlistLabel}</span>
+                    <span>{waitlistLabel}</span>
+                  </span>
+                </span>
+                <span className="site-waitlist-front-right">
+                  <span className="site-waitlist-arrow-circle" aria-hidden="true">
+                    <span className="site-waitlist-arrow-track">
+                      <WaitlistArrowIcon />
+                      <WaitlistArrowIcon />
+                    </span>
+                  </span>
+                </span>
+              </button>
+            </div>
+            <div className="site-waitlist-face site-waitlist-face-back">
+              {waitlistStatus === "success" ? (
+                <div className="site-waitlist-success" role="status">
+                  <span className="site-waitlist-success-left">{waitlistSuccessText}</span>
+                  <span className="site-waitlist-success-right" aria-hidden="true">
+                    <span className="site-waitlist-arrow-circle">
+                      <WaitlistArrowIcon />
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <div className="site-waitlist-control">
+                  <input
+                    id="site-waitlist-email"
+                    name="email"
+                    ref={waitlistInputRef}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    enterKeyHint="send"
+                    placeholder="ENTER YOUR EMAIL"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      if (waitlistStatus !== "pending") {
+                        setWaitlistStatus("idle");
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      event.currentTarget.form?.requestSubmit();
+                    }}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={waitlistStatus === "pending"}
+                    aria-label={waitlistLabel}
+                  >
+                    <span className="site-waitlist-arrow-track" aria-hidden="true">
+                      <WaitlistArrowIcon />
+                      <WaitlistArrowIcon />
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </form>
         <div className="site-project-credit" aria-label="a p to q project">
           <a href="https://github.com/p-to-q/jiko" target="_blank" rel="noreferrer">
             a
@@ -99,6 +348,130 @@ function Site() {
         </div>
       </section>
     </main>
+  );
+}
+
+function objectValue(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function formatWaitlistLabel(count: number): string {
+  return `JOIN WAITLIST WITH ${count} TASTEFUL PEOPLE`;
+}
+
+function normalizeWaitlistInput(value: string): string | undefined {
+  const normalizedValue = value.trim().replace(/\s+/g, " ").toLowerCase();
+  if (!normalizedValue || normalizedValue.length > 254 || /[\u0000-\u001f\u007f]/.test(normalizedValue)) {
+    return undefined;
+  }
+
+  return normalizedValue;
+}
+
+function isValidWaitlistEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function isLocalWaitlistPreview(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const hostname = window.location.hostname;
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+function completeWaitlistSubmission({
+  hasValidEmailFormat,
+  setWaitlistCount,
+  setWaitlistStatus,
+  setEmail,
+  usePreviewFallback,
+}: {
+  hasValidEmailFormat: boolean;
+  setWaitlistCount: React.Dispatch<React.SetStateAction<number>>;
+  setWaitlistStatus: React.Dispatch<React.SetStateAction<"idle" | "pending" | "success" | "error">>;
+  setEmail: React.Dispatch<React.SetStateAction<string>>;
+  usePreviewFallback: boolean;
+}): void {
+  if (usePreviewFallback) {
+    applyLocalWaitlistFallback(setWaitlistCount);
+  }
+
+  setWaitlistStatus(hasValidEmailFormat ? "success" : "error");
+  if (hasValidEmailFormat) {
+    setEmail("");
+  }
+}
+
+function readInitialWaitlistCount(): number {
+  if (typeof window === "undefined") {
+    return 0;
+  }
+
+  try {
+    const storedValue = Number(window.localStorage.getItem(waitlistCountStorageKey));
+    return Number.isInteger(storedValue) && storedValue >= 0 ? storedValue : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function applyWaitlistCount(
+  value: unknown,
+  setCount: React.Dispatch<React.SetStateAction<number>>,
+): void {
+  const nextCount = Number(value);
+  if (!Number.isInteger(nextCount) || nextCount < 0) {
+    return;
+  }
+
+  writeStoredWaitlistCount(nextCount);
+  setCount(nextCount);
+}
+
+function writeStoredWaitlistCount(count: number): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(waitlistCountStorageKey, String(count));
+  } catch {
+    // Count caching is only a display convenience.
+  }
+}
+
+function applyLocalWaitlistFallback(
+  setCount: React.Dispatch<React.SetStateAction<number>>,
+): void {
+  setCount((currentCount) => {
+    const fallbackCount = currentCount + 1;
+    writeStoredWaitlistCount(fallbackCount);
+    return fallbackCount;
+  });
+}
+
+function WaitlistArrowIcon() {
+  return (
+    <svg
+      className="site-waitlist-arrow-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      focusable="false"
+      aria-hidden="true"
+    >
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </svg>
   );
 }
 

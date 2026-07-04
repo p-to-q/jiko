@@ -599,31 +599,42 @@ function syncRearOverlayDepth(mesh: THREE.Mesh, material: THREE.Material) {
 
 function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   const port = new THREE.Group();
-  const bottomY = -bodyH * 0.5 - 0.008;
+  const bottomY = -bodyH * 0.5 - 0.004;
   const portZ = 0;
+  const frontChinY = -bodyH * 0.5 + 0.034;
+  const frontZ = bodyDepth * 0.505;
 
   const recessMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x101316,
-    metalness: 0.36,
-    roughness: 0.54,
-    clearcoat: 0.12,
-    clearcoatRoughness: 0.58,
-    envMapIntensity: 0.18,
+    color: 0x242a31,
+    metalness: 0.42,
+    roughness: 0.48,
+    clearcoat: 0.18,
+    clearcoatRoughness: 0.46,
+    envMapIntensity: 0.28,
     side: THREE.DoubleSide,
   });
   const portInteriorMaterial = new THREE.MeshBasicMaterial({
-    color: 0x000000,
+    color: 0x040608,
     transparent: true,
-    opacity: 0.94,
+    opacity: 0.98,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
   const portLipMaterial = new THREE.MeshBasicMaterial({
-    color: 0xaeb8c8,
+    color: 0xd8e2ee,
     transparent: true,
-    opacity: 0.14,
+    opacity: 0.34,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
+  const frontRimMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x9aa6b5,
+    metalness: 0.62,
+    roughness: 0.34,
+    clearcoat: 0.24,
+    clearcoatRoughness: 0.38,
+    envMapIntensity: 0.42,
     side: THREE.DoubleSide,
   });
 
@@ -675,12 +686,74 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   lip.position.set(0, bottomY - 0.003, portZ + 0.002);
   port.add(lip);
 
-  const lowerEdgeReveal = new THREE.Mesh(
-    new THREE.ShapeGeometry(roundedRect(0.22, 0.018, 0.009)),
+  const frontRim = new THREE.Mesh(
+    new THREE.ShapeGeometry(
+      squircleRect(
+        0.36,
+        0.052,
+        DETAIL_CORNER.radius * 1.35,
+        DETAIL_CORNER.exponent,
+        DETAIL_CORNER.exponent,
+      ),
+    ),
+    frontRimMaterial,
+  );
+  frontRim.position.set(0, frontChinY, frontZ);
+  port.add(frontRim);
+
+  const frontMouth = new THREE.Mesh(
+    new THREE.ShapeGeometry(
+      squircleRect(
+        0.24,
+        0.028,
+        DETAIL_CORNER.radius,
+        DETAIL_CORNER.exponent,
+        DETAIL_CORNER.exponent,
+      ),
+    ),
     portInteriorMaterial,
   );
-  lowerEdgeReveal.position.set(0, -bodyH * 0.5 + 0.012, bodyDepth * 0.515);
-  port.add(lowerEdgeReveal);
+  frontMouth.position.set(0, frontChinY - 0.001, frontZ + 0.0015);
+  port.add(frontMouth);
+
+  const frontTongue = new THREE.Mesh(
+    new THREE.ShapeGeometry(
+      squircleRect(
+        0.1,
+        0.012,
+        DETAIL_CORNER.radius * 0.75,
+        DETAIL_CORNER.exponent,
+        DETAIL_CORNER.exponent,
+      ),
+    ),
+    new THREE.MeshBasicMaterial({
+      color: 0x050607,
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    }),
+  );
+  frontTongue.position.set(0, frontChinY - 0.002, frontZ + 0.0025);
+  port.add(frontTongue);
+
+  const frontHighlight = new THREE.Mesh(
+    new THREE.ShapeGeometry(roundedRect(0.3, 0.006, 0.002)),
+    new THREE.MeshBasicMaterial({
+      color: 0xe8f0f8,
+      transparent: true,
+      opacity: 0.22,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+    }),
+  );
+  frontHighlight.position.set(0, frontChinY + 0.018, frontZ + 0.002);
+  port.add(frontHighlight);
+
+  port.children.forEach((child) => {
+    child.renderOrder = 6;
+  });
 
   return port;
 }

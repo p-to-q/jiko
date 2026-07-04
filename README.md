@@ -8,9 +8,9 @@ jiko is a small physical signal instrument. it listens to one spoken intention, 
 
 > pre-release · v0.9 · hardware in design · software prototype functional · [site live](https://jiko.ptoq.io)
 
-当所有 AI 都抢着给你答案，jiko 偏不——它把你的念头拆成三个信号灯，然后让你自己看。
+When every AI rushes to give you an answer, jiko refuses — it splits your thought into three signal lights, and leaves you to read them.
 
-答案太多的年代，克制是一种激进。
+In an age of too many answers, restraint is radical.
 
 ## what it is not
 
@@ -73,7 +73,7 @@ curl -X POST http://localhost:4317/sessions \
 
 curl -X POST http://localhost:4317/sessions/demo-001/manual-transcript \
   -H 'content-type: application/json' \
-  -d '{"transcript":"我在考虑辞职，但还想先把这件事说清楚。","language":"zh"}'
+  -d '{"transcript":"I am thinking about quitting, but I still want to say this clearly first.","language":"en"}'
 ```
 
 ## docs
@@ -90,6 +90,7 @@ curl -X POST http://localhost:4317/sessions/demo-001/manual-transcript \
 - [Hardware Notes](docs/hardware-notes.md)
 - [Hardware Interfaces](docs/hardware-interfaces.md)
 - [Showcase Design Decisions](docs/showcase-design-decisions.md)
+- [Waitlist Deploy](docs/waitlist-deploy.md)
 - [Demo Runbook](docs/demo-runbook.md)
 - [Repository Map](docs/repository-map.md)
 - [Release Versioning](docs/release-versioning.md)

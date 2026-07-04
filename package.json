@@ -14,5 +14,8 @@
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
     "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0"
   }
 }
