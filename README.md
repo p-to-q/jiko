@@ -6,7 +6,7 @@
 
 jiko is a small physical signal instrument. it listens to one spoken intention, separates it into three independent readings — text, voice, timing — then reveals whether the readings agree or diverge. it does not tell you what to do. the final choice stays with you.
 
-> pre-release · v0.9 · hardware in design · software prototype functional · [site live](https://jiko-nine.vercel.app)
+> pre-release · v0.9 · hardware in design · software prototype functional · [site live](https://jiko.ptoq.io)
 
 当所有 AI 都抢着给你答案，jiko 偏不——它把你的念头拆成三个信号灯，然后让你自己看。
 
@@ -47,6 +47,8 @@ current industrial design uses superellipse (squircle) corner geometry. see `doc
 
 ## three surfaces
 
+- `https://jiko.ptoq.io/` — canonical public website.
+- `https://jiko-showcase.vercel.app/` — Vercel fallback / frontend deployment URL.
 - `/?mode=device` — the Raspberry Pi kiosk face. the actual instrument.
 - `showcase.html` — a standalone Three.js hardware-material study.
 - `site.html` — the public first-viewport, embedding the hardware object in a quiet framed page.
