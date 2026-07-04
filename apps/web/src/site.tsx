@@ -8,6 +8,7 @@ import "./showcase.css";
 import "./site.css";
 
 const waitlistCountStorageKey = "jiko.waitlistCount";
+const waitlistJoinedStorageKey = "jiko.waitlistJoined";
 
 const siteRevealTiming = {
   hardwarePauseMs: 480,
@@ -275,6 +276,10 @@ function Site() {
   // Idle nudge: flash waitlist arrow circle green to remind user about waitlist
   React.useEffect(() => {
     if (!revealReady || waitlistOpen) return;
+
+    try {
+      if (window.localStorage.getItem(waitlistJoinedStorageKey)) return;
+    } catch {}
 
     // Wait for waitlist bar to fully expand (start delay 1.45s + unfold 1.8s) + 1s extra
     const expandCompleteMs = 4300;
@@ -776,6 +781,9 @@ function completeWaitlistSubmission({
   setWaitlistStatus(hasValidEmailFormat ? "success" : "error");
   if (hasValidEmailFormat) {
     setEmail("");
+    try {
+      window.localStorage.setItem(waitlistJoinedStorageKey, "1");
+    } catch {}
   }
 }
 
