@@ -35,6 +35,10 @@ const IDLE_ROTATION_POINTS: ViewRotation[] = [
 const CELEBRATION_DURATION_MS = 3600;
 const CELEBRATION_TURNS = Math.PI * 4;
 const CELEBRATION_EVENT = "jiko:celebrate";
+const COMBO_LIFT_PER_CLICK = 0.15;
+const COMBO_MAX_LIFT = 1.2;
+const COMBO_DESCEND_DELAY = 500;
+const DESCEND_DURATION_MS = 800;
 
 type ViewRotation = { x: number; y: number };
 type DragState = {
@@ -44,10 +48,14 @@ type DragState = {
   base: ViewRotation;
 };
 type CelebrationSpin = {
+  phase: "combo" | "descend";
   start: number;
   fromX: number;
   fromY: number;
   fromPositionY: number;
+  baseY: number;
+  targetLift: number;
+  comboCount: number;
   direction: -1 | 1;
   bobAmplitude: number;
   bobPhase: number;
@@ -204,34 +212,61 @@ function createHardwareScene(
   let nextIdleTurnAt = performance.now() + 1800;
   let idlePausedUntil = 0;
   let celebrationSpin: CelebrationSpin | undefined;
+  let descendTimer: number | undefined;
 
   const render = (time: number) => {
     screenTexture.update(time);
 
     if (celebrationSpin && !dragging) {
-      const progress = clamp((time - celebrationSpin.start) / CELEBRATION_DURATION_MS, 0, 1);
-      const eased = easeInOutBezier(progress);
-      const envelope = Math.sin(progress * Math.PI);
-      const popProgress = clamp((time - celebrationSpin.start) / 340, 0, 1);
-      const pop = Math.sin(popProgress * Math.PI) * celebrationSpin.pop;
-      const bob = Math.sin(progress * Math.PI * 6 + celebrationSpin.bobPhase) *
-        celebrationSpin.bobAmplitude *
-        envelope;
-      const lift = envelope;
+      if (celebrationSpin.phase === "combo") {
+        const progress = clamp((time - celebrationSpin.start) / CELEBRATION_DURATION_MS, 0, 1);
+        const eased = easeInOutBezier(progress);
+        const envelope = Math.sin(progress * Math.PI);
+        const popProgress = clamp((time - celebrationSpin.start) / 340, 0, 1);
+        const pop = Math.sin(popProgress * Math.PI) * celebrationSpin.pop;
+        const bob = Math.sin(progress * Math.PI * 6 + celebrationSpin.bobPhase) *
+          celebrationSpin.bobAmplitude *
+          envelope;
+        const lift = envelope;
 
-      hardware.rotation.x = celebrationSpin.fromX - lift * 0.12 + pop * 0.24;
-      hardware.rotation.y = celebrationSpin.fromY +
-        celebrationSpin.direction * CELEBRATION_TURNS * eased;
-      hardware.position.y = celebrationSpin.fromPositionY + bob + pop;
+        hardware.rotation.x = celebrationSpin.fromX - lift * 0.12 + pop * 0.24;
+        hardware.rotation.y = celebrationSpin.fromY +
+          celebrationSpin.direction * CELEBRATION_TURNS * eased;
+        hardware.position.y = celebrationSpin.baseY + celebrationSpin.targetLift * (1 - Math.pow(1 - clamp((time - celebrationSpin.start) / 300, 0, 1), 3)) + bob + pop;
 
-      if (progress >= 1) {
-        const normalizedY = normalizeRotationY(hardware.rotation.y);
-        hardware.rotation.y = normalizedY;
-        hardware.position.y = celebrationSpin.fromPositionY;
-        idleTarget = nextIdleRotation({ x: hardware.rotation.x, y: normalizedY });
-        nextIdleTurnAt = time + randomBetween(1200, 2200);
-        idlePausedUntil = 0;
-        celebrationSpin = undefined;
+        if (progress >= 1) {
+          const normalizedY = normalizeRotationY(hardware.rotation.y);
+          hardware.rotation.y = normalizedY;
+          hardware.position.y = celebrationSpin.baseY;
+          idleTarget = nextIdleRotation({ x: hardware.rotation.x, y: normalizedY });
+          nextIdleTurnAt = time + randomBetween(1200, 2200);
+          idlePausedUntil = 0;
+          celebrationSpin = undefined;
+        }
+      } else {
+        // descend phase — "天神下凡"
+        const progress = clamp((time - celebrationSpin.start) / DESCEND_DURATION_MS, 0, 1);
+        // ease-in then bounce at bottom
+        const eased = progress < 0.7
+          ? Math.pow(progress / 0.7, 2) * 0.7
+          : 0.7 + (1 - Math.pow(1 - (progress - 0.7) / 0.3, 3)) * 0.3;
+        const bounce = progress > 0.85
+          ? Math.sin((progress - 0.85) / 0.15 * Math.PI) * -0.04 * (1 - progress) / 0.15
+          : 0;
+        const sway = Math.sin(progress * Math.PI * 3) * 0.02 * (1 - progress);
+
+        hardware.position.y = celebrationSpin.fromPositionY * (1 - eased) + bounce;
+        hardware.rotation.y += sway;
+
+        if (progress >= 1) {
+          hardware.position.y = celebrationSpin.baseY;
+          const normalizedY = normalizeRotationY(hardware.rotation.y);
+          hardware.rotation.y = normalizedY;
+          idleTarget = nextIdleRotation({ x: hardware.rotation.x, y: normalizedY });
+          nextIdleTurnAt = time + randomBetween(1200, 2200);
+          idlePausedUntil = 0;
+          celebrationSpin = undefined;
+        }
       }
     } else if (!dragging) {
       if (time >= nextIdleTurnAt) {
@@ -287,21 +322,59 @@ function createHardwareScene(
     },
     celebrateSpin() {
       const now = performance.now();
-      celebrationSpin = {
-        start: now,
-        fromX: hardware.rotation.x,
-        fromY: hardware.rotation.y,
-        fromPositionY: hardware.position.y,
-        direction: Math.random() < 0.5 ? -1 : 1,
-        bobAmplitude: randomBetween(0.12, 0.19),
-        bobPhase: randomBetween(0, Math.PI * 2),
-        pop: randomBetween(0.1, 0.16),
-      };
+
+      if (celebrationSpin && celebrationSpin.phase === "combo") {
+        // Combo: increment lift with diminishing returns
+        celebrationSpin.comboCount++;
+        const diminish = 1 / (1 + celebrationSpin.comboCount * 0.3);
+        celebrationSpin.targetLift = Math.min(
+          celebrationSpin.targetLift + COMBO_LIFT_PER_CLICK * diminish,
+          COMBO_MAX_LIFT,
+        );
+        celebrationSpin.start = now;
+        celebrationSpin.fromX = hardware.rotation.x;
+        celebrationSpin.fromY = hardware.rotation.y;
+        celebrationSpin.direction = Math.random() < 0.5 ? -1 : 1;
+        celebrationSpin.pop = randomBetween(0.1, 0.16);
+        celebrationSpin.bobPhase = randomBetween(0, Math.PI * 2);
+      } else {
+        // New celebration
+        celebrationSpin = {
+          phase: "combo",
+          start: now,
+          fromX: hardware.rotation.x,
+          fromY: hardware.rotation.y,
+          fromPositionY: hardware.position.y,
+          baseY: 0,
+          targetLift: COMBO_LIFT_PER_CLICK,
+          comboCount: 1,
+          direction: Math.random() < 0.5 ? -1 : 1,
+          bobAmplitude: randomBetween(0.12, 0.19),
+          bobPhase: randomBetween(0, Math.PI * 2),
+          pop: randomBetween(0.1, 0.16),
+        };
+      }
+
       dragging = false;
+
+      // Reset descend timer
+      if (descendTimer) clearTimeout(descendTimer);
+      descendTimer = window.setTimeout(() => {
+        if (celebrationSpin && celebrationSpin.phase === "combo") {
+          celebrationSpin = {
+            ...celebrationSpin,
+            phase: "descend",
+            start: performance.now(),
+            fromPositionY: hardware.position.y,
+          };
+        }
+      }, COMBO_DESCEND_DELAY);
+
       nextIdleTurnAt = now + CELEBRATION_DURATION_MS + 1200;
       idlePausedUntil = 0;
     },
     dispose() {
+      if (descendTimer) clearTimeout(descendTimer);
       window.cancelAnimationFrame(frameId);
       observer.disconnect();
       scene.remove(hardware);
