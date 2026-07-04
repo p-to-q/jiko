@@ -29,6 +29,8 @@ const IDLE_ROTATION_POINTS: ViewRotation[] = [
   { x: -0.18, y: -0.62 },
   { x: 0.04, y: 0.46 },
   { x: -0.1, y: 0.04 },
+  { x: -0.08, y: Math.PI - 0.18 },
+  { x: -0.12, y: -Math.PI + 0.2 },
 ];
 const CELEBRATION_DURATION_MS = 3600;
 const CELEBRATION_TURNS = Math.PI * 4;
@@ -323,6 +325,9 @@ function buildHardware(screenTexture: THREE.Texture) {
     clearcoatRoughness: 0.44,
     envMapIntensity: 0.12,
     reflectivity: 0.18,
+    polygonOffset: true,
+    polygonOffsetFactor: 4,
+    polygonOffsetUnits: 4,
   });
 
   const body = new THREE.Mesh(
@@ -382,6 +387,10 @@ function buildHardware(screenTexture: THREE.Texture) {
       clearcoat: 0.2,
       clearcoatRoughness: 0.44,
       envMapIntensity: 0.12,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: 4,
+      polygonOffsetUnits: 4,
     }),
   );
   backPlate.position.z = -bodyDepth * 0.515;
@@ -539,6 +548,7 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
     clearcoat: 0.14,
     clearcoatRoughness: 0.5,
     envMapIntensity: 0.16,
+    depthWrite: false,
     side: THREE.DoubleSide,
   });
   const screwSlotMaterial = new THREE.MeshBasicMaterial({
@@ -559,14 +569,32 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
   screwPositions.forEach(([x, y]) => {
     const screw = new THREE.Mesh(new THREE.CircleGeometry(0.026, 28), screwMaterial);
     screw.position.set(x, y, -bodyDepth * 0.52);
+    syncRearOverlayDepth(screw, screwMaterial);
     details.add(screw);
 
     const slot = new THREE.Mesh(new THREE.PlaneGeometry(0.032, 0.005), screwSlotMaterial);
     slot.position.set(x, y, -bodyDepth * 0.525);
+    syncRearOverlayDepth(slot, screwSlotMaterial);
     details.add(slot);
   });
 
   return details;
+}
+
+function syncRearOverlayDepth(mesh: THREE.Mesh, material: THREE.Material) {
+  const rearNormal = new THREE.Vector3();
+  const meshPosition = new THREE.Vector3();
+  const cameraPosition = new THREE.Vector3();
+  const toCamera = new THREE.Vector3();
+
+  mesh.renderOrder = 4;
+  mesh.onBeforeRender = (_renderer, _scene, camera) => {
+    rearNormal.set(0, 0, -1).transformDirection(mesh.matrixWorld);
+    mesh.getWorldPosition(meshPosition);
+    camera.getWorldPosition(cameraPosition);
+    toCamera.copy(cameraPosition).sub(meshPosition).normalize();
+    material.depthTest = rearNormal.dot(toCamera) <= 0.18;
+  };
 }
 
 function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {

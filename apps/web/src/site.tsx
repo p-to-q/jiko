@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import brandWordmark from "./assets/jiko-wordmark.svg";
+import brandWordmark from "./assets/jiko-wordmark-site.svg";
 import ptoqLogo from "./assets/ptoq-logo.png";
 import { ShowcaseStage } from "./ui/ShowcaseStage";
 import "./styles.css";
@@ -81,16 +81,22 @@ function Site() {
         <div className="site-hardware-stage" aria-label="jiko hardware">
           <ShowcaseStage surface="embedded" />
         </div>
-        <a className="site-project-credit" href="https://www.ptoq.io/" target="_blank" rel="noreferrer">
-          <span>a</span>
-          <span
+        <div className="site-project-credit" aria-label="a p to q project">
+          <a href="https://github.com/p-to-q/jiko" target="_blank" rel="noreferrer">
+            a
+          </a>
+          <a
             className="site-project-credit-logo"
+            href="https://www.ptoq.io/"
+            target="_blank"
+            rel="noreferrer"
             style={ptoqLogoStyle}
-            role="img"
             aria-label="[p to q]"
           />
-          <span>project</span>
-        </a>
+          <a href="https://www.ptoq.io/work#jiko" target="_blank" rel="noreferrer">
+            project
+          </a>
+        </div>
       </section>
     </main>
   );
