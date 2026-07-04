@@ -430,7 +430,7 @@ type HardwareScene = ReturnType<typeof createHardwareScene>;
 function resolveCameraDistance(aspect: number, verticalFov: number) {
   const verticalRadians = THREE.MathUtils.degToRad(verticalFov);
   const horizontalFitDistance = 3.36 / (2 * Math.tan(verticalRadians / 2) * aspect);
-  return Math.max(8.15, horizontalFitDistance);
+  return Math.max(8.55, horizontalFitDistance);
 }
 
 function buildHardware(screenTexture: THREE.Texture) {
