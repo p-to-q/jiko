@@ -56,13 +56,17 @@ type CelebrationSpin = {
 
 export function ShowcaseStage({
   surface = "standalone",
+  onReady,
 }: {
   surface?: "standalone" | "embedded";
+  onReady?: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<HardwareScene>();
   const rotationRef = useRef<ViewRotation>({ ...DEFAULT_ROTATION });
   const dragRef = useRef<DragState>();
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -72,6 +76,10 @@ export function ShowcaseStage({
 
     const scene = createHardwareScene(host, (rotation) => {
       rotationRef.current = rotation;
+    }, () => {
+      window.requestAnimationFrame(() => {
+        onReadyRef.current?.();
+      });
     });
     sceneRef.current = scene;
     rotationRef.current = scene.getRotation();
@@ -129,6 +137,7 @@ export function ShowcaseStage({
 function createHardwareScene(
   host: HTMLDivElement,
   onRotationFrame: (rotation: ViewRotation) => void,
+  onFirstFrame?: () => void,
 ) {
   const renderer = new THREE.WebGLRenderer({
     antialias: true,
@@ -189,6 +198,7 @@ function createHardwareScene(
 
   let frameId = 0;
   let dragging = false;
+  let readyNotified = false;
   let lastRotation = { x: Number.NaN, y: Number.NaN };
   let idleTarget = nextIdleRotation();
   let nextIdleTurnAt = performance.now() + 1800;
@@ -248,6 +258,10 @@ function createHardwareScene(
     }
 
     renderer.render(scene, camera);
+    if (!readyNotified) {
+      readyNotified = true;
+      onFirstFrame?.();
+    }
     frameId = window.requestAnimationFrame(render);
   };
   frameId = window.requestAnimationFrame(render);

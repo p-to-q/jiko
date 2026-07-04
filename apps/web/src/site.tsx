@@ -9,6 +9,132 @@ import "./site.css";
 
 const waitlistCountStorageKey = "jiko.waitlistCount";
 
+const siteRevealTiming = {
+  hardwarePauseMs: 480,
+  fallbackMs: 4200,
+} as const;
+
+const frameDotArrowMotion = {
+  startY: 11,
+  centerY: 0,
+  exitY: -17,
+  approachMs: 340,
+  departMs: 380,
+  rightDelayMs: 90,
+  easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+} as const;
+
+const freeWillHoverState = { hovering: false };
+
+type FrameDotFlight = {
+  phase: "idle" | "approach" | "centered" | "depart";
+  approachAnim?: Animation;
+  departAnim?: Animation;
+  approachTimer?: number;
+};
+
+function prefersReducedSiteMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function getFrameDotArrow(dot: HTMLSpanElement) {
+  return dot.querySelector<SVGSVGElement>(".site-frame-bottom-dot-arrow");
+}
+
+function resetFrameDotArrow(arrow: SVGSVGElement) {
+  arrow.style.removeProperty("transform");
+  arrow.style.removeProperty("opacity");
+}
+
+function frameDotArrowTransform(y: number) {
+  return `translate(-50%, -50%) translateY(${y}px)`;
+}
+
+function startFrameDotDepart(dot: HTMLSpanElement, flight: FrameDotFlight, startY: number) {
+  const arrow = getFrameDotArrow(dot);
+  if (!arrow) {
+    return;
+  }
+
+  if (flight.approachTimer) {
+    window.clearTimeout(flight.approachTimer);
+    flight.approachTimer = undefined;
+  }
+
+  flight.approachAnim?.cancel();
+  flight.phase = "depart";
+
+  if (prefersReducedSiteMotion()) {
+    flight.phase = "idle";
+    resetFrameDotArrow(arrow);
+    return;
+  }
+
+  flight.departAnim = arrow.animate(
+    [
+      { transform: frameDotArrowTransform(startY), opacity: 1 },
+      { transform: frameDotArrowTransform(frameDotArrowMotion.exitY), opacity: 0 },
+    ],
+    {
+      duration: frameDotArrowMotion.departMs,
+      easing: frameDotArrowMotion.easing,
+      fill: "forwards",
+    },
+  );
+
+  flight.departAnim.onfinish = () => {
+    flight.phase = "idle";
+    flight.departAnim = undefined;
+    resetFrameDotArrow(arrow);
+  };
+}
+
+function startFrameDotApproach(dot: HTMLSpanElement, flight: FrameDotFlight, delay = 0) {
+  const arrow = getFrameDotArrow(dot);
+  if (!arrow) {
+    return;
+  }
+
+  if (flight.approachTimer) {
+    window.clearTimeout(flight.approachTimer);
+  }
+
+  flight.departAnim?.cancel();
+  flight.approachAnim?.cancel();
+  flight.approachTimer = window.setTimeout(() => {
+    flight.approachTimer = undefined;
+    flight.phase = "approach";
+
+    if (prefersReducedSiteMotion()) {
+      flight.phase = "idle";
+      resetFrameDotArrow(arrow);
+      return;
+    }
+
+    flight.approachAnim = arrow.animate(
+      [
+        { transform: frameDotArrowTransform(frameDotArrowMotion.startY), opacity: 1 },
+        { transform: frameDotArrowTransform(frameDotArrowMotion.centerY), opacity: 1 },
+      ],
+      {
+        duration: frameDotArrowMotion.approachMs,
+        easing: frameDotArrowMotion.easing,
+        fill: "forwards",
+      },
+    );
+
+    flight.approachAnim.onfinish = () => {
+      flight.approachAnim = undefined;
+      if (freeWillHoverState.hovering) {
+        flight.phase = "centered";
+        return;
+      }
+
+      startFrameDotDepart(dot, flight, frameDotArrowMotion.centerY);
+    };
+  }, delay);
+}
+
 function Site() {
   const ptoqLogoStyle = {
     "--ptoq-logo": `url(${ptoqLogo})`,
@@ -18,10 +144,88 @@ function Site() {
   const [waitlistStatus, setWaitlistStatus] = React.useState<"idle" | "pending" | "success" | "error">("idle");
   const [waitlistCount, setWaitlistCount] = React.useState(readInitialWaitlistCount);
   const [waitlistSuccessText, setWaitlistSuccessText] = React.useState("YOU'RE IN!");
+  const [revealReady, setRevealReady] = React.useState(false);
+  const revealStartedRef = React.useRef(false);
   const waitlistLabel = formatWaitlistLabel(waitlistCount);
+  const waitlistAriaLabel = `JOIN WAITLIST WITH ${waitlistCount} TASTEFUL PEOPLE`;
   const waitlistInputRef = React.useRef<HTMLInputElement>(null);
+  const frameBottomDotLeftRef = React.useRef<HTMLSpanElement>(null);
+  const frameBottomDotRightRef = React.useRef<HTMLSpanElement>(null);
+  const frameDotFlightsRef = React.useRef<{ left: FrameDotFlight; right: FrameDotFlight }>({
+    left: { phase: "idle" },
+    right: { phase: "idle" },
+  });
   const triggerCelebration = React.useCallback(() => {
     window.dispatchEvent(new Event("jiko:celebrate"));
+  }, []);
+  const beginSiteReveal = React.useCallback(() => {
+    if (revealStartedRef.current) {
+      return;
+    }
+
+    revealStartedRef.current = true;
+    window.setTimeout(() => {
+      setRevealReady(true);
+    }, siteRevealTiming.hardwarePauseMs);
+  }, []);
+  React.useEffect(() => {
+    const fallbackTimer = window.setTimeout(() => {
+      beginSiteReveal();
+    }, siteRevealTiming.fallbackMs);
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [beginSiteReveal]);
+  const beginFrameBottomArrows = React.useCallback(() => {
+    freeWillHoverState.hovering = true;
+
+    const leftDot = frameBottomDotLeftRef.current;
+    const rightDot = frameBottomDotRightRef.current;
+
+    if (leftDot) {
+      startFrameDotApproach(leftDot, frameDotFlightsRef.current.left, 0);
+    }
+
+    if (rightDot) {
+      startFrameDotApproach(rightDot, frameDotFlightsRef.current.right, frameDotArrowMotion.rightDelayMs);
+    }
+  }, []);
+  const releaseFrameBottomArrows = React.useCallback(() => {
+    freeWillHoverState.hovering = false;
+
+    const pairs = [
+      [frameBottomDotLeftRef.current, frameDotFlightsRef.current.left] as const,
+      [frameBottomDotRightRef.current, frameDotFlightsRef.current.right] as const,
+    ];
+
+    for (const [dot, flight] of pairs) {
+      if (!dot) {
+        continue;
+      }
+
+      if (flight.approachTimer) {
+        window.clearTimeout(flight.approachTimer);
+        flight.approachTimer = undefined;
+      }
+
+      if (flight.phase === "depart") {
+        continue;
+      }
+
+      if (flight.phase === "centered") {
+        startFrameDotDepart(dot, flight, frameDotArrowMotion.centerY);
+        continue;
+      }
+
+      if (flight.phase === "approach" && flight.approachAnim) {
+        const progress = Math.min(1, (Number(flight.approachAnim.currentTime) || 0) / frameDotArrowMotion.approachMs);
+        const startY =
+          frameDotArrowMotion.startY +
+          (frameDotArrowMotion.centerY - frameDotArrowMotion.startY) * progress;
+        startFrameDotDepart(dot, flight, startY);
+      }
+    }
   }, []);
   React.useEffect(() => {
     if (!waitlistOpen || waitlistStatus === "success") {
@@ -45,12 +249,12 @@ function Site() {
 
     const thankYouTimer = window.setTimeout(() => {
       setWaitlistSuccessText("THANK YOU!!");
-    }, 820);
+    }, 1200);
     const successTimer = window.setTimeout(() => {
       setWaitlistOpen(false);
       setWaitlistStatus("idle");
       setWaitlistSuccessText("YOU'RE IN!");
-    }, 1850);
+    }, 2800);
 
     return () => {
       window.clearTimeout(thankYouTimer);
@@ -190,7 +394,11 @@ function Site() {
 
   return (
     <main className="site-shell" aria-label="jiko official site study">
-      <section className="site-frame" aria-label="jiko first view">
+      <section
+        className="site-frame"
+        data-reveal={revealReady ? "ready" : "pending"}
+        aria-label="jiko first view"
+      >
         <span className="site-frame-accent site-frame-accent-left" aria-hidden="true">
           <svg viewBox="0 0 36 36" focusable="false">
             <path d="M 36 1.8 L 36 36 L 1.8 36 Q 0.8 36 0.35 35.1 Q 0 34.2 0.7 33.5 L 33.5 0.7 Q 34.2 0 35.1 0.35 Q 36 0.8 36 1.8 Z" />
@@ -201,8 +409,12 @@ function Site() {
             <path d="M 0 1.8 L 0 36 L 34.2 36 Q 35.2 36 35.65 35.1 Q 36 34.2 35.3 33.5 L 2.5 0.7 Q 1.8 0 0.9 0.35 Q 0 0.8 0 1.8 Z" />
           </svg>
         </span>
-        <span className="site-frame-bottom-dot site-frame-bottom-dot-left" aria-hidden="true" />
-        <span className="site-frame-bottom-dot site-frame-bottom-dot-right" aria-hidden="true" />
+        <span ref={frameBottomDotLeftRef} className="site-frame-bottom-dot site-frame-bottom-dot-left" aria-hidden="true">
+          <FrameDotArrowIcon />
+        </span>
+        <span ref={frameBottomDotRightRef} className="site-frame-bottom-dot site-frame-bottom-dot-right" aria-hidden="true">
+          <FrameDotArrowIcon />
+        </span>
         <div className="site-hero-copy">
           <h1>
             <span className="site-title-line site-title-line-brand">
@@ -223,6 +435,14 @@ function Site() {
               <button
                 className="site-free-will"
                 type="button"
+                onPointerEnter={beginFrameBottomArrows}
+                onPointerLeave={releaseFrameBottomArrows}
+                onFocus={(event) => {
+                  if (event.currentTarget.matches(":focus-visible")) {
+                    beginFrameBottomArrows();
+                  }
+                }}
+                onBlur={releaseFrameBottomArrows}
                 onClick={(event) => {
                   event.stopPropagation();
                   triggerCelebration();
@@ -235,7 +455,7 @@ function Site() {
           </h1>
         </div>
         <div className="site-hardware-stage" aria-label="jiko hardware">
-          <ShowcaseStage surface="embedded" />
+          <ShowcaseStage surface="embedded" onReady={beginSiteReveal} />
         </div>
         <form
           className="site-waitlist"
@@ -258,20 +478,22 @@ function Site() {
                   setWaitlistOpen(true);
                   setWaitlistStatus("idle");
                 }}
-                aria-label={waitlistLabel}
+                aria-label={waitlistAriaLabel}
               >
-                <span className="site-waitlist-front-left">
-                  <span className="site-waitlist-marquee" aria-hidden="true">
-                    <span>{waitlistLabel}</span>
-                    <span>{waitlistLabel}</span>
-                    <span>{waitlistLabel}</span>
+                <span className="site-waitlist-expand-track">
+                  <span className="site-waitlist-front-left">
+                    <span className="site-waitlist-marquee" aria-hidden="true">
+                      <span>{waitlistLabel}</span>
+                      <span>{waitlistLabel}</span>
+                      <span>{waitlistLabel}</span>
+                    </span>
                   </span>
-                </span>
-                <span className="site-waitlist-front-right">
-                  <span className="site-waitlist-arrow-circle" aria-hidden="true">
-                    <span className="site-waitlist-arrow-track">
-                      <WaitlistArrowIcon />
-                      <WaitlistArrowIcon />
+                  <span className="site-waitlist-front-right">
+                    <span className="site-waitlist-arrow-circle" aria-hidden="true">
+                      <span className="site-waitlist-arrow-track">
+                        <WaitlistArrowIcon />
+                        <WaitlistArrowIcon />
+                      </span>
                     </span>
                   </span>
                 </span>
@@ -320,7 +542,7 @@ function Site() {
                   <button
                     type="submit"
                     disabled={waitlistStatus === "pending"}
-                    aria-label={waitlistLabel}
+                    aria-label={waitlistAriaLabel}
                   >
                     <span className="site-waitlist-arrow-track" aria-hidden="true">
                       <WaitlistArrowIcon />
@@ -333,20 +555,32 @@ function Site() {
           </div>
         </form>
         <div className="site-project-credit" aria-label="a p to q project">
-          <a href="https://github.com/p-to-q/jiko" target="_blank" rel="noreferrer">
-            a
-          </a>
-          <a
-            className="site-project-credit-logo"
-            href="https://www.ptoq.io/"
-            target="_blank"
-            rel="noreferrer"
-            style={ptoqLogoStyle}
-            aria-label="[p to q]"
-          />
-          <a href="https://www.ptoq.io/work#jiko" target="_blank" rel="noreferrer">
-            project
-          </a>
+          <span className="site-project-credit-sequence">
+            <a
+              className="site-project-credit-a"
+              href="https://github.com/p-to-q/jiko"
+              target="_blank"
+              rel="noreferrer"
+            >
+              a
+            </a>
+            <a
+              className="site-project-credit-logo site-project-credit-logo-reveal"
+              href="https://www.ptoq.io/"
+              target="_blank"
+              rel="noreferrer"
+              style={ptoqLogoStyle}
+              aria-label="[p to q]"
+            />
+            <a
+              className="site-project-credit-project"
+              href="https://www.ptoq.io/work#jiko"
+              target="_blank"
+              rel="noreferrer"
+            >
+              project
+            </a>
+          </span>
         </div>
       </section>
     </main>
@@ -361,8 +595,12 @@ function objectValue(value: unknown): Record<string, unknown> | undefined {
   return value as Record<string, unknown>;
 }
 
-function formatWaitlistLabel(count: number): string {
-  return `JOIN WAITLIST WITH ${count} TASTEFUL PEOPLE`;
+function formatWaitlistLabel(count: number): React.ReactNode {
+  return (
+    <>
+      JOIN WAITLIST WITH <span className="site-waitlist-count">{count}</span> TASTEFUL PEOPLE
+    </>
+  );
 }
 
 function normalizeWaitlistInput(value: string): string | undefined {
@@ -462,6 +700,25 @@ function applyLocalWaitlistFallback(
     writeStoredWaitlistCount(fallbackCount);
     return fallbackCount;
   });
+}
+
+function FrameDotArrowIcon() {
+  return (
+    <svg
+      className="site-frame-bottom-dot-arrow"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2.25"
+      focusable="false"
+      aria-hidden="true"
+    >
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </svg>
+  );
 }
 
 function WaitlistArrowIcon() {
