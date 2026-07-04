@@ -223,7 +223,7 @@
   color: inherit;
   font: inherit;
   letter-spacing: inherit;
-  cursor: pointer;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, auto;
   background: transparent;
   text-decoration-line: underline;
   text-decoration-style: solid;
