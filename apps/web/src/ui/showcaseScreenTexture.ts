@@ -19,6 +19,7 @@ const SQUARE_X = (CANVAS_W - SQUARE) / 2;
 const DANCE_TONES: SpriteTone[] = ["yellow", "red", "green"];
 const DANCE_FRAME_INTERVAL_MS = 650;
 const DANCE_FRAME_COUNT = 6;
+const BATTERY_PULSE_MS = 1600;
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"] as const;
 const MONTHS = [
   "JAN",
@@ -207,7 +208,7 @@ function drawTopStrip(
     strip.y + 34,
     { ...metaOptions, glow: "rgba(240, 144, 53, 0.5)" },
   );
-  drawBattery(context, metaRight - 21, strip.y + 56);
+  drawBattery(context, metaRight - 21, strip.y + 56, time);
 }
 
 function drawStatusDots(context: CanvasRenderingContext2D, x: number, y: number) {
@@ -221,19 +222,36 @@ function drawStatusDots(context: CanvasRenderingContext2D, x: number, y: number)
   context.restore();
 }
 
-function drawBattery(context: CanvasRenderingContext2D, x: number, y: number) {
+function drawBattery(context: CanvasRenderingContext2D, x: number, y: number, time: number) {
+  const pulseProgress = (time % BATTERY_PULSE_MS) / BATTERY_PULSE_MS;
+  const pulse = 0.55 + 0.45 * (0.5 + Math.cos(pulseProgress * Math.PI * 2) * 0.5);
+  const leftPulse = 0.68 + 0.32 * (0.5 + Math.cos((pulseProgress - 0.08) * Math.PI * 2) * 0.5);
+
   context.save();
   context.strokeStyle = "#f09035";
   context.fillStyle = "#f09035";
   context.lineWidth = 1;
   context.shadowColor = "rgba(240, 144, 53, 0.5)";
   context.shadowBlur = 4;
+  context.globalAlpha = pulse;
   roundedRectPath(context, x, y, 18, 10, 2);
   context.stroke();
+  context.globalAlpha = pulse * leftPulse;
   context.fillRect(x + 3, y + 3, 3, 4);
+  context.globalAlpha = pulse * (0.78 + leftPulse * 0.22);
   context.fillRect(x + 8, y + 3, 3, 4);
+  context.globalAlpha = pulse;
   context.fillRect(x + 13, y + 3, 3, 4);
   roundedRectPath(context, x + 19, y + 3, 2, 4, 1);
+  context.fill();
+
+  context.globalAlpha = 0.16 * leftPulse;
+  const chargeGlint = context.createLinearGradient(x + 1, y, x + 10, y);
+  chargeGlint.addColorStop(0, "rgba(255, 238, 190, 0)");
+  chargeGlint.addColorStop(0.44, "rgba(255, 238, 190, 0.85)");
+  chargeGlint.addColorStop(1, "rgba(255, 238, 190, 0)");
+  context.fillStyle = chargeGlint;
+  roundedRectPath(context, x + 1, y + 1, 9, 8, 1.5);
   context.fill();
   context.restore();
 }
@@ -266,6 +284,8 @@ function drawLedSquare(
   context.lineWidth = 1;
   roundedRectPath(context, x + 0.5, y + 0.5, SQUARE - 1, SQUARE - 1, 3);
   context.stroke();
+  context.shadowBlur = 0;
+  context.shadowColor = "transparent";
 
   const rows = resolveSpriteRows(character, frameIndex);
   const cell = 8;
@@ -283,18 +303,15 @@ function drawLedSquare(
 
       if (value === ".") {
         context.fillStyle = palette.dim;
-        context.globalAlpha = 0.5;
-        drawCircle(context, cx, cy, dot / 2);
+        context.globalAlpha = 0.42;
+        drawCircle(context, cx, cy, dot * 0.42);
         context.globalAlpha = 1;
         return;
       }
 
       const color = value === "2" ? palette.secondary : palette.primary;
-      context.fillStyle = color;
-      context.shadowColor = value === "2" ? palette.secondary : palette.halo;
-      context.shadowBlur = value === "2" ? dot * 1.2 : dot * 1.5;
-      drawCircle(context, cx, cy, dot / 2);
-      context.shadowBlur = 0;
+      const glow = value === "2" ? palette.secondary : palette.halo;
+      drawLedDot(context, cx, cy, dot / 2, color, glow, value === "2" ? dot * 1.08 : dot * 1.36);
     });
   });
   context.restore();
@@ -318,12 +335,27 @@ function drawCoverGlass(context: CanvasRenderingContext2D) {
   context.fillStyle = upper;
   context.fillRect(0, 0, CANVAS_W, 74);
 
+  const lower = context.createRadialGradient(160, CANVAS_H + 38, 0, 160, CANVAS_H + 38, 142);
+  lower.addColorStop(0, "rgba(255, 255, 255, 0.058)");
+  lower.addColorStop(0.68, "rgba(255, 255, 255, 0.012)");
+  lower.addColorStop(1, "rgba(255, 255, 255, 0)");
+  context.fillStyle = lower;
+  context.fillRect(0, CANVAS_H - 98, CANVAS_W, 98);
+
   const side = context.createLinearGradient(0, 0, CANVAS_W, 0);
-  side.addColorStop(0, "rgba(255, 222, 170, 0.032)");
-  side.addColorStop(0.2, "rgba(255, 222, 170, 0)");
+  side.addColorStop(0, "rgba(255, 255, 255, 0.034)");
+  side.addColorStop(0.22, "rgba(255, 255, 255, 0)");
   side.addColorStop(0.78, "rgba(255, 255, 255, 0)");
-  side.addColorStop(1, "rgba(255, 255, 255, 0.012)");
+  side.addColorStop(1, "rgba(255, 255, 255, 0.018)");
   context.fillStyle = side;
+  context.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  const verticalVeil = context.createLinearGradient(0, 0, 0, CANVAS_H);
+  verticalVeil.addColorStop(0, "rgba(255, 255, 255, 0.014)");
+  verticalVeil.addColorStop(0.16, "rgba(255, 255, 255, 0)");
+  verticalVeil.addColorStop(0.82, "rgba(255, 255, 255, 0)");
+  verticalVeil.addColorStop(1, "rgba(255, 255, 255, 0.018)");
+  context.fillStyle = verticalVeil;
   context.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
   context.restore();
@@ -351,11 +383,14 @@ function drawDotText(
           return;
         }
 
-        drawCircle(
+        drawLedDot(
           context,
           cursor + colIndex * (options.dot + options.gap) + options.dot / 2,
           y + rowIndex * (options.dot + options.gap) + options.dot / 2,
           options.dot / 2,
+          options.color,
+          options.glow,
+          options.dot * 0.95,
         );
       });
     });
@@ -432,6 +467,30 @@ function drawCircle(context: CanvasRenderingContext2D, x: number, y: number, rad
   context.beginPath();
   context.arc(x, y, radius, 0, Math.PI * 2);
   context.fill();
+}
+
+function drawLedDot(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  color: string,
+  glow: string,
+  glowBlur: number,
+) {
+  context.save();
+  context.fillStyle = color;
+  context.shadowColor = glow;
+  context.shadowBlur = glowBlur;
+  context.globalAlpha = 0.68;
+  drawCircle(context, x, y, radius);
+  context.restore();
+
+  context.save();
+  context.fillStyle = color;
+  context.shadowBlur = 0;
+  drawCircle(context, x, y, radius * 0.88);
+  context.restore();
 }
 
 function resolveClockStart(): Date | undefined {
