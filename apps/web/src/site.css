@@ -943,7 +943,7 @@
   }
 
   .site-hero-copy {
-    padding: clamp(56px, 9vh, 72px) 20px 0;
+    padding: clamp(64px, 10vh, 84px) 20px 0;
   }
 
   .site-hero-copy h1 {
@@ -954,16 +954,16 @@
     min-height: 0;
     margin-top: -20px;
     margin-bottom: 8px;
-    transform: translateY(-32px);
+    transform: translateY(-24px);
   }
 
   .site-waitlist {
     --site-waitlist-max-width: min(calc(100% - 64px), 520px);
-    bottom: clamp(120px, 20vw, 180px);
+    bottom: clamp(112px, 18vw, 168px);
   }
 
   .site-project-credit {
-    bottom: calc(clamp(120px, 20vw, 180px) - 40px);
+    bottom: calc(clamp(112px, 18vw, 168px) - 40px);
   }
 
   .site-waitlist-expand-track {
