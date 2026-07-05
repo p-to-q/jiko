@@ -17,6 +17,17 @@ production, preview, and development automatically — no manual env setup neede
 
 - `DATABASE_URL` — injected by the Neon store connection
 - `WAITLIST_BASE_COUNT` — optional display offset (default `0`), set manually if wanted
+- `ADMIN_SECRET` — required for `GET /api/waitlist-admin`
+
+## Admin: list subscribers
+
+```sh
+curl -H "Authorization: Bearer $ADMIN_SECRET" https://jiko.ptoq.io/api/waitlist-admin
+# or in a browser:
+# https://jiko.ptoq.io/api/waitlist-admin?secret=<ADMIN_SECRET>
+```
+
+Invalid email formats are rejected with `400` and never stored.
 
 ## Verify after deploy
 

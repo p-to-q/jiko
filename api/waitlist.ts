@@ -1,4 +1,6 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
+
+type Sql = NeonQueryFunction<false, false>;
 
 const maxBodyBytes = 4096;
 const waitlistBaseCount = readBaseCount(process.env.WAITLIST_BASE_COUNT);
@@ -52,6 +54,11 @@ export default async function handler(request: any, response: any) {
       return;
     }
 
+    if (!isValidEmail(email)) {
+      sendJson(response, 400, { error: "Expected a valid email address", looksLikeEmail: false });
+      return;
+    }
+
     const source = sanitizeSource(stringValue(body.source));
 
     await sql`
@@ -79,7 +86,7 @@ export default async function handler(request: any, response: any) {
   }
 }
 
-async function ensureWaitlistTable(sql: ReturnType<typeof neon>): Promise<void> {
+async function ensureWaitlistTable(sql: Sql): Promise<void> {
   await sql`
     create table if not exists waitlist_subscribers (
       email text primary key,
@@ -90,7 +97,7 @@ async function ensureWaitlistTable(sql: ReturnType<typeof neon>): Promise<void> 
   `;
 }
 
-async function readStoredCount(sql: ReturnType<typeof neon>): Promise<number> {
+async function readStoredCount(sql: Sql): Promise<number> {
   const rows = await sql`
     select count(*)::int as count
     from waitlist_subscribers

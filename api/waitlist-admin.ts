@@ -1,4 +1,5 @@
 import { neon } from "@neondatabase/serverless";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 export default async function handler(request: any, response: any) {
   response.setHeader("access-control-allow-origin", "*");
@@ -24,7 +25,7 @@ export default async function handler(request: any, response: any) {
   }
 
   const token = extractToken(request);
-  if (token !== adminSecret) {
+  if (!token || !safeEqual(token, adminSecret)) {
     sendJson(response, 401, { error: "Unauthorized" });
     return;
   }
@@ -59,6 +60,12 @@ export default async function handler(request: any, response: any) {
   } catch {
     sendJson(response, 500, { error: "Failed to query subscribers" });
   }
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const digestA = new Uint8Array(createHash("sha256").update(a).digest());
+  const digestB = new Uint8Array(createHash("sha256").update(b).digest());
+  return timingSafeEqual(digestA, digestB);
 }
 
 function extractToken(request: any): string | undefined {
