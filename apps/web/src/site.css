@@ -954,11 +954,16 @@
     min-height: 0;
     margin-top: -20px;
     margin-bottom: 8px;
-    transform: translateY(-64px);
+    transform: translateY(-32px);
   }
 
   .site-waitlist {
     --site-waitlist-max-width: min(calc(100% - 64px), 520px);
+    bottom: clamp(120px, 20vw, 180px);
+  }
+
+  .site-project-credit {
+    bottom: calc(clamp(120px, 20vw, 180px) - 40px);
   }
 
   .site-waitlist-expand-track {
