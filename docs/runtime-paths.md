@@ -30,7 +30,7 @@ Recommended packages:
 
 - `packages/protocol`: event types, session schema, reading schema.
 - `packages/core`: state machine, result composition, reading orchestration.
-- `packages/readings`: text/voice/timing reading contracts and first heuristics.
+- `packages/readings`: content/emotion/context reading contracts and first heuristics.
 
 The shared core should not know whether audio came from a browser, a Python process, or a Raspberry Pi microphone.
 

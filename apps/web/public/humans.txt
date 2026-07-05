@@ -1,0 +1,19 @@
+/* TEAM */
+
+Name: [p → q]
+Site: https://ptoq.io
+Contact: hi [at] ptoq.io
+GitHub: https://github.com/p-to-q
+
+/* SITE */
+
+Name: Jiko
+URL: https://jiko.ptoq.io
+Description: Instant decision-making instrument
+Standards: HTML5, CSS3, ES2024
+Components: React, Three.js, Vite
+Platform: Vercel
+
+/* THANKS */
+
+Built with care by [p → q].

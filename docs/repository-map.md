@@ -13,7 +13,7 @@ This map should stay short. It explains where things go without turning the repo
 - `apps/server`: local backend with HTTP commands, SSE events, manual transcript loop, audio upload, ffmpeg normalization, first-pass audio features, local STT/TTS adapter boundaries, shared readings, and dev receipts.
 - `packages/protocol`: shared Zod schemas and TypeScript types for session events, readings, features, transcripts, results, and receipts.
 - `packages/core`: shared session reducer and result composer.
-- `packages/readings`: first transparent text, voice, and timing reading heuristics.
+- `packages/readings`: first transparent content, emotion, and context reading heuristics.
 - `docs/product-brief.md`: product definition and interaction shape.
 - `docs/engineering-discipline.md`: how humans and agents should change the repo.
 - `docs/engineering-architecture.md`: system architecture and event protocol.

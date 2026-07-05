@@ -8,9 +8,22 @@
       name="description"
       content="Jiko is an instant decision-making instrument that turns your thoughts into red, yellow, or green signals while keeping free will intact."
     />
+    <meta name="robots" content="index, follow" />
+    <meta
+      name="googlebot"
+      content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"
+    />
     <link rel="canonical" href="https://jiko.ptoq.io/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#1f1e1a" />
+    <meta name="humans" content="/humans.txt" />
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Jiko" />
     <meta property="og:title" content="Jiko | instant decision making instrument" />
@@ -19,12 +32,57 @@
       content="Turn your thoughts into red, yellow, or green signals while keeping free will intact."
     />
     <meta property="og:url" content="https://jiko.ptoq.io/" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://jiko.ptoq.io/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Jiko | instant decision making instrument" />
     <meta
       name="twitter:description"
       content="Turn your thoughts into red, yellow, or green signals while keeping free will intact."
     />
+    <meta name="twitter:image" content="https://jiko.ptoq.io/og.png" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://ptoq.io/#organization",
+            "name": "[p → q]",
+            "url": "https://ptoq.io",
+            "sameAs": ["https://github.com/p-to-q"]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://jiko.ptoq.io/#website",
+            "name": "Jiko",
+            "url": "https://jiko.ptoq.io",
+            "description": "An instant decision-making instrument that turns your thoughts into red, yellow, or green signals while keeping free will intact.",
+            "publisher": { "@id": "https://ptoq.io/#organization" }
+          },
+          {
+            "@type": "Product",
+            "@id": "https://jiko.ptoq.io/#product",
+            "name": "Jiko",
+            "url": "https://jiko.ptoq.io",
+            "description": "A physical decision-making instrument that listens to one spoken intention and reveals whether your content, emotion, and context agree or diverge — using red, yellow, and green signals.",
+            "brand": { "@id": "https://ptoq.io/#organization" },
+            "category": "Electronics > Decision Tools",
+            "offers": {
+              "@type": "Offer",
+              "availability": "https://schema.org/PreOrder",
+              "url": "https://jiko.ptoq.io/"
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

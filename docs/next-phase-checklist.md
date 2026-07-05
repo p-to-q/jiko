@@ -25,7 +25,7 @@ These decisions are stable enough to start coding:
 - Use a side thumb button for hold-to-record in hardware.
 - Keep the UI event-driven.
 - Keep audio/STT behind local provider interfaces.
-- Keep text, voice, and timing readings separate.
+- Keep content, emotion, and context readings separate.
 - Store debug receipts for every real session.
 - Keep manual demo control on the same event path as real audio.
 
@@ -52,7 +52,7 @@ Build the smallest complete path:
 
 1. `packages/protocol`: event and reading types. Done for the mock loop.
 2. `packages/core`: state machine and result composition. Done for the mock loop.
-3. `packages/readings`: transparent text, voice, and timing heuristics. Done for the mock loop.
+3. `packages/readings`: transparent content, emotion, and context heuristics. Done for the mock loop.
 4. `apps/server`: manual transcript -> mock features -> readings -> result over SSE. Done.
 5. `apps/web`: consume `session.result` from SSE and update the four-window UI. Done.
 6. Browser recording upload and audio normalization. Server upload and normalization are done; browser UI wiring is in progress.

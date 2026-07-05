@@ -114,7 +114,7 @@ Each reading returns the same shape:
 type SignalState = "maintain" | "deviate" | "static";
 
 type Reading = {
-  channel: "text" | "voice" | "timing";
+  channel: "content" | "emotion" | "context";
   state: SignalState;
   confidence: number;
   features: Record<string, number | string | boolean>;

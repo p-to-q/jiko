@@ -4,7 +4,7 @@
 
 ---
 
-jiko is a small physical signal instrument. it listens to one spoken intention, separates it into three independent readings — text, voice, timing — then reveals whether the readings agree or diverge. it does not tell you what to do. the final choice stays with you.
+jiko is a small physical signal instrument. it listens to one spoken intention, separates it into three independent readings — content, emotion, context — then reveals whether the readings agree or diverge. it does not tell you what to do. the final choice stays with you.
 
 > pre-release · v0.9 · hardware in design · software prototype functional · [site live](https://jiko.ptoq.io)
 
@@ -41,7 +41,7 @@ color mapping: red · yellow · green. never good / bad / correct / wrong.
 
 ## hardware direction
 
-a thick vertical slab — Raspberry Pi 5, MPI3508 display, masked four-window shell, side thumb button. the form borrows from field instruments and compact signal objects. the interaction is quieter and stranger than an assistant.
+a thick vertical slab — masked four-window shell, side thumb button. the prototype runs on Raspberry Pi 5 with MPI3508 display, but the product form is independent of any specific compute board. the interaction is quieter and stranger than an assistant.
 
 current industrial design uses superellipse (squircle) corner geometry. see `docs/form-factor.md` and `docs/hardware-notes.md`.
 
@@ -49,7 +49,7 @@ current industrial design uses superellipse (squircle) corner geometry. see `doc
 
 - `https://jiko.ptoq.io/` — canonical public website.
 - `https://jiko-showcase.vercel.app/` — Vercel fallback / frontend deployment URL.
-- `/?mode=device` — the Raspberry Pi kiosk face. the actual instrument.
+- `/?mode=device` — the kiosk face. the actual instrument.
 - `showcase.html` — a standalone Three.js hardware-material study.
 - `site.html` — the public first-viewport, embedding the hardware object in a quiet framed page.
 

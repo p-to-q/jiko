@@ -2,7 +2,7 @@
 
 ## One-Sentence Definition
 
-A wearable four-window signal instrument that listens to an intention, reads it through text, voice, and timing, then shows whether the self is unanimous or still contains divergence.
+A wearable four-window signal instrument that listens to an intention, reads it through content, emotion, and context, then shows whether the self is unanimous or still contains divergence.
 
 ## What It Is
 
@@ -42,9 +42,11 @@ Top narrow window:
 
 Three square windows:
 
-- Text reading: what the user said.
-- Voice reading: how the user sounded.
-- Timing reading: when the user hesitated, rushed, paused, or stopped.
+- Content reading (code: `"text"`): what the user said.
+- Emotion reading (code: `"voice"`): how the user sounded.
+- Context reading (code: `"timing"`): when the user hesitated, rushed, paused, or stopped.
+
+> **Code mapping note:** In the codebase, `"text"` = content, `"voice"` = emotion, `"context"` = timing. The public-facing terms are content, emotion, and context.
 
 ## Physical Direction
 

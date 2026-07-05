@@ -1,0 +1,43 @@
+# Jiko — instant decision making instrument
+
+> A physical decision-making instrument by [p → q]. You hold the button, speak one intention, and three independent readings — content, emotion, and context — lock into red, yellow, or green signals. It does not tell you what to do. The decision stays with you.
+
+## What It Is
+
+Jiko is a small physical instrument (pre-release v0.9). It runs a single ritual: hold, speak, observe three signals, hear one spoken line, then silence. It reveals whether your content, emotion, and context agree or diverge — nothing more.
+
+## What It Is Not
+
+- Not an AI assistant or recommendation engine
+- Not a chatbot or therapist
+- Not a traffic light that says stop or go
+
+## Three Readings
+
+| Public Term | Code Channel | What It Reads |
+|-------------|-------------|---------------|
+| Content | `"text"` | What the user said |
+| Emotion | `"voice"` | How the user sounded |
+| Context | `"timing"` | When the user hesitated, rushed, or paused |
+
+## Signal States
+
+- **Maintain** (Red) — inertia, return to familiar path
+- **Deviate** (Green) — rupture, break from pattern
+- **Static** (Yellow) — cannot form stable signal
+
+## Pages
+
+- [Home](https://jiko.ptoq.io/): Landing page with hardware visualization and waitlist signup
+
+## Machine-Readable
+
+- [Sitemap](https://jiko.ptoq.io/sitemap.xml): XML sitemap
+- [Robots](https://jiko.ptoq.io/robots.txt): Crawler directives
+- [Manifest](https://jiko.ptoq.io/manifest.webmanifest): PWA manifest
+- [Humans](https://jiko.ptoq.io/humans.txt): Team and technology info
+
+## Contact
+
+- Website: https://ptoq.io
+- GitHub: https://github.com/p-to-q

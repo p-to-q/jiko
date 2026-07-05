@@ -71,7 +71,7 @@ Recommended packages and apps:
 
 - `packages/protocol`: Zod schemas and TypeScript types for events, readings, receipts, and provider results.
 - `packages/core`: session state machine, event reducer, reading orchestration, and result composition.
-- `packages/readings`: first rule-based text, voice, and timing readings.
+- `packages/readings`: first rule-based content, emotion, and context readings.
 - `apps/server`: local HTTP server, event stream, upload handling, provider adapters, receipts, and TTS trigger.
 - `apps/device`: Raspberry Pi GPIO/kiosk adapter. It should emit the same events as the laptop path.
 
@@ -235,7 +235,7 @@ Each reading returns:
 type SignalState = "maintain" | "deviate" | "static";
 
 type Reading = {
-  channel: "text" | "voice" | "timing";
+  channel: "content" | "emotion" | "context";
   state: SignalState;
   confidence: number;
   features: Record<string, number | string | boolean>;
@@ -358,7 +358,7 @@ Exit: one spoken Chinese or mixed-language intention becomes transcript text loc
 
 ### Stage 5: Readings And Result
 
-- Implement text, voice, and timing heuristics.
+- Implement content, emotion, and context heuristics.
 - Compose majority/minority/consensus outcomes.
 - Select top-window copy.
 - Emit `session.result`.
