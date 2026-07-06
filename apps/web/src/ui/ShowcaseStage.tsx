@@ -883,7 +883,7 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
     new THREE.MeshBasicMaterial({
       color: 0xe8f0f8,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.12,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
