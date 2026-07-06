@@ -485,7 +485,7 @@
   justify-content: center;
   flex: 0 0 var(--site-waitlist-height);
   padding: 0;
-  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
+  cursor: pointer;
   color: rgba(31, 30, 26, 0.62);
   color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent);
 }
@@ -531,7 +531,7 @@
   position: relative;
   display: grid;
   place-items: center;
-  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
+  cursor: pointer;
   width: 20px;
   height: 20px;
   border: 2px solid currentColor;
@@ -572,6 +572,7 @@
   display: block;
   transform: none;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .site-waitlist-arrow-icon {
@@ -613,7 +614,7 @@
 
 .site-waitlist-control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-columns: minmax(0, 1fr) 34px;
   align-items: center;
   gap: 8px;
   height: var(--site-waitlist-height);
@@ -718,18 +719,21 @@
   min-height: 22px;
   border: 2px solid currentColor;
   border-radius: 999px;
-  padding: 11px;
-  margin: -11px;
-  box-sizing: content-box;
+  padding: 0;
   color: rgba(31, 30, 26, 0.68);
   color: color-mix(in srgb, var(--site-waitlist-ink) 68%, transparent);
   cursor: pointer;
   background: transparent;
   white-space: nowrap;
-  overflow: hidden;
   transition:
     color 180ms ease,
     background 180ms ease;
+}
+
+.site-waitlist-control button::after {
+  content: "";
+  position: absolute;
+  inset: -11px;
 }
 
 .site-waitlist[data-state="idle"] .site-waitlist-control button:hover:not(:disabled),
@@ -1012,8 +1016,14 @@
   }
 
   .site-waitlist-control {
-    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-columns: minmax(0, 1fr) 30px;
     padding: 0 6px 0 14px;
+  }
+
+  .site-waitlist-control button {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
   }
 
   .site-waitlist-control input,

@@ -762,7 +762,7 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   });
 
   const recess = new THREE.Mesh(
-    new THREE.ShapeGeometry(
+    new THREE.ExtrudeGeometry(
       squircleRect(
         0.31,
         0.108,
@@ -770,6 +770,7 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
         DETAIL_CORNER.exponent,
         DETAIL_CORNER.exponent,
       ),
+      { depth: 0.008, bevelEnabled: false },
     ),
     recessMaterial,
   );
@@ -777,24 +778,49 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   recess.position.set(0, bottomY, portZ);
   port.add(recess);
 
+  const usbCShape = new THREE.Shape();
+  const usbW = 0.19;
+  const usbH = 0.052;
+  const usbR = usbH / 2;
+  usbCShape.moveTo(-usbW / 2 + usbR, -usbH / 2);
+  usbCShape.lineTo(usbW / 2 - usbR, -usbH / 2);
+  usbCShape.absarc(usbW / 2 - usbR, 0, usbR, -Math.PI / 2, Math.PI / 2, false);
+  usbCShape.lineTo(-usbW / 2 + usbR, usbH / 2);
+  usbCShape.absarc(-usbW / 2 + usbR, 0, usbR, Math.PI / 2, -Math.PI / 2, false);
+
   const innerMouth = new THREE.Mesh(
-    new THREE.ShapeGeometry(
-      squircleRect(
-        0.19,
-        0.058,
-        DETAIL_CORNER.radius,
-        DETAIL_CORNER.exponent,
-        DETAIL_CORNER.exponent,
-      ),
-    ),
+    new THREE.ExtrudeGeometry(usbCShape, { depth: 0.006, bevelEnabled: false }),
     portInteriorMaterial,
   );
   innerMouth.rotation.copy(recess.rotation);
-  innerMouth.position.set(0, bottomY - 0.002, portZ + 0.001);
+  innerMouth.position.set(0, bottomY - 0.002, portZ);
   port.add(innerMouth);
 
+  const tongueW = 0.12;
+  const tongueH = 0.015;
+  const tongueR = tongueH / 2;
+  const tongueShape = new THREE.Shape();
+  tongueShape.moveTo(-tongueW / 2 + tongueR, -tongueH / 2);
+  tongueShape.lineTo(tongueW / 2 - tongueR, -tongueH / 2);
+  tongueShape.absarc(tongueW / 2 - tongueR, 0, tongueR, -Math.PI / 2, Math.PI / 2, false);
+  tongueShape.lineTo(-tongueW / 2 + tongueR, tongueH / 2);
+  tongueShape.absarc(-tongueW / 2 + tongueR, 0, tongueR, Math.PI / 2, -Math.PI / 2, false);
+  const bottomTongue = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(tongueShape, { depth: 0.004, bevelEnabled: false }),
+    new THREE.MeshPhysicalMaterial({
+      color: 0x0a0c0f,
+      metalness: 0.28,
+      roughness: 0.62,
+      envMapIntensity: 0.1,
+      side: THREE.DoubleSide,
+    }),
+  );
+  bottomTongue.rotation.copy(recess.rotation);
+  bottomTongue.position.set(0, bottomY - 0.003, portZ);
+  port.add(bottomTongue);
+
   const lip = new THREE.Mesh(
-    new THREE.ShapeGeometry(
+    new THREE.ExtrudeGeometry(
       squircleRect(
         0.23,
         0.078,
@@ -802,11 +828,12 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
         DETAIL_CORNER.exponent,
         DETAIL_CORNER.exponent,
       ),
+      { depth: 0.007, bevelEnabled: false },
     ),
     portLipMaterial,
   );
   lip.rotation.copy(recess.rotation);
-  lip.position.set(0, bottomY - 0.003, portZ + 0.002);
+  lip.position.set(0, bottomY - 0.003, portZ);
   port.add(lip);
 
   const frontRim = new THREE.Mesh(
@@ -824,31 +851,34 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   frontRim.position.set(0, frontChinY, frontZ);
   port.add(frontRim);
 
+  const frontMouthW = 0.24;
+  const frontMouthH = 0.028;
+  const frontMouthR = frontMouthH / 2;
+  const frontMouthShape = new THREE.Shape();
+  frontMouthShape.moveTo(-frontMouthW / 2 + frontMouthR, -frontMouthH / 2);
+  frontMouthShape.lineTo(frontMouthW / 2 - frontMouthR, -frontMouthH / 2);
+  frontMouthShape.absarc(frontMouthW / 2 - frontMouthR, 0, frontMouthR, -Math.PI / 2, Math.PI / 2, false);
+  frontMouthShape.lineTo(-frontMouthW / 2 + frontMouthR, frontMouthH / 2);
+  frontMouthShape.absarc(-frontMouthW / 2 + frontMouthR, 0, frontMouthR, Math.PI / 2, -Math.PI / 2, false);
   const frontMouth = new THREE.Mesh(
-    new THREE.ShapeGeometry(
-      squircleRect(
-        0.24,
-        0.028,
-        DETAIL_CORNER.radius,
-        DETAIL_CORNER.exponent,
-        DETAIL_CORNER.exponent,
-      ),
-    ),
+    new THREE.ExtrudeGeometry(frontMouthShape, { depth: 0.003, bevelEnabled: false }),
     portInteriorMaterial,
   );
+  frontMouth.rotation.y = Math.PI;
   frontMouth.position.set(0, frontChinY - 0.001, frontZ + 0.0015);
   port.add(frontMouth);
 
+  const ftW = 0.1;
+  const ftH = 0.012;
+  const ftR = ftH / 2;
+  const ftShape = new THREE.Shape();
+  ftShape.moveTo(-ftW / 2 + ftR, -ftH / 2);
+  ftShape.lineTo(ftW / 2 - ftR, -ftH / 2);
+  ftShape.absarc(ftW / 2 - ftR, 0, ftR, -Math.PI / 2, Math.PI / 2, false);
+  ftShape.lineTo(-ftW / 2 + ftR, ftH / 2);
+  ftShape.absarc(-ftW / 2 + ftR, 0, ftR, Math.PI / 2, -Math.PI / 2, false);
   const frontTongue = new THREE.Mesh(
-    new THREE.ShapeGeometry(
-      squircleRect(
-        0.1,
-        0.012,
-        DETAIL_CORNER.radius * 0.75,
-        DETAIL_CORNER.exponent,
-        DETAIL_CORNER.exponent,
-      ),
-    ),
+    new THREE.ShapeGeometry(ftShape),
     new THREE.MeshBasicMaterial({
       color: 0x050607,
       transparent: true,
