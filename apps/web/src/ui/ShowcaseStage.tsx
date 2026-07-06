@@ -925,6 +925,14 @@ function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
     color: 0x010101,
     side: THREE.DoubleSide,
   });
+  const chamferMaterial = new THREE.MeshBasicMaterial({
+    color: 0xc0cad8,
+    transparent: true,
+    opacity: 0.18,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
 
   const sink = new THREE.Mesh(
     new THREE.CylinderGeometry(countersinkR, countersinkR, countersinkDepth, 48),
@@ -937,6 +945,14 @@ function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
   bore.rotation.x = -Math.PI * 0.5;
   bore.position.set(micX, topY - countersinkDepth + 0.001, micZ);
   mic.add(bore);
+
+  const chamfer = new THREE.Mesh(
+    new THREE.RingGeometry(countersinkR - 0.002, countersinkR + 0.002, 48),
+    chamferMaterial,
+  );
+  chamfer.rotation.x = -Math.PI * 0.5;
+  chamfer.position.set(micX, topY + 0.001, micZ);
+  mic.add(chamfer);
 
   mic.children.forEach((child) => {
     child.renderOrder = 7;
