@@ -67,7 +67,8 @@
   bottom: var(--site-frame-gap);
   z-index: 2;
   width: var(--site-frame-dot);
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
   background:
     linear-gradient(var(--site-frame-line), var(--site-frame-line)) center 12px /
       1px calc(100% - var(--site-frame-dot) - 11px) no-repeat,
@@ -95,7 +96,8 @@
   width: var(--site-frame-triangle);
   height: var(--site-frame-triangle);
   color: var(--site-frame-line);
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
 }
 
 .site-frame-accent-left {
@@ -146,11 +148,11 @@
 }
 
 @keyframes waitlist-arrow-nudge {
-  0%, 100% { background: var(--site-waitlist-fill); color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent); }
+  0%, 100% { background: var(--site-waitlist-fill); color: rgba(31, 30, 26, 0.62); }
   5%, 25% { background: #79bf72; color: #1f1e1a; }
-  33%, 37% { background: var(--site-waitlist-fill); color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent); }
+  33%, 37% { background: var(--site-waitlist-fill); color: rgba(31, 30, 26, 0.62); }
   42%, 62% { background: #79bf72; color: #1f1e1a; }
-  70%, 74% { background: var(--site-waitlist-fill); color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent); }
+  70%, 74% { background: var(--site-waitlist-fill); color: rgba(31, 30, 26, 0.62); }
   79%, 95% { background: #79bf72; color: #1f1e1a; }
 }
 
@@ -238,6 +240,7 @@
   display: block;
   width: 3.75em;
   height: auto;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
   object-fit: contain;
   transform: translate(-0.68em, 0.04em);
 }
@@ -482,6 +485,8 @@
   justify-content: center;
   flex: 0 0 var(--site-waitlist-height);
   padding: 0;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
+  color: rgba(31, 30, 26, 0.62);
   color: color-mix(in srgb, var(--site-waitlist-ink) 62%, transparent);
 }
 
@@ -526,6 +531,7 @@
   position: relative;
   display: grid;
   place-items: center;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
   width: 20px;
   height: 20px;
   border: 2px solid currentColor;
@@ -607,7 +613,7 @@
 
 .site-waitlist-control {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
+  grid-template-columns: minmax(0, 1fr) 44px;
   align-items: center;
   gap: 8px;
   height: var(--site-waitlist-height);
@@ -653,6 +659,7 @@
 }
 
 .site-waitlist-control input::placeholder {
+  color: rgba(31, 30, 26, 0.52);
   color: color-mix(in srgb, var(--site-waitlist-ink) 52%, transparent);
   opacity: 1;
 }
@@ -711,7 +718,10 @@
   min-height: 22px;
   border: 2px solid currentColor;
   border-radius: 999px;
-  padding: 0;
+  padding: 11px;
+  margin: -11px;
+  box-sizing: content-box;
+  color: rgba(31, 30, 26, 0.68);
   color: color-mix(in srgb, var(--site-waitlist-ink) 68%, transparent);
   cursor: pointer;
   background: transparent;
@@ -773,6 +783,7 @@
   bottom: calc(clamp(72px, 14vw, 132px) - 40px);
   z-index: 4;
   margin: 0;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
   color: rgba(234, 232, 224, 0.48);
   font-family:
     Montserrat,
@@ -828,6 +839,7 @@
   display: block;
   width: 58px;
   aspect-ratio: 726 / 235;
+  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
   background: currentColor;
   mask: var(--ptoq-logo) center / contain no-repeat;
   -webkit-mask: var(--ptoq-logo) center / contain no-repeat;
@@ -966,9 +978,8 @@
 
   .site-hardware-stage {
     min-height: 0;
-    margin-top: -20px;
+    margin-top: -56px;
     margin-bottom: 8px;
-    transform: translateY(-24px);
   }
 
   .site-waitlist {
@@ -1001,7 +1012,7 @@
   }
 
   .site-waitlist-control {
-    grid-template-columns: minmax(0, 1fr) 30px;
+    grid-template-columns: minmax(0, 1fr) 44px;
     padding: 0 6px 0 14px;
   }
 
@@ -1014,12 +1025,6 @@
   .site-waitlist-control input:-webkit-autofill::first-line,
   .site-waitlist-control input:autofill {
     font-size: 18px;
-  }
-
-  .site-waitlist-control button {
-    width: 22px;
-    height: 22px;
-    min-height: 22px;
   }
 
 }
@@ -1040,6 +1045,17 @@
 
   .site-waitlist-control {
     padding: 0 4px 0 12px;
+  }
+
+  .site-signal-dot {
+    width: max(0.3em, 6px);
+    height: max(0.3em, 6px);
+  }
+}
+
+@media (max-height: 500px) and (max-width: 720px) {
+  .site-hardware-stage {
+    max-height: 30vh;
   }
 }
 
