@@ -783,7 +783,7 @@
   bottom: calc(clamp(72px, 14vw, 132px) - 40px);
   z-index: 4;
   margin: 0;
-  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
+  cursor: pointer;
   color: rgba(234, 232, 224, 0.48);
   font-family:
     Montserrat,
@@ -839,7 +839,7 @@
   display: block;
   width: 58px;
   aspect-ratio: 726 / 235;
-  cursor: url("./assets/deal-with-it-pointer-48.png") 15 0, pointer;
+  cursor: pointer;
   background: currentColor;
   mask: var(--ptoq-logo) center / contain no-repeat;
   -webkit-mask: var(--ptoq-logo) center / contain no-repeat;

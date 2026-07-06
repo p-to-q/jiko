@@ -725,7 +725,7 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   const bottomY = -bodyH * 0.5 - 0.004;
   const portZ = 0;
   const frontChinY = -bodyH * 0.5 + 0.034;
-  const frontZ = bodyDepth * 0.505;
+  const frontZ = bodyDepth * 0.505 + 0.003;
 
   const recessMaterial = new THREE.MeshPhysicalMaterial({
     color: 0x242a31,
