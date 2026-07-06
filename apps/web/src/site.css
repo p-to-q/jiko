@@ -1026,8 +1026,7 @@
     min-height: 22px;
   }
 
-  .site-waitlist-control input,
-  .site-waitlist-control button {
+  .site-waitlist-control input {
     min-height: 32px;
     font-size: 18px;
   }
