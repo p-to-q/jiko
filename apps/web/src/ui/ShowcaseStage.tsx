@@ -651,19 +651,6 @@ function buildSideButton(bodyW: number, bodyH: number, bodyDepth: number) {
 function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number) {
   const details = new THREE.Group();
 
-  const apertureMaterial = new THREE.MeshBasicMaterial({
-    color: 0x020202,
-    transparent: true,
-    opacity: 0.95,
-    depthWrite: false,
-  });
-  const bevelMaterial = new THREE.MeshBasicMaterial({
-    color: 0xaeb8c8,
-    transparent: true,
-    opacity: 0.18,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
   const screwMaterial = new THREE.MeshPhysicalMaterial({
     color: 0x171a1d,
     metalness: 0.58,
@@ -683,6 +670,7 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
   });
 
   details.add(buildUsbCPort(bodyW, bodyH, bodyDepth));
+  details.add(buildMicAperture(bodyW, bodyH, bodyDepth));
 
   const screwPositions = [
     [-bodyW * 0.39, bodyH * 0.395],
@@ -909,6 +897,52 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   });
 
   return port;
+}
+
+function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
+  const mic = new THREE.Group();
+  const bevel = 0.026;
+  const cornerR = BODY_CORNER.radius;
+  const usableHalf = bodyW * 0.5 - cornerR;
+  const micX = -0.62;
+  const topY = bodyH * 0.5 + bevel + 0.002;
+  const micZ = 0;
+
+  const countersinkR = 0.024;
+  const boreR = 0.016;
+  const countersinkDepth = 0.008;
+
+  const sinkMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x181d22,
+    metalness: 0.52,
+    roughness: 0.38,
+    clearcoat: 0.24,
+    clearcoatRoughness: 0.4,
+    envMapIntensity: 0.34,
+    side: THREE.DoubleSide,
+  });
+  const boreMaterial = new THREE.MeshBasicMaterial({
+    color: 0x010101,
+    side: THREE.DoubleSide,
+  });
+
+  const sink = new THREE.Mesh(
+    new THREE.CylinderGeometry(countersinkR, countersinkR, countersinkDepth, 48),
+    sinkMaterial,
+  );
+  sink.position.set(micX, topY - countersinkDepth * 0.5, micZ);
+  mic.add(sink);
+
+  const bore = new THREE.Mesh(new THREE.CircleGeometry(boreR, 48), boreMaterial);
+  bore.rotation.x = -Math.PI * 0.5;
+  bore.position.set(micX, topY - countersinkDepth + 0.001, micZ);
+  mic.add(bore);
+
+  mic.children.forEach((child) => {
+    child.renderOrder = 7;
+  });
+
+  return mic;
 }
 
 function beginDrag(
