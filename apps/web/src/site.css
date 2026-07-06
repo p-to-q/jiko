@@ -154,6 +154,14 @@
   79%, 95% { background: #79bf72; color: #1f1e1a; }
 }
 
+@keyframes waitlist-arrow-nudge-hover {
+  0% { background: var(--site-waitlist-hover); color: var(--site-waitlist-ink); }
+  25% { background: #79bf72; color: #1f1e1a; }
+  50% { background: var(--site-waitlist-hover); color: var(--site-waitlist-ink); }
+  75% { background: #79bf72; color: #1f1e1a; }
+  100% { background: var(--site-waitlist-hover); color: var(--site-waitlist-ink); }
+}
+
 .site-waitlist-front-right.nudge {
   animation: waitlist-arrow-nudge 2.4s ease;
 }
@@ -530,6 +538,12 @@
 
 .site-waitlist-front-right.nudge .site-waitlist-arrow-circle {
   transition: none;
+}
+
+/* Hover + nudge: interrupt green, flash yellow with same timing */
+.site-waitlist[data-state="idle"] .site-waitlist-front:hover .site-waitlist-front-right.nudge,
+.site-waitlist[data-state="idle"] .site-waitlist-front-right.nudge:hover {
+  animation: waitlist-arrow-nudge-hover 2.4s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .site-waitlist[data-state="idle"] .site-waitlist-front:hover .site-waitlist-front-right,
