@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { ShowcaseStage } from "./ui/ShowcaseStageV2";
+import { ShowcaseStage } from "./ui/ShowcaseStage";
 import "./styles.css";
 import "./showcase.css";
 

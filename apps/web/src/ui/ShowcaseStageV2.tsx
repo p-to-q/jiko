@@ -6,7 +6,6 @@ import {
 } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import { createShowcaseScreenTexture } from "./showcaseScreenTexture";
 import { squircleRectPoints } from "./squircleGeometry";
 
@@ -739,7 +738,7 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
 
   details.add(buildUsbCPort(bodyW, bodyH, bodyDepth));
   details.add(buildMicAperture(bodyW, bodyH, bodyDepth));
-  details.add(buildThermalVent(bodyW, bodyH, bodyDepth));
+
 
   const screwPositions = [
     [-bodyW * 0.39, bodyH * 0.395],
@@ -966,122 +965,6 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   });
 
   return port;
-}
-
-const RECHAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -91 971 925">
-<g transform="scale(1,-1) translate(0,-834)">
-<g fill="#1a1a1a">
-<path d="M205 603H83Q59 603 40 597L23 640Q46 636 73 636H205V714Q205 775 201 822Q344 813 344 793Q344 783 317 767V636H359Q393 688 397.0 692.0Q401 696 405 696Q414 696 459.0 659.5Q504 623 504.0 613.0Q504 603 484 603H317V497Q396 509 475 522Q481 522 481 520Q481 516 463.0 509.5Q445 503 398 482Q466 474 523 456Q531 512 534 565L470 554Q447 550 434 543L410 582Q432 583 458 587L537 600Q540 664 540.0 722.0Q540 780 538 834Q609 827 644.0 821.0Q679 815 685.0 811.0Q691 807 691.0 799.5Q691 792 675 785Q668 782 666 756L651 620L706 629Q733 682 748 682Q755 682 793.0 659.5Q831 637 850.0 622.5Q869 608 869.0 597.5Q869 587 828 578Q812 504 812.0 444.0Q812 384 827.5 347.5Q843 311 857 311Q882 311 910 410Q914 424 917.0 424.0Q920 424 920 406V383Q920 319 928.0 289.5Q936 260 953.5 240.5Q971 221 971.0 202.5Q971 184 954.0 170.5Q937 157 910 157Q863 157 812.5 184.0Q762 211 733.0 277.0Q704 343 704 473Q704 533 711 596L647 585Q634 470 612 414Q685 364 685 304Q685 273 665.5 250.5Q646 228 622.5 228.0Q599 228 588.5 240.0Q578 252 572.0 272.5Q566 293 558 312Q521 264 468.0 230.0Q415 196 354.5 177.0Q294 158 284 158Q280 158 280.0 161.0Q280 164 285 166Q370 202 428.0 259.5Q486 317 509 391Q464 442 387 477Q341 457 317 446V269Q317 233 310.5 212.0Q304 191 287.0 177.5Q270 164 236.0 155.0Q202 146 184.5 146.0Q167 146 166 169Q163 218 85 244Q75 248 75.0 251.0Q75 254 88 254Q143 255 167.0 259.0Q191 263 198.0 272.5Q205 282 205 302V395Q147 369 91 339Q81 334 76.5 334.0Q72 334 69.0 338.0Q66 342 54.5 374.5Q43 407 27 465Q89 469 205 482Z"/>
-<path d="M135 160Q144 160 173.5 116.5Q203 73 203.0 25.5Q203 -22 171.5 -56.5Q140 -91 105.5 -91.0Q71 -91 54.5 -73.0Q38 -55 38.0 -26.0Q38 3 73 28Q138 75 138 122Q138 133 135.5 142.5Q133 152 133.0 156.0Q133 160 135 160Z"/>
-<path d="M739 151Q775 151 829.5 132.5Q884 114 918.0 77.5Q952 41 952 1Q952 -80 875 -80Q852 -80 835.5 -60.5Q819 -41 815.0 4.0Q811 49 795.0 80.0Q779 111 740 139Q731 145 731.0 148.0Q731 151 739 151Z"/>
-<path d="M509 144Q538 144 588.5 123.0Q639 102 671.0 63.0Q703 24 703.0 -11.0Q703 -46 675.5 -61.0Q648 -76 626.5 -76.0Q605 -76 591.5 -60.0Q578 -44 575 -15Q569 44 553.0 76.0Q537 108 504 127Q496 132 496.0 138.0Q496 144 509 144Z"/>
-<path d="M298 130Q319 130 362.5 111.5Q406 93 432.5 61.5Q459 30 459.0 -7.5Q459 -45 434.5 -63.5Q410 -82 387.0 -82.0Q364 -82 348.0 -64.5Q332 -47 334.0 -26.5Q336 -6 336 9Q336 88 297 118Q290 123 290.0 126.5Q290 130 298 130Z"/>
-</g>
-</g>
-</svg>`;
-
-function buildThermalVent(bodyW: number, _bodyH: number, bodyDepth: number) {
-  const vent = new THREE.Group();
-
-  // Parse SVG to get character shapes
-  const loader = new SVGLoader();
-  const result = loader.parse(RECHAR_SVG);
-  const rawShapes: THREE.Shape[] = [];
-  for (const path of result.paths) {
-    rawShapes.push(...SVGLoader.createShapes(path));
-  }
-  if (rawShapes.length === 0) return vent;
-
-  // Compute bounding box across all shapes
-  const box = new THREE.Box2();
-  for (const s of rawShapes) {
-    const pts = s.getPoints(48);
-    for (const p of pts) box.expandByPoint(new THREE.Vector2(p.x, p.y));
-  }
-  const svgW = box.max.x - box.min.x;
-  const svgH = box.max.y - box.min.y;
-  const svgCx = (box.min.x + box.max.x) * 0.5;
-  const svgCy = (box.min.y + box.max.y) * 0.5;
-
-  // Scale: fit within a target size on the front face
-  const targetSize = 0.2;
-  const scale = targetSize / Math.max(svgW, svgH);
-
-  // Outer panel size
-  const margin = 0.028;
-  const outerW = svgW * scale + margin * 2;
-  const outerH = svgH * scale + margin * 2;
-
-  // Build outer shape (rounded rect)
-  function roundedRectShape(w: number, h: number, r: number) {
-    const s = new THREE.Shape();
-    s.moveTo(-w * 0.5 + r, -h * 0.5);
-    s.lineTo(w * 0.5 - r, -h * 0.5);
-    s.absarc(w * 0.5 - r, 0, r, -Math.PI * 0.5, Math.PI * 0.5, false);
-    s.lineTo(-w * 0.5 + r, h * 0.5);
-    s.absarc(-w * 0.5 + r, 0, r, Math.PI * 0.5, -Math.PI * 0.5, false);
-    s.closePath();
-    return s;
-  }
-  const outerShape = roundedRectShape(outerW, outerH, 0.012);
-
-  // Add character shapes as holes, centered in the outer shape
-  for (const raw of rawShapes) {
-    const hole = new THREE.Shape();
-    const pts = raw.getPoints(48);
-    for (let i = 0; i < pts.length; i++) {
-      const px = (pts[i].x - svgCx) * scale;
-      const py = (pts[i].y - svgCy) * scale;
-      if (i === 0) hole.moveTo(px, py);
-      else hole.lineTo(px, py);
-    }
-    hole.closePath();
-    outerShape.holes.push(hole);
-  }
-
-  const panelDepth = 0.005;
-
-  // Gold metal panel (with cutout)
-  const goldMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0xc8a050,
-    metalness: 0.88,
-    roughness: 0.16,
-    clearcoat: 0.3,
-    clearcoatRoughness: 0.14,
-    envMapIntensity: 0.55,
-    side: THREE.DoubleSide,
-  });
-
-  const panel = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(outerShape, { depth: panelDepth, bevelEnabled: false }),
-    goldMaterial,
-  );
-  // Position on front face, left side, lower area
-  const ventX = -bodyW * 0.32;
-  const ventY = -bodyW * 0.28;
-  const ventZ = bodyDepth * 0.5 + 0.005;
-  panel.position.set(ventX, ventY, ventZ);
-  panel.renderOrder = 6;
-  vent.add(panel);
-
-  // Recess plane behind the panel (black, slightly inset)
-  const recessShape = roundedRectShape(outerW + 0.004, outerH + 0.004, 0.014);
-  const recessMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x050505,
-    metalness: 0.1,
-    roughness: 0.85,
-    envMapIntensity: 0.05,
-    side: THREE.DoubleSide,
-  });
-  const recess = new THREE.Mesh(
-    new THREE.ShapeGeometry(recessShape),
-    recessMaterial,
-  );
-  recess.position.set(ventX, ventY, ventZ - panelDepth * 0.5 - 0.001);
-  recess.renderOrder = 5;
-  vent.add(recess);
-
-  return vent;
 }
 
 function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
