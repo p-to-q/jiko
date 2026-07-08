@@ -433,6 +433,69 @@ function resolveCameraDistance(aspect: number, verticalFov: number) {
   return Math.max(8.8, horizontalFitDistance);
 }
 
+function createWoodTexture(width = 1024, height = 1024) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.Texture();
+
+  // Walnut-like base: warm medium brown
+  const base = ctx.createLinearGradient(0, 0, 0, height);
+  base.addColorStop(0, "#5c3a2a");
+  base.addColorStop(0.5, "#6b4130");
+  base.addColorStop(1, "#5c3a2a");
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, width, height);
+
+  // Grain lines: darker brown, mostly vertical with slight waviness
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = "#3d2418";
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 220; i++) {
+    const x = Math.random() * width;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    let cx = x;
+    for (let y = 0; y < height; y += 24) {
+      cx += (Math.random() - 0.5) * 2.2;
+      ctx.lineTo(cx, y);
+    }
+    ctx.stroke();
+  }
+
+  // Lighter streaks for wood figure
+  ctx.globalAlpha = 0.18;
+  ctx.strokeStyle = "#8a5a42";
+  ctx.lineWidth = 0.8;
+  for (let i = 0; i < 80; i++) {
+    const x = Math.random() * width;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    let cx = x;
+    for (let y = 0; y < height; y += 32) {
+      cx += (Math.random() - 0.5) * 3;
+      ctx.lineTo(cx, y);
+    }
+    ctx.stroke();
+  }
+
+  // Fine noise
+  ctx.globalAlpha = 0.08;
+  for (let i = 0; i < 6000; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    ctx.fillStyle = Math.random() > 0.5 ? "#2a1812" : "#a06b52";
+    ctx.fillRect(x, y, 1, 1);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 function buildHardware(screenTexture: THREE.Texture) {
   const group = new THREE.Group();
   const bodyW = 1.82;
@@ -440,14 +503,16 @@ function buildHardware(screenTexture: THREE.Texture) {
   const bodyDepth = 0.15;
   const bodyRadius = BODY_CORNER.radius;
 
+  const woodTexture = createWoodTexture();
   const shellMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x010101,
-    metalness: 0.22,
-    roughness: 0.58,
-    clearcoat: 0.24,
-    clearcoatRoughness: 0.44,
-    envMapIntensity: 0.12,
-    reflectivity: 0.18,
+    map: woodTexture,
+    color: 0xffffff,
+    metalness: 0.05,
+    roughness: 0.42,
+    clearcoat: 0.18,
+    clearcoatRoughness: 0.35,
+    envMapIntensity: 0.08,
+    reflectivity: 0.1,
     polygonOffset: true,
     polygonOffsetFactor: 4,
     polygonOffsetUnits: 4,
@@ -482,12 +547,13 @@ function buildHardware(screenTexture: THREE.Texture) {
       ),
     ),
     new THREE.MeshPhysicalMaterial({
-      color: 0x010101,
-      metalness: 0.2,
-      roughness: 0.6,
-      clearcoat: 0.2,
-      clearcoatRoughness: 0.46,
-      envMapIntensity: 0.1,
+      map: woodTexture,
+      color: 0xffffff,
+      metalness: 0.04,
+      roughness: 0.4,
+      clearcoat: 0.16,
+      clearcoatRoughness: 0.38,
+      envMapIntensity: 0.06,
     }),
   );
   frontFace.position.z = bodyDepth * 0.5 + 0.004;
@@ -504,12 +570,13 @@ function buildHardware(screenTexture: THREE.Texture) {
       ),
     ),
     new THREE.MeshPhysicalMaterial({
-      color: 0x020202,
-      metalness: 0.26,
-      roughness: 0.6,
-      clearcoat: 0.2,
-      clearcoatRoughness: 0.44,
-      envMapIntensity: 0.12,
+      map: woodTexture,
+      color: 0xffffff,
+      metalness: 0.04,
+      roughness: 0.38,
+      clearcoat: 0.16,
+      clearcoatRoughness: 0.38,
+      envMapIntensity: 0.06,
       depthWrite: false,
       polygonOffset: true,
       polygonOffsetFactor: 4,
@@ -608,13 +675,13 @@ function normalizeRotationY(value: number) {
 function buildSideButton(bodyW: number, bodyH: number, bodyDepth: number) {
   const side = new THREE.Group();
   const buttonMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x070707,
-    metalness: 0.32,
-    roughness: 0.58,
-    clearcoat: 0.22,
-    clearcoatRoughness: 0.42,
-    envMapIntensity: 0.12,
-    reflectivity: 0.18,
+    color: 0xc8c8d0,
+    metalness: 0.92,
+    roughness: 0.18,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.15,
+    envMapIntensity: 0.6,
+    reflectivity: 0.5,
   });
 
   const rail = new THREE.Mesh(
@@ -652,12 +719,12 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
   const details = new THREE.Group();
 
   const screwMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x171a1d,
-    metalness: 0.58,
-    roughness: 0.42,
-    clearcoat: 0.14,
-    clearcoatRoughness: 0.5,
-    envMapIntensity: 0.16,
+    color: 0xb8bcc4,
+    metalness: 0.88,
+    roughness: 0.22,
+    clearcoat: 0.28,
+    clearcoatRoughness: 0.2,
+    envMapIntensity: 0.5,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
@@ -740,12 +807,12 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
     side: THREE.DoubleSide,
   });
   const frontRimMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x9aa6b5,
-    metalness: 0.62,
-    roughness: 0.34,
-    clearcoat: 0.24,
-    clearcoatRoughness: 0.38,
-    envMapIntensity: 0.42,
+    color: 0xc0c5cc,
+    metalness: 0.88,
+    roughness: 0.2,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.18,
+    envMapIntensity: 0.55,
     side: THREE.DoubleSide,
   });
 
@@ -913,24 +980,25 @@ function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
   const countersinkDepth = 0.008;
 
   const sinkMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x181d22,
-    metalness: 0.52,
-    roughness: 0.38,
-    clearcoat: 0.24,
-    clearcoatRoughness: 0.4,
-    envMapIntensity: 0.34,
+    color: 0xc0c5cc,
+    metalness: 0.88,
+    roughness: 0.2,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.18,
+    envMapIntensity: 0.5,
     side: THREE.DoubleSide,
   });
   const boreMaterial = new THREE.MeshBasicMaterial({
     color: 0x010101,
     side: THREE.DoubleSide,
   });
-  const chamferMaterial = new THREE.MeshBasicMaterial({
-    color: 0xc0cad8,
-    transparent: true,
-    opacity: 0.18,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
+  const chamferMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xc8ccd4,
+    metalness: 0.9,
+    roughness: 0.15,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.12,
+    envMapIntensity: 0.6,
     side: THREE.DoubleSide,
   });
 
