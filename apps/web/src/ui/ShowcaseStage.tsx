@@ -154,12 +154,10 @@ function createHardwareScene(
     powerPreference: "high-performance",
   });
   renderer.setClearColor(0x000000, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.64;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMappingExposure = 0.5;
   host.append(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -181,10 +179,6 @@ function createHardwareScene(
 
   const key = new THREE.DirectionalLight(0xffffff, 1.32);
   key.position.set(-3.6, 5.2, 5.4);
-  key.castShadow = true;
-  key.shadow.mapSize.width = 2048;
-  key.shadow.mapSize.height = 2048;
-  key.shadow.bias = -0.0001;
   scene.add(key);
 
   const rim = new THREE.DirectionalLight(0xd9f1ff, 0.94);
@@ -677,7 +671,6 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
 
   details.add(buildUsbCPort(bodyW, bodyH, bodyDepth));
   details.add(buildMicAperture(bodyW, bodyH, bodyDepth));
-  details.add(buildVents(bodyW, bodyH, bodyDepth));
 
   const screwPositions = [
     [-bodyW * 0.39, bodyH * 0.395],
@@ -966,120 +959,6 @@ function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
   });
 
   return mic;
-}
-
-function buildVents(bodyW: number, _bodyH: number, bodyDepth: number) {
-  const vents = new THREE.Group();
-
-  const slotW = 0.012;
-  const slotH = 0.180;
-  const gap = 0.020;
-
-  // Left side face, same depth zone as the right-side button (no bevel there).
-  const sideX = -(bodyW * 0.5) - 0.003;
-  const ventZ = bodyDepth * 0.1;
-
-  const totalHeight = 5 * slotH + 4 * gap;
-  const groupY = 0.0;
-
-  const slotFill = new THREE.MeshBasicMaterial({ color: 0x010101, side: THREE.DoubleSide });
-  const slotOutline = new THREE.MeshBasicMaterial({
-    color: 0x9fb0c4,
-    transparent: true,
-    opacity: 0.32,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-  });
-
-  function stadiumShape(w: number, h: number) {
-    const r = w * 0.5;
-    const s = new THREE.Shape();
-    s.moveTo(-w * 0.5 + r, -h * 0.5);
-    s.lineTo(w * 0.5 - r, -h * 0.5);
-    s.absarc(w * 0.5 - r, 0, r, -Math.PI * 0.5, Math.PI * 0.5, false);
-    s.lineTo(-w * 0.5 + r, h * 0.5);
-    s.absarc(-w * 0.5 + r, 0, r, Math.PI * 0.5, -Math.PI * 0.5, false);
-    s.closePath();
-    return s;
-  }
-
-  function stadiumRing(w: number, h: number, thickness: number) {
-    const outer = stadiumShape(w + thickness, h + thickness);
-    const inner = stadiumShape(w, h);
-    outer.holes.push(inner);
-    return outer;
-  }
-
-  function addSlot(cy: number, h: number) {
-    const shape = stadiumShape(slotW, h);
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape), slotFill);
-    mesh.rotation.y = -Math.PI * 0.5;
-    mesh.position.set(sideX, cy, ventZ);
-    mesh.renderOrder = 8;
-    vents.add(mesh);
-
-    const ring = new THREE.Mesh(
-      new THREE.ShapeGeometry(stadiumRing(slotW, h, 0.006)),
-      slotOutline,
-    );
-    ring.rotation.y = -Math.PI * 0.5;
-    ring.position.set(sideX - 0.001, cy, ventZ);
-    ring.renderOrder = 8;
-    vents.add(ring);
-  }
-
-  // 4 long slots
-  for (let i = 0; i < 4; i++) {
-    const cy = groupY + totalHeight * 0.5 - i * (slotH + gap) - slotH * 0.5;
-    addSlot(cy, slotH);
-  }
-
-  // Bottom composite: short slot + squircle square
-  const compY = groupY - totalHeight * 0.5 + slotH * 0.5;
-
-  addSlot(compY, slotH);
-
-  const sqSize = 0.035;
-  const sqR = 0.010;
-  const sqEx = 3.2;
-
-  const sqPoints = squircleRectPoints({
-    x: -sqSize * 0.5, y: -sqSize * 0.5,
-    width: sqSize, height: sqSize,
-    radius: sqR,
-    exponentX: sqEx, exponentY: sqEx,
-  });
-  const sqShape = new THREE.Shape();
-  sqShape.moveTo(sqPoints[0].x, sqPoints[0].y);
-  sqPoints.slice(1).forEach((p) => sqShape.lineTo(p.x, p.y));
-  sqShape.closePath();
-
-  const sqMesh = new THREE.Mesh(new THREE.ShapeGeometry(sqShape), slotFill);
-  sqMesh.rotation.y = -Math.PI * 0.5;
-  sqMesh.position.set(sideX, compY, ventZ + 0.022);
-  sqMesh.renderOrder = 8;
-  vents.add(sqMesh);
-
-  const sqRingShape = new THREE.Shape();
-  const sqOuterPoints = squircleRectPoints({
-    x: -(sqSize + 0.006) * 0.5, y: -(sqSize + 0.006) * 0.5,
-    width: sqSize + 0.006, height: sqSize + 0.006,
-    radius: sqR + 0.003,
-    exponentX: sqEx, exponentY: sqEx,
-  });
-  sqRingShape.moveTo(sqOuterPoints[0].x, sqOuterPoints[0].y);
-  sqOuterPoints.slice(1).forEach((p) => sqRingShape.lineTo(p.x, p.y));
-  sqRingShape.closePath();
-  sqRingShape.holes.push(sqShape);
-
-  const sqRing = new THREE.Mesh(new THREE.ShapeGeometry(sqRingShape), slotOutline);
-  sqRing.rotation.y = -Math.PI * 0.5;
-  sqRing.position.set(sideX - 0.001, compY, ventZ + 0.022);
-  sqRing.renderOrder = 8;
-  vents.add(sqRing);
-
-  return vents;
 }
 
 function beginDrag(
