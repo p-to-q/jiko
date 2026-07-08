@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import brandWordmark from "./assets/jiko-wordmark-site.svg";
 import ptoqLogo from "./assets/ptoq-logo.png";
-import { ShowcaseStage } from "./ui/ShowcaseStage";
+import { ShowcaseStage } from "./ui/ShowcaseStageV2";
 import "./styles.css";
 import "./showcase.css";
 import "./site.css";
