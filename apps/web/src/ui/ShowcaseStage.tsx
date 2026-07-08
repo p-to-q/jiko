@@ -671,6 +671,7 @@ function buildFunctionalDetails(bodyW: number, bodyH: number, bodyDepth: number)
 
   details.add(buildUsbCPort(bodyW, bodyH, bodyDepth));
   details.add(buildMicAperture(bodyW, bodyH, bodyDepth));
+  details.add(buildThermalMark(bodyW, bodyH, bodyDepth));
 
   const screwPositions = [
     [-bodyW * 0.39, bodyH * 0.395],
@@ -732,9 +733,9 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
     side: THREE.DoubleSide,
   });
   const portLipMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd8e2ee,
+    color: 0x8a96a6,
     transparent: true,
-    opacity: 0.34,
+    opacity: 0.22,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
@@ -749,6 +750,7 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
     side: THREE.DoubleSide,
   });
 
+  const btmRecessMat = recessMaterial.clone();
   const recess = new THREE.Mesh(
     new THREE.ExtrudeGeometry(
       squircleRect(
@@ -760,10 +762,11 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
       ),
       { depth: 0.008, bevelEnabled: false },
     ),
-    recessMaterial,
+    btmRecessMat,
   );
   recess.rotation.x = Math.PI * 0.5;
   recess.position.set(0, bottomY, portZ);
+  syncSurfaceDepth(recess, btmRecessMat);
   port.add(recess);
 
   const usbCShape = new THREE.Shape();
@@ -776,12 +779,14 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   usbCShape.lineTo(-usbW / 2 + usbR, usbH / 2);
   usbCShape.absarc(-usbW / 2 + usbR, 0, usbR, Math.PI / 2, -Math.PI / 2, false);
 
+  const btmInteriorMat = portInteriorMaterial.clone();
   const innerMouth = new THREE.Mesh(
     new THREE.ExtrudeGeometry(usbCShape, { depth: 0.006, bevelEnabled: false }),
-    portInteriorMaterial,
+    btmInteriorMat,
   );
   innerMouth.rotation.copy(recess.rotation);
   innerMouth.position.set(0, bottomY - 0.002, portZ);
+  syncSurfaceDepth(innerMouth, btmInteriorMat);
   port.add(innerMouth);
 
   const tongueW = 0.12;
@@ -793,20 +798,23 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   tongueShape.absarc(tongueW / 2 - tongueR, 0, tongueR, -Math.PI / 2, Math.PI / 2, false);
   tongueShape.lineTo(-tongueW / 2 + tongueR, tongueH / 2);
   tongueShape.absarc(-tongueW / 2 + tongueR, 0, tongueR, Math.PI / 2, -Math.PI / 2, false);
+  const btmTongueMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0a0c0f,
+    metalness: 0.28,
+    roughness: 0.62,
+    envMapIntensity: 0.1,
+    side: THREE.DoubleSide,
+  });
   const bottomTongue = new THREE.Mesh(
     new THREE.ExtrudeGeometry(tongueShape, { depth: 0.004, bevelEnabled: false }),
-    new THREE.MeshPhysicalMaterial({
-      color: 0x0a0c0f,
-      metalness: 0.28,
-      roughness: 0.62,
-      envMapIntensity: 0.1,
-      side: THREE.DoubleSide,
-    }),
+    btmTongueMat,
   );
   bottomTongue.rotation.copy(recess.rotation);
   bottomTongue.position.set(0, bottomY - 0.003, portZ);
+  syncSurfaceDepth(bottomTongue, btmTongueMat);
   port.add(bottomTongue);
 
+  const btmLipMat = portLipMaterial.clone();
   const lip = new THREE.Mesh(
     new THREE.ExtrudeGeometry(
       squircleRect(
@@ -818,10 +826,11 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
       ),
       { depth: 0.007, bevelEnabled: false },
     ),
-    portLipMaterial,
+    btmLipMat,
   );
   lip.rotation.copy(recess.rotation);
   lip.position.set(0, bottomY - 0.003, portZ);
+  syncSurfaceDepth(lip, btmLipMat);
   port.add(lip);
 
   const frontRim = new THREE.Mesh(
@@ -881,9 +890,9 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   const frontHighlight = new THREE.Mesh(
     new THREE.ShapeGeometry(roundedRect(0.3, 0.006, 0.002)),
     new THREE.MeshBasicMaterial({
-      color: 0xe8f0f8,
+      color: 0x7a8898,
       transparent: true,
-      opacity: 0.06,
+      opacity: 0.10,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
@@ -899,32 +908,61 @@ function buildUsbCPort(bodyW: number, bodyH: number, bodyDepth: number) {
   return port;
 }
 
+function syncSurfaceDepth(mesh: THREE.Mesh, material: THREE.Material, threshold = 0.08) {
+  const faceDir = new THREE.Vector3();
+  const meshPos = new THREE.Vector3();
+  const camPos = new THREE.Vector3();
+  const toCamera = new THREE.Vector3();
+
+  mesh.onBeforeRender = (_renderer, _scene, camera) => {
+    faceDir.set(0, 0, 1).transformDirection(mesh.matrixWorld);
+    mesh.getWorldPosition(meshPos);
+    camera.getWorldPosition(camPos);
+    toCamera.copy(camPos).sub(meshPos).normalize();
+    material.depthTest = faceDir.dot(toCamera) <= threshold;
+  };
+}
+
 function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
   const mic = new THREE.Group();
   const bevel = 0.026;
-  const cornerR = BODY_CORNER.radius;
-  const usableHalf = bodyW * 0.5 - cornerR;
   const micX = -0.62;
-  const topY = bodyH * 0.5 + bevel + 0.002;
+  const topY = bodyH * 0.5 + bevel;
   const micZ = 0;
 
   const countersinkR = 0.024;
   const boreR = 0.016;
-  const countersinkDepth = 0.008;
 
-  const sinkMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x181d22,
-    metalness: 0.52,
-    roughness: 0.38,
-    clearcoat: 0.24,
-    clearcoatRoughness: 0.4,
-    envMapIntensity: 0.34,
+  // 凹陷区域：深色圆面，贴合顶面
+  const sinkMaterial = new THREE.MeshBasicMaterial({
+    color: 0x080a0d,
+    depthWrite: false,
     side: THREE.DoubleSide,
   });
+  const sink = new THREE.Mesh(
+    new THREE.CircleGeometry(countersinkR, 48),
+    sinkMaterial,
+  );
+  sink.rotation.x = -Math.PI * 0.5;
+  sink.position.set(micX, topY + 0.001, micZ);
+  sink.renderOrder = 7;
+  syncSurfaceDepth(sink, sinkMaterial);
+  mic.add(sink);
+
+  // 孔洞中心：纯黑
   const boreMaterial = new THREE.MeshBasicMaterial({
     color: 0x010101,
+    depthWrite: false,
     side: THREE.DoubleSide,
   });
+  const bore = new THREE.Mesh(new THREE.CircleGeometry(boreR, 48), boreMaterial);
+  bore.rotation.x = -Math.PI * 0.5;
+  bore.position.set(micX, topY + 0.0015, micZ);
+  bore.renderOrder = 8;
+  syncSurfaceDepth(bore, boreMaterial);
+  mic.add(bore);
+
+  // 边缘倒角高光
   const chamferMaterial = new THREE.MeshBasicMaterial({
     color: 0xc0cad8,
     transparent: true,
@@ -933,32 +971,130 @@ function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
     blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
   });
-
-  const sink = new THREE.Mesh(
-    new THREE.CylinderGeometry(countersinkR, countersinkR, countersinkDepth, 48),
-    sinkMaterial,
-  );
-  sink.position.set(micX, topY - countersinkDepth * 0.5, micZ);
-  mic.add(sink);
-
-  const bore = new THREE.Mesh(new THREE.CircleGeometry(boreR, 48), boreMaterial);
-  bore.rotation.x = -Math.PI * 0.5;
-  bore.position.set(micX, topY - countersinkDepth + 0.001, micZ);
-  mic.add(bore);
-
   const chamfer = new THREE.Mesh(
-    new THREE.RingGeometry(countersinkR - 0.002, countersinkR + 0.002, 48),
+    new THREE.RingGeometry(countersinkR - 0.002, countersinkR + 0.003, 48),
     chamferMaterial,
   );
   chamfer.rotation.x = -Math.PI * 0.5;
-  chamfer.position.set(micX, topY + 0.001, micZ);
+  chamfer.position.set(micX, topY + 0.002, micZ);
+  chamfer.renderOrder = 9;
+  syncSurfaceDepth(chamfer, chamferMaterial);
   mic.add(chamfer);
 
-  mic.children.forEach((child) => {
-    child.renderOrder = 7;
-  });
-
   return mic;
+}
+
+// 热字解构路径 — potrace 内部坐标（像素×10），配合 canvas transform 使用
+// viewBox 原图 1482×1532，transform: translate(0,H) scale(W/14820, -H/15320)
+const THERMAL_SHOU =
+  "M4235 14918 c-3 -7 -6 -479 -8 -1048 -2 -1035 -2 -1035 -1277 -1040 -1275 -5 -1275 -5 -1275 -185 0 -180 0 -180 1245 -186 926 -4 1250 -8 1266 -17 30 -16 37 -192 37 -932 0 -614 -6 -738 -40 -771 -22 -22 -147 -69 -185 -69 -15 0 -29 -4 -32 -9 -3 -5 -23 -11 -43 -14 -21 -2 -92 -16 -158 -31 -66 -14 -147 -31 -180 -37 -33 -6 -82 -15 -110 -20 -27 -6 -77 -14 -110 -19 -33 -5 -80 -14 -105 -19 -25 -5 -117 -21 -205 -36 -88 -15 -182 -31 -210 -36 -27 -5 -84 -14 -125 -19 -138 -18 -275 -42 -455 -81 -55 -11 -118 -23 -140 -25 -22 -3 -49 -9 -60 -14 -11 -5 -40 -11 -65 -14 -25 -2 -70 -9 -100 -15 -103 -19 -245 -41 -359 -56 -114 -14 -177 -30 -195 -46 -6 -5 -18 -9 -27 -9 -38 0 -25 -33 161 -408 106 -213 196 -396 200 -407 5 -11 54 -114 111 -230 175 -357 239 -427 338 -369 33 19 117 121 132 161 4 11 13 24 19 28 6 3 21 27 35 53 51 97 212 212 296 212 10 0 21 5 24 10 3 6 15 10 26 10 10 0 27 4 37 10 9 5 49 21 87 35 39 15 88 34 110 44 22 10 56 23 75 30 93 32 226 84 234 92 6 5 20 9 32 9 13 0 26 5 29 10 3 6 14 10 24 10 10 0 33 8 52 17 19 10 68 29 109 44 135 48 145 52 162 60 10 5 24 9 33 9 8 0 30 9 50 20 20 11 42 20 50 20 8 0 31 7 52 16 21 9 47 20 58 24 232 82 283 99 320 102 52 4 58 -120 51 -957 -10 -1029 -5 -1020 -506 -1019 -135 1 -351 8 -481 18 -130 9 -306 16 -390 16 -190 0 -606 16 -878 35 -223 16 -231 15 -231 -38 0 -127 37 -147 366 -197 118 -18 473 -127 586 -179 36 -17 69 -31 73 -31 16 0 133 -61 145 -75 7 -8 20 -15 30 -15 10 0 23 -7 30 -15 7 -8 16 -15 21 -15 44 0 312 -270 337 -340 8 -22 149 -239 181 -277 14 -18 37 -46 49 -63 49 -63 147 -80 357 -60 72 7 180 16 240 20 114 8 189 18 335 45 47 9 104 19 128 22 23 3 45 10 48 14 3 5 16 9 29 9 13 0 27 5 30 10 3 6 18 10 33 10 15 0 52 9 82 21 30 11 67 24 81 29 129 40 325 157 441 262 98 89 201 273 240 428 40 162 57 803 58 2151 0 726 0 726 23 737 12 6 58 22 102 37 44 14 89 30 100 34 11 5 67 23 125 41 58 18 114 36 125 40 11 4 46 16 77 25 32 9 60 21 64 26 3 5 23 9 44 9 21 0 42 5 45 10 3 6 16 10 29 10 12 0 26 4 32 9 5 5 38 18 74 29 36 12 90 30 120 42 30 12 64 24 75 27 11 2 29 9 40 13 11 5 56 21 100 35 44 14 88 31 97 36 10 5 26 9 36 9 10 0 22 4 28 9 5 5 72 30 149 56 77 25 148 51 157 56 10 5 24 9 32 9 8 0 31 8 53 19 21 10 76 31 123 46 47 15 103 36 124 46 22 11 48 19 57 19 10 0 21 5 24 10 3 6 16 10 29 10 12 0 26 4 32 8 5 5 32 17 59 27 135 48 185 90 185 156 0 38 -89 55 -212 40 -46 -6 -164 -20 -263 -31 -164 -19 -331 -42 -395 -56 -14 -3 -56 -10 -95 -15 -93 -12 -184 -26 -215 -33 -14 -3 -110 -20 -215 -37 -104 -17 -212 -36 -240 -41 -77 -14 -174 -28 -235 -34 -30 -3 -59 -10 -64 -15 -6 -5 -25 -9 -44 -9 -18 0 -52 -4 -75 -9 -93 -20 -243 -43 -262 -40 -36 7 -39 61 -40 794 0 813 -115 728 955 705 784 -16 1398 -18 1435 -4 17 7 50 18 75 25 91 27 142 86 113 130 -40 61 -181 192 -230 215 -28 13 -55 29 -58 35 -4 5 -17 14 -28 19 -12 5 -44 23 -72 39 -27 17 -71 42 -96 55 -26 14 -67 39 -92 56 -25 16 -49 30 -55 30 -5 0 -15 7 -22 15 -7 9 -33 25 -56 35 -24 11 -45 24 -49 29 -3 6 -29 21 -59 35 -29 14 -59 32 -66 41 -7 8 -16 15 -21 15 -5 0 -28 12 -52 27 -23 15 -62 38 -87 51 -25 14 -52 30 -60 37 -54 46 -192 88 -290 89 -107 0 -133 -12 -293 -143 -66 -53 -131 -105 -145 -116 -450 -337 -451 -338 -641 -333 -106 3 -106 3 -109 665 -2 745 -19 657 145 792 155 127 263 261 263 324 0 27 -58 63 -125 77 -22 5 -67 16 -100 24 -92 24 -280 50 -615 86 -102 11 -203 24 -225 29 -22 5 -87 15 -145 21 -200 22 -536 65 -593 76 -17 4 -29 1 -32 -8z";
+
+const THERMAL_WAN =
+  "M4086 5708 c-3 -13 -7 -282 -10 -598 -4 -316 -9 -608 -13 -647 -6 -73 -6 -73 -590 -73 -584 0 -584 0 -581 -117 3 -118 3 -118 563 -123 649 -6 612 35 524 -580 -11 -74 -24 -164 -29 -200 -22 -160 -60 -345 -75 -370 -10 -17 -129 -11 -237 11 -445 91 -639 119 -811 119 -173 0 -203 -52 -62 -105 33 -13 105 -40 160 -61 55 -20 142 -57 193 -81 52 -23 96 -43 99 -43 6 0 183 -83 218 -102 10 -6 37 -21 60 -33 162 -88 204 -120 205 -158 1 -53 -99 -277 -190 -425 -25 -41 -49 -81 -55 -90 -202 -338 -701 -817 -1262 -1212 -199 -139 -200 -140 -333 -222 -269 -166 -249 -146 -195 -201 49 -50 104 -45 270 22 203 83 438 180 550 228 137 58 554 272 670 344 17 10 44 26 60 35 376 210 862 643 1073 955 162 239 157 235 223 192 298 -192 645 -523 762 -725 56 -97 157 -148 309 -155 680 -35 653 668 -42 1092 -103 63 -427 225 -450 225 -6 0 -18 4 -28 9 -16 9 -190 78 -305 121 -31 12 -57 25 -57 29 0 7 20 75 54 181 76 235 136 524 171 825 15 124 46 290 63 336 10 26 10 26 463 32 831 13 928 11 933 -15 3 -13 7 -230 9 -483 5 -469 7 -510 57 -915 21 -169 43 -283 87 -450 14 -52 31 -117 38 -145 25 -97 171 -479 196 -510 4 -6 29 -51 54 -100 26 -50 53 -97 61 -106 8 -8 14 -19 14 -23 0 -6 29 -50 115 -172 85 -120 393 -424 431 -424 3 0 23 -13 44 -30 21 -16 40 -30 43 -30 3 0 26 -14 51 -30 331 -224 966 -328 1266 -208 113 45 181 106 232 208 43 87 -17 316 -132 496 -70 111 -84 433 -47 1114 15 276 15 276 -37 266 -46 -9 -81 -51 -96 -118 -24 -106 -170 -581 -200 -653 -5 -11 -25 -67 -45 -125 -47 -134 -107 -256 -147 -297 -173 -179 -585 126 -813 603 -87 180 -104 224 -155 409 -92 326 -120 573 -120 1050 1 497 16 557 147 581 96 17 213 95 213 141 0 84 -314 285 -733 470 -159 70 -182 61 -565 -206 -72 -51 -72 -51 -708 -51 -636 0 -636 0 -630 43 15 111 19 189 25 537 6 374 6 374 36 390 16 8 37 22 47 31 10 9 48 33 84 54 247 145 108 184 -961 275 -154 13 -154 14 -159 -12z";
+
+const THERMAL_HUO: readonly string[] = [
+  "M11285 14975 c-851 -133 -1542 -1122 -1869 -2675 -91 -434 -90 -581 4 -620 43 -18 28 -36 242 290 559 851 1283 1410 2148 1656 148 42 184 64 234 138 126 190 170 673 78 855 -57 112 -201 260 -307 314 -108 55 -333 73 -530 42z",
+  "M11145 10719 c-725 -55 -1397 -842 -1809 -2116 -48 -149 -47 -184 5 -279 41 -75 41 -75 193 73 548 539 1206 855 1991 958 249 32 226 20 286 150 146 317 150 608 12 883 -138 276 -309 359 -678 331z",
+  "M11157 6799 c-320 -31 -604 -175 -899 -457 -426 -408 -777 -1013 -657 -1133 38 -38 161 -22 334 41 223 83 467 140 775 182 67 9 240 13 580 13 546 0 504 -6 571 84 192 262 232 455 153 734 -103 363 -442 575 -857 536z",
+  "M10175 3044 c-16 -2 -70 -9 -120 -15 -224 -27 -465 -92 -516 -140 -25 -24 -29 -34 -29 -84 0 -74 28 -103 132 -134 260 -79 347 -118 501 -221 372 -250 767 -774 953 -1268 177 -466 525 -686 851 -537 368 167 407 1049 69 1554 -255 381 -671 669 -1132 785 -185 47 -570 80 -709 60z",
+];
+
+function syncLeftFaceDepth(
+  mesh: THREE.Mesh,
+  material: THREE.MeshBasicMaterial,
+  baseOpacity: number,
+) {
+  const faceDir = new THREE.Vector3();
+  const meshPos = new THREE.Vector3();
+  const camPos = new THREE.Vector3();
+  const toCamera = new THREE.Vector3();
+
+  mesh.onBeforeRender = (_renderer, _scene, camera) => {
+    faceDir.set(0, 0, 1).transformDirection(mesh.matrixWorld);
+    mesh.getWorldPosition(meshPos);
+    camera.getWorldPosition(camPos);
+    toCamera.copy(camPos).sub(meshPos).normalize();
+    const facing = faceDir.dot(toCamera);
+    material.depthTest = facing <= 0.05;
+    const t = Math.min(1, Math.max(0, (facing - 0.05) / 0.25));
+    material.opacity = t * baseOpacity;
+  };
+}
+
+function buildThermalMark(bodyW: number, bodyH: number, bodyDepth: number) {
+  const group = new THREE.Group();
+
+  const bevelThickness = 0.026;
+  const safeHalf = bodyDepth / 2 - bevelThickness - 0.004;
+  const markW = safeHalf * 2 * 1.35;
+  const markH = markW * 1.55;
+
+  const faceX = -(bodyW / 2 + 0.004);
+  const markY = -bodyH * 0.26;
+
+  const CS = 1024;
+  const paths = [THERMAL_SHOU, THERMAL_WAN, ...THERMAL_HUO];
+
+  const cvs = document.createElement("canvas");
+  cvs.width = CS;
+  cvs.height = CS;
+  const ctx = cvs.getContext("2d")!;
+  ctx.setTransform(CS / 14820, 0, 0, -(CS / 15320), 0, CS);
+
+  ctx.fillStyle = "rgba(45, 42, 38, 1)";
+  for (const p of paths) ctx.fill(new Path2D(p));
+
+  ctx.resetTransform();
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+
+  const mat = new THREE.MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    opacity: 0.92,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(markW, markH), mat);
+  mesh.rotation.y = -Math.PI / 2;
+  mesh.position.set(faceX - 0.001, markY, 0);
+  mesh.renderOrder = 6;
+  syncLeftFaceDepth(mesh, mat, 0.92);
+  group.add(mesh);
+
+  const hCvs = document.createElement("canvas");
+  hCvs.width = CS;
+  hCvs.height = CS;
+  const hc = hCvs.getContext("2d")!;
+  hc.setTransform(CS / 14820, 0, 0, -(CS / 15320), 0, CS);
+  hc.strokeStyle = "rgba(210, 218, 228, 1)";
+  hc.lineWidth = 600;
+  hc.lineJoin = "round";
+  hc.lineCap = "round";
+  for (const p of paths) hc.stroke(new Path2D(p));
+  hc.resetTransform();
+
+  const haloTex = new THREE.CanvasTexture(hCvs);
+  haloTex.colorSpace = THREE.SRGBColorSpace;
+  haloTex.anisotropy = 8;
+
+  const haloMat = new THREE.MeshBasicMaterial({
+    map: haloTex,
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(markW, markH), haloMat);
+  halo.rotation.y = -Math.PI / 2;
+  halo.position.set(faceX - 0.0005, markY, 0);
+  halo.renderOrder = 5;
+  syncLeftFaceDepth(halo, haloMat, 0.35);
+  group.add(halo);
+
+  return group;
 }
 
 function beginDrag(
