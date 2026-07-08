@@ -47,7 +47,6 @@ sessions/
 .idea/
 .vscode/
 .vercel
-.env*
 
 # Local experiments unrelated to jiko
 _vendor/
