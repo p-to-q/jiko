@@ -50,7 +50,20 @@ Three square windows:
 
 ## Physical Direction
 
-The current physical direction is locked in [Form Factor](form-factor.md): a thick vertical Raspberry Pi 5-based signal object with a top result strip, three stacked signal windows, and a side thumb control.
+The current physical direction is locked in [Form Factor](form-factor.md): a
+thick vertical signal object with a top result strip, three stacked signal
+windows, and a side thumb control.
+
+The form has two phases. See [Hardware Phases](hardware-phases.md):
+
+- **Jiko Zero** — the hackathon stack uses Raspberry Pi 5 with MPI3508 display
+  as a fast, visible prototype shell.
+- **Jiko One** — the advanced prototype carries the same object language into a
+  custom-chip form factor. The showcase industrial-design model is the starting
+  point for this phase.
+
+The product form is independent of any specific compute board. The interaction is
+quieter and stranger than an assistant.
 
 ## Signal States
 

@@ -1,6 +1,12 @@
 # Next Phase Checklist
 
-This file answers one question: is the repo ready to move from planning into implementation, then into naming and narrative?
+This file answers one question: is the repo ready to move from planning into
+implementation, then into naming and narrative?
+
+This checklist is written for **Jiko Zero** — the hackathon laptop + Raspberry Pi 5
+kiosk prototype. **Jiko One** planning will start after this phase is stable. See
+[Hardware Phases](hardware-phases.md) for the phase definitions and physical
+dimensions.
 
 ## Current Verdict
 

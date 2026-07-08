@@ -1,6 +1,17 @@
 # Form Factor
 
-This document defines the current physical and screen-layout direction.
+This document defines the physical and screen-layout direction.
+
+## Hardware Phases
+
+The physical direction applies to both phases, but the baseline compute stack
+is different. See [Hardware Phases](hardware-phases.md) for the full definition
+and the dimension calculation from the USB-C reference.
+
+- **Jiko Zero** — Hackathon baseline: Raspberry Pi 5 + MPI3508 3.5-inch display.
+- **Jiko One** — Advanced prototype: custom chip and the current squircle form
+  factor from the showcase study. The current industrial-design model is the
+  starting point for this phase.
 
 ## Hardware Baseline
 

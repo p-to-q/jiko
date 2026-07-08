@@ -24,6 +24,7 @@ This map should stay short. It explains where things go without turning the repo
 - `docs/result-copy.md`: top-screen result copy rules and candidate lines.
 - `docs/form-factor.md`: Raspberry Pi 5 physical form and screen-layout direction.
 - `docs/hardware-notes.md`: screen, shell, button, Pi, and mounting notes.
+- `docs/hardware-phases.md`: Jiko Zero / Jiko One definitions and physical dimensions from the USB-C reference.
 - `docs/hardware-interfaces.md`: Raspberry Pi 5 and MPI3508 interface notes, with secondary Pi notes.
 - `docs/showcase-design-decisions.md`: current visual decisions for the framed site and Three.js hardware showcase.
 - `docs/demo-runbook.md`: hackathon laptop-plus-Pi setup, smoke tests, and fallback ladder.
@@ -61,7 +62,8 @@ For new contributors:
 2. `docs/product-brief.md`.
 3. `docs/result-copy.md`.
 4. `docs/form-factor.md`.
-5. `docs/engineering-discipline.md`.
+5. `docs/hardware-phases.md`.
+6. `docs/engineering-discipline.md`.
 6. `docs/backend-architecture.md`.
 7. `docs/runtime-paths.md`.
 8. `docs/data-handling.md`.

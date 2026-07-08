@@ -87,6 +87,7 @@ curl -X POST http://localhost:4317/sessions/demo-001/manual-transcript \
 - [Data Handling](docs/data-handling.md)
 - [Result Copy](docs/result-copy.md)
 - [Form Factor](docs/form-factor.md)
+- [Hardware Phases](docs/hardware-phases.md)
 - [Hardware Notes](docs/hardware-notes.md)
 - [Hardware Interfaces](docs/hardware-interfaces.md)
 - [Showcase Design Decisions](docs/showcase-design-decisions.md)

@@ -1,5 +1,17 @@
 # Hardware Notes
 
+## Hardware Phases
+
+The repo tracks two hardware phases. See [Hardware Phases](hardware-phases.md)
+for the full phase definition, USB-C scale reference, and physical dimensions.
+
+- **Jiko Zero** — Hackathon prototype: Raspberry Pi 5 + MPI3508 display.
+- **Jiko One** — Advanced prototype: custom chip, current squircle form factor,
+  on-board audio path. The vent layout and dimensions are recorded there.
+
+The notes below are oriented toward Jiko Zero construction, but the enclosure
+principles (edge openings, front mask, side button) apply to Jiko One as well.
+
 ## Assumption
 
 The current hackathon stack may use Raspberry Pi 5, but the product should be

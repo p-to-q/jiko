@@ -63,6 +63,14 @@ The shared squircle point generator lives in `apps/web/src/ui/squircleGeometry.t
 Three.js geometry and canvas clipping should both use it so the hardware body
 and live screen texture do not drift into different corner systems.
 
+## Showcase Model Dimensions
+
+The `ShowcaseStage` model uses normalized units. See
+[Hardware Phases](hardware-phases.md) for the USB-C scale reference and the
+physical millimeter conversion. The current model size is approximately
+**80 mm × 120 mm × 6.6 mm** (width × height × depth), and the left-side flat
+surface is about **120 mm × 4.3 mm**.
+
 ## Screen Treatment
 
 The screen is a live canvas texture, not a static image. Its outer clip now uses the same softer glass family (`n=3.5`) so the screen and reflective glass layer do not look like mismatched corners.

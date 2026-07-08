@@ -1,5 +1,13 @@
 # Runtime Paths
 
+## Runtime Phases
+
+The runtime paths are defined for **Jiko Zero** (the hackathon laptop + Raspberry
+Pi 5 kiosk prototype). **Jiko One** (custom-chip advanced prototype) will reuse
+the same shared core and event protocol, but its runtime adapters will be defined
+when that compute stack is chosen. See [Hardware Phases](hardware-phases.md) for
+the phase definitions and physical dimensions.
+
 ## Purpose
 
 The project needs two execution paths without becoming two products. The laptop path should carry the hackathon compute and audio loop. The Raspberry Pi path should preserve the physical object by acting as a thin display shell first.
@@ -34,7 +42,7 @@ Recommended packages:
 
 The shared core should not know whether audio came from a browser, a Python process, or a Raspberry Pi microphone.
 
-## Runtime A: Laptop App
+## Runtime A: Laptop App (Jiko Zero)
 
 Goal:
 
@@ -61,7 +69,7 @@ Why:
 
 Laptop audio is easier to debug, and a clean laptop demo can already show the entire product ritual.
 
-## Runtime B: Raspberry Pi 5 Projector Shell
+## Runtime B: Raspberry Pi 5 Projector Shell (Jiko Zero)
 
 Goal:
 

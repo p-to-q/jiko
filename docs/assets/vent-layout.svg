@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" font-family="'SF Mono','Menlo','Consolas',monospace" font-size="11">
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 Z" fill="#888"/>
+    </marker>
+    <marker id="dot" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="4" markerHeight="4">
+      <circle cx="3" cy="3" r="2" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="700" fill="#1a1a1a"/>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 1: Overall Hardware (Front View) -->
+  <!-- ============================================================ -->
+  <text x="40" y="32" fill="#eae8e0" font-size="14" font-weight="bold">1. 整体硬件 · 正面</text>
+
+  <!-- Hardware body (squircle) -->
+  <rect x="60" y="52" rx="28" ry="28" width="200" height="300" fill="#222" stroke="#555" stroke-width="1.2"/>
+  <!-- Screen area -->
+  <rect x="64" y="56" rx="26" ry="26" width="192" height="292" fill="#111" stroke="#444" stroke-width="0.6"/>
+
+  <!-- Screen mock content -->
+  <rect x="80" y="110" rx="4" ry="4" width="160" height="14" fill="#2c2c2c"/>
+  <rect x="80" y="132" rx="4" ry="4" width="140" height="14" fill="#2c2c2c"/>
+  <rect x="80" y="170" rx="4" ry="4" width="120" height="14" fill="#2c2c2c"/>
+  <rect x="80" y="200" rx="4" ry="4" width="100" height="38" fill="#2c2c2c" opacity="0.6"/>
+
+  <!-- Mic aperture (top edge) -->
+  <circle cx="78" cy="52" r="4" fill="#111" stroke="#555" stroke-width="0.6"/>
+  <line x1="58" y1="56" x2="54" y2="60" stroke="#888" stroke-width="0.6" marker-end="url(#arrow)"/>
+  <text x="28" y="62" fill="#aaa" font-size="10">麦克风孔</text>
+
+  <!-- USB-C port (bottom edge) -->
+  <rect x="133" y="348" rx="2" ry="2" width="40" height="8" fill="#111" stroke="#555" stroke-width="0.6"/>
+  <line x1="153" y1="358" x2="153" y2="368" stroke="#888" stroke-width="0.6" marker-end="url(#arrow)"/>
+  <text x="125" y="380" fill="#aaa" font-size="10" text-anchor="middle">USB-C 接口</text>
+
+  <!-- Side button (right edge) -->
+  <rect x="260" y="180" rx="4" ry="4" width="6" height="44" fill="#333" stroke="#555" stroke-width="0.6"/>
+  <line x1="268" y1="202" x2="278" y2="202" stroke="#888" stroke-width="0.6" marker-end="url(#arrow)"/>
+  <text x="282" y="206" fill="#aaa" font-size="10">侧边按钮</text>
+
+  <!-- Vents (left edge) -->
+  <rect x="54" y="178" rx="0.5" ry="0.5" width="6" height="28" fill="#111" stroke="#555" stroke-width="0.4"/>
+  <rect x="54" y="210" rx="0.5" ry="0.5" width="6" height="28" fill="#111" stroke="#555" stroke-width="0.4"/>
+  <rect x="54" y="242" rx="0.5" ry="0.5" width="6" height="28" fill="#111" stroke="#555" stroke-width="0.4"/>
+  <rect x="54" y="274" rx="0.5" ry="0.5" width="6" height="28" fill="#111" stroke="#555" stroke-width="0.4"/>
+  <rect x="54" y="306" rx="0.5" ry="0.5" width="6" height="14" fill="#111" stroke="#555" stroke-width="0.4"/>
+  <rect x="62" y="306" rx="1.5" ry="1.5" width="8" height="8" fill="#111" stroke="#555" stroke-width="0.4"/>
+  <line x1="48" y1="232" x2="38" y2="232" stroke="#888" stroke-width="0.6" marker-end="url(#arrow)"/>
+  <text x="14" y="240" fill="#aaa" font-size="10">散热孔</text>
+
+  <!-- Dimension arrows: width -->
+  <line x1="60" y1="48" x2="260" y2="48" stroke="#777" stroke-width="0.6" marker-start="url(#dot)" marker-end="url(#dot)"/>
+  <text x="160" y="45" fill="#888" font-size="10" text-anchor="middle">~80mm</text>
+
+  <!-- Dimension arrows: height -->
+  <line x1="264" y1="52" x2="264" y2="352" stroke="#777" stroke-width="0.6" marker-start="url(#dot)" marker-end="url(#dot)"/>
+  <text x="276" y="204" fill="#888" font-size="10">~120mm</text>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 2: Left Side Face (depth cross-section) -->
+  <!-- ============================================================ -->
+  <text x="340" y="32" fill="#eae8e0" font-size="14" font-weight="bold">2. 左侧面（侧面视图）</text>
+
+  <!-- Left side face as seen from left -->
+  <rect x="380" y="52" rx="8" ry="8" width="38" height="300" fill="#222" stroke="#555" stroke-width="1.2"/>
+
+  <!-- Bevel indication at top and bottom -->
+  <path d="M380 60 Q380 52 388 52" fill="none" stroke="#666" stroke-width="0.8"/>
+  <path d="M380 344 Q380 352 388 352" fill="none" stroke="#666" stroke-width="0.8"/>
+  <path d="M418 60 Q418 52 410 52" fill="none" stroke="#666" stroke-width="0.8"/>
+  <path d="M418 344 Q418 352 410 352" fill="none" stroke="#666" stroke-width="0.8"/>
+
+  <!-- Bevel labels -->
+  <line x1="418" y1="52" x2="450" y2="40" stroke="#666" stroke-width="0.5"/>
+  <text x="452" y="44" fill="#888" font-size="9">倒角 ~1.14mm</text>
+
+  <!-- Flat surface region -->
+  <rect x="380" y="64" rx="0" ry="0" width="38" height="276" fill="none" stroke="#555" stroke-width="0.3" stroke-dasharray="3,3"/>
+  <line x1="420" y1="64" x2="460" y2="64" stroke="#666" stroke-width="0.5"/>
+  <text x="462" y="68" fill="#888" font-size="9">平直面 4.3mm</text>
+
+  <!-- Vent slots on the edge -->
+  <rect x="397" y="128" rx="1" ry="1" width="4" height="28" fill="#111" stroke="#666" stroke-width="0.4"/>
+  <rect x="397" y="160" rx="1" ry="1" width="4" height="28" fill="#111" stroke="#666" stroke-width="0.4"/>
+  <rect x="397" y="192" rx="1" ry="1" width="4" height="28" fill="#111" stroke="#666" stroke-width="0.4"/>
+  <rect x="397" y="224" rx="1" ry="1" width="4" height="28" fill="#111" stroke="#666" stroke-width="0.4"/>
+  <rect x="397" y="256" rx="1" ry="1" width="4" height="14" fill="#111" stroke="#666" stroke-width="0.4"/>
+  <rect x="403" y="256" rx="1.5" ry="1.5" width="8" height="7" fill="#111" stroke="#666" stroke-width="0.4"/>
+
+  <!-- Vent zoom callout -->
+  <line x1="399" y1="144" x2="465" y2="130" stroke="#555" stroke-width="0.5"/>
+  <circle cx="399" cy="144" r="2" fill="none" stroke="#555" stroke-width="0.4"/>
+
+  <!-- Depth dimension -->
+  <line x1="416" y1="356" x2="416" y2="372" stroke="#777" stroke-width="0.6" marker-start="url(#dot)" marker-end="url(#dot)"/>
+  <line x1="382" y1="356" x2="382" y2="372" stroke="#777" stroke-width="0.6" marker-start="url(#dot)" marker-end="url(#dot)"/>
+  <line x1="382" y1="368" x2="416" y2="368" stroke="#777" stroke-width="0.6" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="399" y="384" fill="#888" font-size="10" text-anchor="middle">总深 6.6mm</text>
+
+  <!-- Height dimension -->
+  <line x1="422" y1="52" x2="440" y2="52" stroke="#777" stroke-width="0.6" marker-start="url(#dot)" marker-end="url(#dot)"/>
+  <line x1="422" y1="352" x2="440" y2="352" stroke="#777" stroke-width="0.6" marker-start="url(#dot)" marker-end="url(#dot)"/>
+  <line x1="436" y1="52" x2="436" y2="352" stroke="#777" stroke-width="0.6" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="448" y="204" fill="#888" font-size="10">120mm</text>
+
+  <!-- ============================================================ -->
+  <!-- SECTION 3: Vent Layout Detail -->
+  <!-- ============================================================ -->
+  <text x="340" y="430" fill="#eae8e0" font-size="14" font-weight="bold">3. 排热孔布局（展开放大）</text>
+
+  <!-- Expanded vent detail - left column (ten slots exaggerated) -->
+  <rect x="380" y="450" rx="3" ry="3" width="120" height="240" fill="#1d1d1d" stroke="#555" stroke-width="0.8"/>
+
+  <!-- Title row -->
+  <line x1="380" y1="475" x2="500" y2="475" stroke="#444" stroke-width="0.5"/>
+  <text x="440" y="472" fill="#aaa" font-size="10" text-anchor="middle">左侧面展开（不按比例）</text>
+
+  <!-- 4 long vertical slots -->
+  <rect x="442" y="484" rx="1" ry="1" width="12" height="36" fill="#0a0a0a" stroke="#555" stroke-width="0.5"/>
+  <text x="456" y="470" fill="#666" font-size="8" text-anchor="middle">—</text>
+
+  <rect x="442" y="528" rx="1" ry="1" width="12" height="36" fill="#0a0a0a" stroke="#555" stroke-width="0.5"/>
+  <rect x="442" y="572" rx="1" ry="1" width="12" height="36" fill="#0a0a0a" stroke="#555" stroke-width="0.5"/>
+  <rect x="442" y="616" rx="1" ry="1" width="12" height="36" fill="#0a0a0a" stroke="#555" stroke-width="0.5"/>
+
+  <!-- Bottom composite -->
+  <rect x="442" y="660" rx="1" ry="1" width="12" height="20" fill="#0a0a0a" stroke="#555" stroke-width="0.5"/>
+  <rect x="456" y="660" rx="3" ry="3" width="16" height="16" fill="#0a0a0a" stroke="#555" stroke-width="0.5"/>
+
+  <!-- Gap annotation -->
+  <line x1="442" y1="522" x2="534" y2="522" stroke="#555" stroke-width="0.4"/>
+  <line x1="534" y1="475" x2="534" y2="522" stroke="#555" stroke-width="0.4" marker-start="url(#dot)"/>
+  <text x="536" y="500" fill="#888" font-size="9">间隙 ~0.97mm</text>
+
+  <!-- Slot width annotation -->
+  <line x1="440" y1="484" x2="440" y2="520" stroke="#666" stroke-width="0.4"/>
+  <line x1="422" y1="484" x2="440" y2="484" stroke="#666" stroke-width="0.4" marker-start="url(#dot)"/>
+  <line x1="422" y1="520" x2="440" y2="520" stroke="#666" stroke-width="0.4" marker-start="url(#dot)"/>
+  <line x1="416" y1="484" x2="416" y2="520" stroke="#666" stroke-width="0.4"/>
+  <rect x="414" y="496" width="2" height="12" fill="#666"/>
+  <text x="406" y="508" fill="#888" font-size="9" text-anchor="end">槽宽 0.44mm</text>
+
+  <!-- Slot height annotation - first slot -->
+  <line x1="456" y1="484" x2="480" y2="484" stroke="#666" stroke-width="0.4"/>
+  <line x1="456" y1="520" x2="480" y2="520" stroke="#666" stroke-width="0.4"/>
+  <line x1="480" y1="484" x2="480" y2="520" stroke="#666" stroke-width="0.4"/>
+  <rect x="480" y="496" width="12" height="2" fill="#666"/>
+  <text x="494" y="506" fill="#888" font-size="9">槽高 8.8mm</text>
+
+  <!-- Bottom composite annotation -->
+  <line x1="474" y1="668" x2="520" y2="680" stroke="#555" stroke-width="0.4"/>
+  <text x="522" y="684" fill="#888" font-size="9">方块 ~1.5mm</text>
+  <line x1="442" y1="682" x2="490" y2="694" stroke="#555" stroke-width="0.4"/>
+  <text x="492" y="698" fill="#888" font-size="9">短槽 0.44×8.8mm</text>
+
+  <!-- Legend -->
+  <text x="380" y="450" fill="#888" font-size="8">┌ 4 条长槽</text>
+
+  <!-- Summary box -->
+  <rect x="560" y="450" rx="4" ry="4" width="160" height="160" fill="none" stroke="#444" stroke-width="0.8"/>
+  <text x="568" y="468" fill="#eae8e0" font-size="10" font-weight="bold">汇总</text>
+
+  <line x1="560" y1="474" x2="720" y2="474" stroke="#444" stroke-width="0.5"/>
+
+  <text x="568" y="490" fill="#aaa" font-size="10">总高</text>
+  <text x="640" y="490" fill="#eae8e0" font-size="10" text-anchor="end">48mm</text>
+
+  <text x="568" y="508" fill="#aaa" font-size="10">开槽数</text>
+  <text x="640" y="508" fill="#eae8e0" font-size="10" text-anchor="end">4 + 1</text>
+
+  <text x="568" y="526" fill="#aaa" font-size="10">排列方向</text>
+  <text x="640" y="526" fill="#eae8e0" font-size="10" text-anchor="end">竖向</text>
+
+  <text x="568" y="544" fill="#aaa" font-size="10">单槽宽</text>
+  <text x="640" y="544" fill="#eae8e0" font-size="10" text-anchor="end">0.44mm</text>
+
+  <text x="568" y="562" fill="#aaa" font-size="10">单槽高</text>
+  <text x="640" y="562" fill="#eae8e0" font-size="10" text-anchor="end">8.8mm</text>
+
+  <text x="568" y="580" fill="#aaa" font-size="10">底部方块</text>
+  <text x="640" y="580" fill="#eae8e0" font-size="10" text-anchor="end">1.5mm</text>
+
+  <text x="568" y="598" fill="#aaa" font-size="10">阵列高占比</text>
+  <text x="640" y="598" fill="#eae8e0" font-size="10" text-anchor="end">40%</text>
+
+  <line x1="560" y1="606" x2="720" y2="606" stroke="#444" stroke-width="0.3"/>
+
+  <text x="568" y="620" fill="#888" font-size="9">比例基准：USB-C 开口 × 43.9</text>
+
+  <!-- Footer -->
+  <text x="380" y="660" fill="#555" font-size="8">注：示意图仅展示相对布局和标注，元器件未按精确比例缩放</text>
+</svg>

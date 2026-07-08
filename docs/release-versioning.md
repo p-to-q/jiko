@@ -8,6 +8,7 @@ prototype release marker for the current jiko artifact.
 
 - Version: `0.9.0`
 - Release name: `Showcase Prototype`
+- Hardware phase: **Jiko Zero** (hackathon prototype; Raspberry Pi 5 + MPI3508)
 - Snapshot ordinal: `23`
 - Reference commit: `db14613`
 
@@ -16,6 +17,12 @@ Full internal label:
 ```text
 jiko 0.9.0 "Showcase Prototype" (+23.db14613)
 ```
+
+The next minor should be `0.10.0` when the browser recording, receipt viewer,
+and one benchmarked local STT path are stable enough to rehearse as a single
+laptop-first demo loop. That line continues Jiko Zero. The Jiko One (custom
+chip, showcase form factor) milestones will be tracked separately in
+[Hardware Phases](hardware-phases.md) once that stack is defined.
 
 ## Calculation
 
@@ -62,6 +69,7 @@ Keep all workspace package versions aligned.
 - `0.8.0` - Device UI, Asset, and Recorder Preview.
 - `0.9.0` - Showcase Prototype.
 
-The next minor should be `0.10.0` when the browser recording, receipt viewer,
-and one benchmarked local STT path are stable enough to rehearse as a single
-laptop-first demo loop.
+Milestones `0.1.0` through the current release are **Jiko Zero** work:
+laptop-first loop, Pi kiosk shell, and the four-window UI. Future milestones will
+carry the shared core into **Jiko One** once the custom-chip stack is known.
+
