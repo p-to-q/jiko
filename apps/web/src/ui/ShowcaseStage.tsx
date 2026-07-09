@@ -1073,7 +1073,7 @@ function buildThermalMark(bodyW: number, bodyH: number, bodyDepth: number) {
   const hc = hCvs.getContext("2d")!;
   hc.setTransform(CS / 14820, 0, 0, -(CS / 15320), 0, CS);
   hc.strokeStyle = "rgba(210, 218, 228, 1)";
-  hc.lineWidth = 900;
+  hc.lineWidth = 700;
   hc.lineJoin = "round";
   hc.lineCap = "round";
   for (const p of paths) hc.stroke(new Path2D(p));
