@@ -83,7 +83,7 @@ export function ShowcaseStage({
       return;
     }
 
-    const scene = createHardwareScene(host, (rotation) => {
+    const scene = createHardwareScene(host, surface, (rotation) => {
       rotationRef.current = rotation;
     }, () => {
       window.requestAnimationFrame(() => {
@@ -97,7 +97,7 @@ export function ShowcaseStage({
       sceneRef.current = undefined;
       scene.dispose();
     };
-  }, []);
+  }, [surface]);
 
   useEffect(() => {
     const finishPointer = (event: PointerEvent) => {
@@ -145,6 +145,7 @@ export function ShowcaseStage({
 
 function createHardwareScene(
   host: HTMLDivElement,
+  surface: "standalone" | "embedded",
   onRotationFrame: (rotation: ViewRotation) => void,
   onFirstFrame?: () => void,
 ) {
@@ -154,7 +155,8 @@ function createHardwareScene(
     powerPreference: "high-performance",
   });
   renderer.setClearColor(0x000000, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const maxPixelRatio = surface === "embedded" ? 3 : 2;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.5;
@@ -1071,7 +1073,7 @@ function buildThermalMark(bodyW: number, bodyH: number, bodyDepth: number) {
   const hc = hCvs.getContext("2d")!;
   hc.setTransform(CS / 14820, 0, 0, -(CS / 15320), 0, CS);
   hc.strokeStyle = "rgba(210, 218, 228, 1)";
-  hc.lineWidth = 900;
+  hc.lineWidth = 700;
   hc.lineJoin = "round";
   hc.lineCap = "round";
   for (const p of paths) hc.stroke(new Path2D(p));
