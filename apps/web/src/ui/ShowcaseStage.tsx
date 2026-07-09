@@ -26,8 +26,8 @@ const DETAIL_CORNER = {
 const IDLE_ROTATION_POINTS: ViewRotation[] = [
   { x: -0.12, y: -0.32 },
   { x: -0.02, y: 0.26 },
-  { x: -0.18, y: -0.62 },
-  { x: 0.04, y: 0.46 },
+  { x: -0.26, y: -0.62 },
+  { x: 0.12, y: 0.46 },
   { x: -0.1, y: 0.04 },
   { x: -0.08, y: Math.PI - 0.18 },
   { x: -0.12, y: -Math.PI + 0.2 },
@@ -926,7 +926,8 @@ function syncSurfaceDepth(mesh: THREE.Mesh, material: THREE.Material, threshold 
 function buildMicAperture(bodyW: number, bodyH: number, bodyDepth: number) {
   const mic = new THREE.Group();
   const bevel = 0.026;
-  const micX = -0.62;
+  const cornerR = BODY_CORNER.radius;
+  const micX = -(bodyW * 0.5 - 2 * cornerR);
   const topY = bodyH * 0.5 + bevel;
   const micZ = 0;
 
