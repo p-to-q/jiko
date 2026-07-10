@@ -1,5 +1,7 @@
 # [jiko]
 
+**instant decision making instrument**
+
 **a traffic light for your own thoughts.**
 
 ---
