@@ -1,6 +1,6 @@
 # Operational Readiness
 
-Last audited: **2026-09-22**
+Last audited: **2026-09-23**
 
 Status vocabulary:
 
@@ -108,6 +108,7 @@ evidence.
 | 2026-09-18 | `pnpm --filter @jiko/server build`; one-shot injected PCM subprocess through `Rfc6455OrderedPcmTransport` to the live loopback server | pass: finalized ACK, 5 chunks, 12,800 received bytes, matching source SHA-256, `coverageComplete=true` | the dependency-free client interoperates with the actual Node upgrade/ACK actor and canonical post-stop pipeline for paced synthetic PCM | a committed automated integration harness, `arecord`, physical audio, Pi/CM5, loss/reconnect/restart behavior, model quality, power, thermal, or endurance |
 | 2026-09-18 | `pnpm test`; `pnpm typecheck`; `pnpm benchmark`; `pnpm test:e2e`; `pnpm demo:smoke` | pass: full workspace gate including 29/29 device, 8/8 runtime-supervision, 157/157 server, 32/32 STT/soak, 11/11 Chrome journeys, 10/10 structural benchmark, and smoke; build retains the 581.19 kB showcase-chunk warning | result invariants, private receipt permissions, UTF-8/path boundaries, bounded session identity retirement and restart rejection, device quarantine, resource accounting, second-device-session discovery, capture-unavailable observer UX, and the canonical local audio paths regressed together in that checkout | physical microphone/native prompt/track loss, Raspberry Pi/CM5 execution, real-speech model selection, multi-process coordination, identity after receipt pruning, enclosure, power, thermal, endurance, or standalone hardware release qualification |
 | 2026-09-22 | `pnpm test`; `pnpm typecheck`; `pnpm benchmark`; `pnpm test:e2e`; `pnpm demo:smoke` | pass: workspace build, 35/35 device tests, 8/8 runtime-supervision tests, 70/70 shared protocol/core/readings/HIL tests, 161/161 server tests, 32/32 STT/soak tests, workspace typecheck, 11/11 Chrome journeys, smoke, and 10/10 structural benchmark; build retains the 581.19 kB showcase-chunk warning | exact device ACK typing, closed HTTP error handles, explicit invalid session-ID rejection without breaking omitted-ID creation, ordered PCM, attempt deadlines, local-first provider boundaries, and the human-facing desktop paths regress together in this checkout | physical microphone/native permission prompt/track loss, real-speech model selection, Raspberry Pi/CM5 execution, multi-process coordination, enclosure, power, thermal, endurance, or standalone hardware release qualification |
+| 2026-09-23 | release-candidate commit `2612f95`; [GitHub Actions `ci / validate`](https://github.com/p-to-q/jiko/actions/runs/35737150715/job/106777232148?pr=9) | pass on the code release candidate; the only subsequent change is this evidence-ledger row | the exact code candidate built and passed the repository CI on Linux after the portable UTF-8 runtime fix | external Vercel project deployment, physical microphone/native permission prompt/track loss, real-speech model selection, Raspberry Pi/CM5 execution, enclosure, power, thermal, endurance, or standalone hardware release qualification |
 
 ## Immediate Release Blockers
 
