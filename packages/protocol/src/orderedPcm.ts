@@ -204,6 +204,46 @@ export class OrderedPcmBinaryEnvelopeError extends Error {
   }
 }
 
+type RuntimeTextEncoder = {
+  encode(input?: string): Uint8Array;
+};
+
+type RuntimeTextDecoder = {
+  decode(input?: Uint8Array): string;
+};
+
+type RuntimeTextEncoderConstructor = new () => RuntimeTextEncoder;
+type RuntimeTextDecoderConstructor = new (
+  label?: string,
+  options?: { fatal?: boolean }
+) => RuntimeTextDecoder;
+
+function encodeUtf8(input: string): Uint8Array {
+  const constructor = (
+    globalThis as unknown as { TextEncoder?: RuntimeTextEncoderConstructor }
+  ).TextEncoder;
+  if (!constructor) {
+    throw new OrderedPcmBinaryEnvelopeError(
+      "invalid_header",
+      "Ordered PCM encoding requires a UTF-8 TextEncoder runtime"
+    );
+  }
+  return new constructor().encode(input);
+}
+
+function decodeUtf8(input: Uint8Array): string {
+  const constructor = (
+    globalThis as unknown as { TextDecoder?: RuntimeTextDecoderConstructor }
+  ).TextDecoder;
+  if (!constructor) {
+    throw new OrderedPcmBinaryEnvelopeError(
+      "invalid_header",
+      "Ordered PCM decoding requires a UTF-8 TextDecoder runtime"
+    );
+  }
+  return new constructor("utf-8", { fatal: true }).decode(input);
+}
+
 /**
  * Wire layout (network byte order):
  *
@@ -229,7 +269,7 @@ export function encodeOrderedPcmBinaryEnvelope(
     metadata = message;
   }
 
-  const metadataBytes = new TextEncoder().encode(JSON.stringify(metadata));
+  const metadataBytes = encodeUtf8(JSON.stringify(metadata));
   if (metadataBytes.byteLength === 0) {
     throw new OrderedPcmBinaryEnvelopeError(
       "invalid_header",
@@ -340,7 +380,7 @@ export function decodeOrderedPcmBinaryEnvelope(
 
   let metadata: unknown;
   try {
-    const metadataJson = new TextDecoder("utf-8", { fatal: true }).decode(
+    const metadataJson = decodeUtf8(
       input.subarray(ORDERED_PCM_BINARY_FIXED_HEADER_BYTES, metadataEnd)
     );
     metadata = JSON.parse(metadataJson);
