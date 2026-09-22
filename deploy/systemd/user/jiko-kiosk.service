@@ -1,0 +1,26 @@
+# Contract: jiko_systemd_v1
+[Unit]
+Description=Jiko Chromium kiosk shell (jiko_systemd_v1)
+After=graphical-session.target
+PartOf=graphical-session.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=exec
+EnvironmentFile=-%h/.config/jiko/kiosk.env
+Environment=JIKO_PROBE_URL=http://127.0.0.1:4317/health
+Environment=JIKO_WEB_PROBE_URL=http://127.0.0.1:4173/
+Environment=JIKO_KIOSK_URL=http://127.0.0.1:4173/?mode=device
+ExecStartPre=/usr/bin/mkdir -p %h/.local/state/jiko/chromium
+ExecStartPre=/usr/bin/node /opt/jiko/current/deploy/systemd/runtime-probe.mjs server
+ExecStartPre=/usr/bin/node /opt/jiko/current/deploy/systemd/runtime-probe.mjs web
+ExecStart=/usr/bin/chromium --kiosk --no-first-run --disable-session-crashed-bubble --disable-features=Translate --autoplay-policy=no-user-gesture-required --user-data-dir=%h/.local/state/jiko/chromium ${JIKO_KIOSK_URL}
+Restart=always
+RestartSec=3
+TimeoutStartSec=30
+TimeoutStopSec=15
+KillMode=mixed
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "stt_benchmark_config_v1",
+  "profileId": "development-host-unconfigured",
+  "environmentKind": "host",
+  "corpusManifestPath": null,
+  "warmupIterations": 0,
+  "measuredIterations": 0,
+  "candidates": [
+    {
+      "id": "sensevoice-int8",
+      "family": "sensevoice"
+    },
+    {
+      "id": "whisper-cpp-quantized",
+      "family": "whisper_cpp"
+    },
+    {
+      "id": "funasr-self-hosted",
+      "family": "funasr"
+    }
+  ]
+}

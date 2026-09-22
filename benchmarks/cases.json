@@ -1,0 +1,356 @@
+{
+  "schemaVersion": 4,
+  "suite": "jiko-readings-and-coverage-structural-v4",
+  "measurement": {
+    "scope": "warmed in-process shared-core microbenchmark",
+    "warmupIterations": 100,
+    "measuredIterations": 1000
+  },
+  "cases": [
+    {
+      "id": "clear-deviate-zh",
+      "input": {
+        "text": {
+          "transcript": "我想离开这里，开始改变",
+          "language": "zh"
+        },
+        "voice": {
+          "durationMs": 4000,
+          "speechMs": 3300,
+          "silenceMs": 700,
+          "pauseCount": 1,
+          "longestPauseMs": 300,
+          "rmsMean": 0.12,
+          "rmsStd": 0.05,
+          "rmsPeak": 0.35,
+          "pitchStdHz": 50
+        },
+        "timing": {
+          "durationMs": 4000,
+          "speechMs": 3300,
+          "preSpeechDelayMs": 200,
+          "pauseCount": 1,
+          "longestPauseMs": 300
+        }
+      },
+      "expectedStates": {
+        "text": "deviate",
+        "voice": "deviate",
+        "timing": "deviate"
+      },
+      "expectedResult": {
+        "topWindowStatus": "consensus_deviate",
+        "majorityState": "deviate",
+        "unavailableChannels": [],
+        "hasTts": true
+      }
+    },
+    {
+      "id": "clear-maintain-zh",
+      "input": {
+        "text": {
+          "transcript": "还是先别做，晚点再说，保持安全",
+          "language": "zh"
+        },
+        "voice": {
+          "durationMs": 5000,
+          "speechMs": 2100,
+          "silenceMs": 2900,
+          "pauseCount": 4,
+          "longestPauseMs": 1100,
+          "rmsMean": 0.04,
+          "rmsStd": 0.008,
+          "rmsPeak": 0.1,
+          "pitchStdHz": 10
+        },
+        "timing": {
+          "durationMs": 5000,
+          "speechMs": 2100,
+          "preSpeechDelayMs": 1500,
+          "pauseCount": 4,
+          "longestPauseMs": 1100
+        }
+      },
+      "expectedStates": {
+        "text": "maintain",
+        "voice": "maintain",
+        "timing": "maintain"
+      },
+      "expectedResult": {
+        "topWindowStatus": "consensus_maintain",
+        "majorityState": "maintain",
+        "unavailableChannels": [],
+        "hasTts": true
+      }
+    },
+    {
+      "id": "negated-movement-is-maintain",
+      "input": {
+        "text": {
+          "transcript": "我不想辞职，还是先留下",
+          "language": "zh"
+        },
+        "voice": {
+          "durationMs": 5000,
+          "speechMs": 2100,
+          "silenceMs": 2900,
+          "pauseCount": 4,
+          "longestPauseMs": 1100,
+          "rmsMean": 0.04,
+          "rmsStd": 0.008,
+          "rmsPeak": 0.1,
+          "pitchStdHz": 10
+        },
+        "timing": {
+          "durationMs": 5000,
+          "speechMs": 2100,
+          "preSpeechDelayMs": 1500,
+          "pauseCount": 4,
+          "longestPauseMs": 1100
+        }
+      },
+      "expectedStates": {
+        "text": "maintain",
+        "voice": "maintain",
+        "timing": "maintain"
+      },
+      "expectedResult": {
+        "topWindowStatus": "consensus_maintain",
+        "majorityState": "maintain",
+        "unavailableChannels": [],
+        "hasTts": true
+      }
+    },
+    {
+      "id": "insufficient-signal",
+      "input": {
+        "text": {
+          "transcript": "嗯",
+          "language": "zh"
+        },
+        "voice": {
+          "durationMs": 600,
+          "speechMs": 250,
+          "silenceMs": 350
+        },
+        "timing": {
+          "durationMs": 600,
+          "speechMs": 250
+        }
+      },
+      "expectedStates": {
+        "text": "static",
+        "voice": "static",
+        "timing": "static"
+      },
+      "expectedResult": {
+        "topWindowStatus": "consensus_static",
+        "majorityState": "static",
+        "unavailableChannels": [],
+        "hasTts": true
+      }
+    },
+    {
+      "id": "partial-two-lines-agree",
+      "input": {
+        "text": {
+          "transcript": "",
+          "language": "unknown"
+        },
+        "voice": {
+          "durationMs": 4000,
+          "speechMs": 3300,
+          "silenceMs": 700,
+          "pauseCount": 1,
+          "longestPauseMs": 300,
+          "rmsMean": 0.12,
+          "rmsStd": 0.05,
+          "rmsPeak": 0.35,
+          "pitchStdHz": 50
+        },
+        "timing": {
+          "durationMs": 4000,
+          "speechMs": 3300,
+          "preSpeechDelayMs": 200,
+          "pauseCount": 1,
+          "longestPauseMs": 300
+        }
+      },
+      "availabilityByChannel": {
+        "text": "unavailable"
+      },
+      "expectedStates": {
+        "text": "static",
+        "voice": "deviate",
+        "timing": "deviate"
+      },
+      "expectedResult": {
+        "topWindowStatus": "partial",
+        "majorityState": "deviate",
+        "unavailableChannels": ["text"],
+        "hasTts": false
+      }
+    },
+    {
+      "id": "insufficient-two-lines-disagree",
+      "input": {
+        "text": {
+          "transcript": "",
+          "language": "unknown"
+        },
+        "voice": {
+          "durationMs": 5000,
+          "speechMs": 2100,
+          "silenceMs": 2900,
+          "pauseCount": 4,
+          "longestPauseMs": 1100,
+          "rmsMean": 0.04,
+          "rmsStd": 0.008,
+          "rmsPeak": 0.1,
+          "pitchStdHz": 10
+        },
+        "timing": {
+          "durationMs": 4000,
+          "speechMs": 3300,
+          "preSpeechDelayMs": 200,
+          "pauseCount": 1,
+          "longestPauseMs": 300
+        }
+      },
+      "availabilityByChannel": {
+        "text": "unavailable"
+      },
+      "expectedStates": {
+        "text": "static",
+        "voice": "maintain",
+        "timing": "deviate"
+      },
+      "expectedResult": {
+        "topWindowStatus": "insufficient",
+        "majorityState": null,
+        "unavailableChannels": ["text"],
+        "hasTts": false
+      }
+    },
+    {
+      "id": "insufficient-one-line-only",
+      "input": {
+        "text": {
+          "transcript": "我想离开这里并开始改变",
+          "language": "zh"
+        },
+        "voice": {
+          "durationMs": 600,
+          "speechMs": 250,
+          "silenceMs": 350
+        },
+        "timing": {
+          "durationMs": 600,
+          "speechMs": 250
+        }
+      },
+      "availabilityByChannel": {
+        "voice": "unavailable",
+        "timing": "unavailable"
+      },
+      "expectedStates": {
+        "text": "deviate",
+        "voice": "static",
+        "timing": "static"
+      },
+      "expectedResult": {
+        "topWindowStatus": "insufficient",
+        "majorityState": "deviate",
+        "unavailableChannels": ["voice", "timing"],
+        "hasTts": false
+      }
+    },
+    {
+      "id": "ambivalent-unequal-content-cues",
+      "input": {
+        "text": {
+          "transcript": "我想离开、开始改变，但我也想留下",
+          "language": "zh"
+        },
+        "voice": {
+          "durationMs": 600,
+          "speechMs": 250,
+          "silenceMs": 350
+        },
+        "timing": {
+          "durationMs": 600,
+          "speechMs": 250
+        }
+      },
+      "expectedStates": {
+        "text": "static",
+        "voice": "static",
+        "timing": "static"
+      },
+      "expectedResult": {
+        "topWindowStatus": "consensus_static",
+        "majorityState": "static",
+        "unavailableChannels": [],
+        "hasTts": true
+      }
+    },
+    {
+      "id": "english-keyword-boundaries",
+      "input": {
+        "text": {
+          "transcript": "We can exchange notes and forgo nothing.",
+          "language": "en"
+        },
+        "voice": {
+          "durationMs": 600,
+          "speechMs": 250,
+          "silenceMs": 350
+        },
+        "timing": {
+          "durationMs": 600,
+          "speechMs": 250
+        }
+      },
+      "expectedStates": {
+        "text": "static",
+        "voice": "static",
+        "timing": "static"
+      },
+      "expectedResult": {
+        "topWindowStatus": "consensus_static",
+        "majorityState": "static",
+        "unavailableChannels": [],
+        "hasTts": true
+      }
+    },
+    {
+      "id": "repeated-cue-opposed-polarity",
+      "input": {
+        "text": {
+          "transcript": "I do not want to stay, but after thinking I will stay.",
+          "language": "en"
+        },
+        "voice": {
+          "durationMs": 600,
+          "speechMs": 250,
+          "silenceMs": 350
+        },
+        "timing": {
+          "durationMs": 600,
+          "speechMs": 250
+        }
+      },
+      "expectedStates": {
+        "text": "static",
+        "voice": "static",
+        "timing": "static"
+      },
+      "expectedResult": {
+        "topWindowStatus": "consensus_static",
+        "majorityState": "static",
+        "unavailableChannels": [],
+        "hasTts": true
+      }
+    }
+  ]
+}

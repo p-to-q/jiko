@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="660" viewBox="0 0 1080 660" role="img" aria-labelledby="route-title route-desc">
+  <title id="route-title">route map for Select an evidence-gated edge speech stack</title>
+  <desc id="route-desc">Gated hybrid: 120k to 260k tokens, 18 to 42 minutes, 5 checkpoints, suggested. Local appliance: 90k to 210k tokens, 16 to 38 minutes, 5 checkpoints. Remote thin client: 70k to 160k tokens, 12 to 30 minutes, 5 checkpoints</desc>
+  <defs>
+    <filter id="dock-shadow" x="-8%" y="-30%" width="116%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity=".16"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#000000" flood-opacity=".09"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity=".06"/>
+    </filter>
+  </defs>
+  <style>
+    text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Arial,sans-serif;font-variant-numeric:tabular-nums}.title{font-size:22px;font-weight:600;fill:#1F1F1F}.subtitle{font-size:13px;font-weight:400;fill:#6B6B6B}.eyebrow{font-size:11px;font-weight:700;letter-spacing:1.1px;fill:#1F1F1F}.endpoint-sub{font-size:11px;font-weight:500;fill:#6B6B6B}.node-label{font-size:12px;font-weight:450;fill:#1F1F1F}.card-label{font-size:14px;font-weight:650;fill:#1F1F1F}.cost{font-size:24px;font-weight:600;fill:#1F1F1F}.unit{font-size:12px;font-weight:500;fill:#6B6B6B}.meta{font-size:12px;font-weight:600}.check-count{font-size:12px;font-weight:500;fill:#6B6B6B}.summary{font-size:12px;font-weight:400;fill:#6B6B6B}.card rect{transition:fill .18s ease,stroke .18s ease}.flow{opacity:.16;stroke-dasharray:2 15;animation:travel 1.25s linear infinite}.window-lights circle{transform-box:fill-box;transform-origin:center}.window-lights:hover circle{animation:light-pop .32s ease both}.window-lights circle:nth-child(2){animation-delay:.04s}.window-lights circle:nth-child(3){animation-delay:.08s}@keyframes travel{to{stroke-dashoffset:-34}}@keyframes light-pop{50%{transform:scale(1.2)}}@media(prefers-reduced-motion:reduce){.flow{animation:none}.window-lights circle{animation:none!important}.card rect{transition:none}}
+  </style>
+  <rect width="1080" height="660" rx="18" fill="#F4F4F4"/>
+  <rect x="16" y="12" width="1048" height="636" rx="16" fill="#FFFFFF" stroke="#E5E5E5"/>
+  <g class="window-lights" transform="translate(38 35)">
+    <circle cx="0" cy="0" r="6" fill="#E25555"/>
+    <circle cx="20" cy="0" r="6" fill="#E6A700"/>
+    <circle cx="40" cy="0" r="6" fill="#32A05F"/>
+  </g>
+  <text x="100" y="40" class="eyebrow">via · a [p → q] project</text>
+  <text x="1032" y="40" text-anchor="end" class="eyebrow subtle">ptoq.io</text>
+  <text x="48" y="80" class="title">Select an evidence-gated edge speech stack</text>
+  <text x="48" y="104" class="subtitle">Choose how this gets built</text>
+  <g class="map"><path d="M36 142H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 210H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 278H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 346H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 414H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path class="edge e0" d="M72 278 C126 278 150 278 204 278" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M72 278 C126 278 150 278 204 278" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><path class="edge e1" d="M204 278 C258 278 282 142 336 142" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M204 278 C258 278 282 142 336 142" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><path class="edge e2" d="M204 278 C258 278 282 414 336 414" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M204 278 C258 278 282 414 336 414" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><path class="edge e3" d="M336 142 C390 142 414 142 468 142" fill="none" stroke="#5DC977" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M336 142 C390 142 414 142 468 142" fill="none" stroke="#5DC977" stroke-width="2" stroke-linecap="round"/><path class="edge e4" d="M468 142 C522 142 546 142 600 142" fill="none" stroke="#5DC977" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M468 142 C522 142 546 142 600 142" fill="none" stroke="#5DC977" stroke-width="2" stroke-linecap="round"/><path class="edge e5" d="M336 142 C390 142 546 278 600 278" fill="none" stroke="#3AB9B1" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M336 142 C390 142 546 278 600 278" fill="none" stroke="#3AB9B1" stroke-width="2" stroke-linecap="round"/><path class="edge e6" d="M336 414 C390 414 414 414 468 414" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M336 414 C390 414 414 414 468 414" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><path class="edge e7" d="M468 414 C522 414 546 278 600 278" fill="none" stroke="#3AB9B1" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M468 414 C522 414 546 278 600 278" fill="none" stroke="#3AB9B1" stroke-width="2" stroke-linecap="round"/><path class="edge e8" d="M468 414 C522 414 546 414 600 414" fill="none" stroke="#F3883B" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M468 414 C522 414 546 414 600 414" fill="none" stroke="#F3883B" stroke-width="2" stroke-linecap="round"/><path class="edge e9" d="M600 142 C654 142 678 278 732 278" fill="none" stroke="#5DC977" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M600 142 C654 142 678 278 732 278" fill="none" stroke="#5DC977" stroke-width="2" stroke-linecap="round"/><path class="edge e10" d="M600 278 C654 278 678 278 732 278" fill="none" stroke="#3AB9B1" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M600 278 C654 278 678 278 732 278" fill="none" stroke="#3AB9B1" stroke-width="2" stroke-linecap="round"/><path class="edge e11" d="M600 414 C654 414 678 278 732 278" fill="none" stroke="#F3883B" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M600 414 C654 414 678 278 732 278" fill="none" stroke="#F3883B" stroke-width="2" stroke-linecap="round"/><path class="edge e12" d="M732 278 C786 278 810 278 864 278" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M732 278 C786 278 810 278 864 278" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><path class="edge e13" d="M864 278 C918 278 942 278 996 278" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M864 278 C918 278 942 278 996 278" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><g class="node"><circle cx="72" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/></g><g class="node"><circle cx="204" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><g transform="translate(217 261)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="204" y="307" text-anchor="middle" class="node-label">lock input + rece…</text></g><g class="node"><circle cx="336" cy="142" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><text x="336" y="171" text-anchor="middle" class="node-label">warm local stream</text></g><g class="node"><circle cx="336" cy="414" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><text x="336" y="443" text-anchor="middle" class="node-label">remote live stream</text></g><g class="node"><circle cx="468" cy="142" r="11" fill="#FFFFFF" stroke="#5DC977" stroke-width="3.5"/><text x="468" y="171" text-anchor="middle" class="node-label">profile operators</text></g><g class="node"><circle cx="468" cy="414" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><g transform="translate(481 397)"><circle r="6" fill="#E25555" stroke="#FFFFFF" stroke-width="3"/></g><text x="468" y="443" text-anchor="middle" class="node-label">privacy + budget …</text></g><g class="node"><circle cx="600" cy="142" r="11" fill="#FFFFFF" stroke="#5DC977" stroke-width="3.5"/><text x="600" y="171" text-anchor="middle" class="node-label">offline profile</text></g><g class="node"><circle cx="600" cy="278" r="11" fill="#FFFFFF" stroke="#3AB9B1" stroke-width="3.5"/><text x="600" y="307" text-anchor="middle" class="node-label">deadline scheduler</text></g><g class="node"><circle cx="600" cy="414" r="11" fill="#FFFFFF" stroke="#F3883B" stroke-width="3.5"/><text x="600" y="443" text-anchor="middle" class="node-label">networked profile</text></g><g class="node"><circle cx="732" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><g transform="translate(745 261)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="732" y="307" text-anchor="middle" class="node-label">same-corpus proof</text></g><g class="node"><circle cx="864" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><g transform="translate(877 261)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="864" y="307" text-anchor="middle" class="node-label">target HIL + soak</text></g><g class="node"><circle cx="996" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/></g></g>
+  <g class="endpoint" transform="translate(72 278)">
+    <text y="-24" text-anchor="middle" class="eyebrow">START</text>
+    <text y="29" text-anchor="middle" class="endpoint-sub">batch audio proto…</text>
+  </g><g class="endpoint" transform="translate(996 278)">
+    <text y="-24" text-anchor="middle" class="eyebrow">DONE</text>
+    <text y="29" text-anchor="middle" class="endpoint-sub">measured release …</text>
+  </g>
+  <rect class="route-dock" x="32" y="468" width="1016" height="164" rx="22" fill="#FFFFFF" stroke="#DEDEDE" filter="url(#dock-shadow)"/>
+  <g class="card selected" data-route-id="hybrid-gated" transform="translate(48 484)" aria-label="Gated hybrid, 120k–260k tokens, 18 to 42 minutes, 5 engineering checks">
+      <rect width="320" height="132" rx="12" fill="#F2F5F5" stroke="#AEBFC0" stroke-width="1"/>
+      <text x="16" y="33" class="card-label">Gated hybrid</text>
+      <text x="16" y="67" class="cost">120k–260k<tspan class="unit"> tok</tspan></text>
+      <text x="16" y="87" class="meta" fill="#247C78">18–42 min</text>
+      <g class="gate-light" transform="translate(238 84)" aria-label="5 engineering checks">
+    <title>5 engineering checks</title>
+    <g transform="translate(0 -9)" fill="#1F1F1F">
+      <rect x="5" y="1.5" width="8" height="15" rx="2.4" fill="none" stroke="#1F1F1F" stroke-width="1.8"/>
+      <circle cx="9" cy="6" r="1.45"/>
+      <circle cx="9" cy="12" r="1.45"/>
+      <path d="M5 4.8H2.2c.25 1.45 1.15 2.45 2.8 2.85V4.8Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85V4.8ZM5 10.8H2.2c.25 1.45 1.15 2.45 2.8 2.85v-2.85Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85v-2.85Z"/>
+    </g>
+    <text x="22" y="4" class="check-count">5 checks</text>
+  </g>
+      <text x="16" y="117" class="summary">Local default, explicit remote ch…</text>
+    </g><g class="card" data-route-id="local-appliance" transform="translate(380 484)" aria-label="Local appliance, 90k–210k tokens, 16 to 38 minutes, 5 engineering checks">
+      <rect width="320" height="132" rx="12" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1"/>
+      <text x="16" y="33" class="card-label">Local appliance</text>
+      <text x="16" y="67" class="cost">90k–210k<tspan class="unit"> tok</tspan></text>
+      <text x="16" y="87" class="meta" fill="#267A43">16–38 min</text>
+      <g class="gate-light" transform="translate(238 84)" aria-label="5 engineering checks">
+    <title>5 engineering checks</title>
+    <g transform="translate(0 -9)" fill="#1F1F1F">
+      <rect x="5" y="1.5" width="8" height="15" rx="2.4" fill="none" stroke="#1F1F1F" stroke-width="1.8"/>
+      <circle cx="9" cy="6" r="1.45"/>
+      <circle cx="9" cy="12" r="1.45"/>
+      <path d="M5 4.8H2.2c.25 1.45 1.15 2.45 2.8 2.85V4.8Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85V4.8ZM5 10.8H2.2c.25 1.45 1.15 2.45 2.8 2.85v-2.85Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85v-2.85Z"/>
+    </g>
+    <text x="22" y="4" class="check-count">5 checks</text>
+  </g>
+      <text x="16" y="117" class="summary">Offline privacy with deeper edge …</text>
+    </g><g class="card" data-route-id="remote-thin-client" transform="translate(712 484)" aria-label="Remote thin client, 70k–160k tokens, 12 to 30 minutes, 5 engineering checks">
+      <rect width="320" height="132" rx="12" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1"/>
+      <text x="16" y="33" class="card-label">Remote thin client</text>
+      <text x="16" y="67" class="cost">70k–160k<tspan class="unit"> tok</tspan></text>
+      <text x="16" y="87" class="meta" fill="#A95227">12–30 min</text>
+      <g class="gate-light" transform="translate(238 84)" aria-label="5 engineering checks">
+    <title>5 engineering checks</title>
+    <g transform="translate(0 -9)" fill="#1F1F1F">
+      <rect x="5" y="1.5" width="8" height="15" rx="2.4" fill="none" stroke="#1F1F1F" stroke-width="1.8"/>
+      <circle cx="9" cy="6" r="1.45"/>
+      <circle cx="9" cy="12" r="1.45"/>
+      <path d="M5 4.8H2.2c.25 1.45 1.15 2.45 2.8 2.85V4.8Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85V4.8ZM5 10.8H2.2c.25 1.45 1.15 2.45 2.8 2.85v-2.85Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85v-2.85Z"/>
+    </g>
+    <text x="22" y="4" class="check-count">5 checks</text>
+  </g>
+      <text x="16" y="117" class="summary">Fast cloud iteration with network…</text>
+    </g>
+  </svg>

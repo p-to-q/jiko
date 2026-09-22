@@ -1,0 +1,4 @@
+cadquery==2.8.0
+trimesh==4.12.2
+svg.path==7.1
+pyvista==0.48.4

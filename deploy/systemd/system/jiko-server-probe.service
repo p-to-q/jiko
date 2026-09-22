@@ -1,0 +1,28 @@
+# Contract: jiko_systemd_v1
+[Unit]
+Description=Check Jiko server readiness (jiko_runtime_probe_v1)
+After=jiko-server.service
+Requires=jiko-server.service
+
+[Service]
+Type=oneshot
+User=jiko
+Group=jiko
+EnvironmentFile=/etc/jiko/server.env
+Environment=JIKO_DEPLOYMENT_SCHEMA=jiko_systemd_v1
+Environment=JIKO_PROBE_URL=http://127.0.0.1:4317/health
+ExecStart=/usr/bin/env JIKO_PROBE_TIMEOUT_MS=5000 JIKO_PROBE_ATTEMPTS=1 /usr/bin/node /opt/jiko/current/deploy/systemd/runtime-probe.mjs server
+TimeoutStartSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost

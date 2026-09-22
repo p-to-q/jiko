@@ -25,6 +25,8 @@ type SpriteMatrixProps = {
 
 type CSSVars = CSSProperties & Record<string, string>;
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
 function sequenceFor(name: SpriteName, animation: SpriteAnimation): readonly string[] {
   return animations[animation].characters[name];
 }
@@ -36,6 +38,7 @@ function useSpriteFrame(
   name: SpriteName,
   animation: SpriteAnimation,
   playing: boolean,
+  reducedMotion: boolean,
   fpsOverride?: number,
   frameIndexOverride?: number,
 ): readonly string[] {
@@ -50,7 +53,7 @@ function useSpriteFrame(
 
     setIndex(0);
 
-    if (!playing || sequence.length <= 1) {
+    if (reducedMotion || !playing || sequence.length <= 1) {
       return;
     }
 
@@ -60,11 +63,37 @@ function useSpriteFrame(
     );
 
     return () => window.clearInterval(id);
-  }, [name, animation, playing, fps, sequence.length, frameIndexOverride]);
+  }, [name, animation, playing, reducedMotion, fps, sequence.length, frameIndexOverride]);
 
   const table = frames[name] as Record<string, readonly string[]>;
-  const resolvedIndex = frameIndexOverride ?? index;
+  const resolvedIndex = frameIndexOverride ?? (reducedMotion ? 0 : index);
   return table[sequence[resolvedIndex % sequence.length]] ?? Object.values(table)[0];
+}
+
+function usePrefersReducedMotion(): boolean {
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    return typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia(REDUCED_MOTION_QUERY).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(REDUCED_MOTION_QUERY);
+    const handleChange = (event: MediaQueryListEvent) => {
+      setReducedMotion(event.matches);
+    };
+
+    setReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return reducedMotion;
 }
 
 // King / Tree / Oracle pixel sprite, rendered as round LED dots. Colors come from
@@ -81,7 +110,15 @@ export function SpriteMatrix({
   fpsOverride,
   frameIndexOverride,
 }: SpriteMatrixProps) {
-  const rows = useSpriteFrame(name, animation, playing, fpsOverride, frameIndexOverride);
+  const reducedMotion = usePrefersReducedMotion();
+  const rows = useSpriteFrame(
+    name,
+    animation,
+    playing,
+    reducedMotion,
+    fpsOverride,
+    frameIndexOverride,
+  );
   const palette = palettes[tone];
 
   const style: CSSVars = {

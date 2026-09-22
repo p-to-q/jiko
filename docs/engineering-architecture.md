@@ -2,7 +2,10 @@
 
 ## Goal
 
-Build a laptop-first prototype that can later move onto a Raspberry Pi 5 kiosk setup without rewriting the product logic.
+Build one shared product core with two runtime shells: a laptop development /
+observer shell and a Pi/CM-class instrument shell. Jiko Zero may use the laptop
+for compute, but the long-range instrument must close the loop without the
+observer and without rewriting product logic.
 
 ## Recommended Stack
 
@@ -21,9 +24,11 @@ Backend:
 Hardware runtime:
 
 - Raspberry Pi OS with Chromium kiosk mode.
-- Laptop-hosted web app opened full-screen on the MPI3508.
-- Optional Python daemon for GPIO button events.
-- Future Python daemon for microphone capture and local/offline TTS/STT only after the laptop loop is stable.
+- Jiko Zero can open the laptop-hosted web app full-screen on the MPI3508.
+- A Python edge adapter owns GPIO and, in the device-local phase, capture.
+- Pi 5 / CM5 local STT and fixed local speech output are candidates that must
+  pass the same corpus, latency, memory, thermal, and soak gates as the laptop
+  path.
 
 ## System Shape
 
@@ -114,9 +119,10 @@ Each reading returns the same shape:
 type SignalState = "maintain" | "deviate" | "static";
 
 type Reading = {
-  channel: "content" | "emotion" | "context";
+  channel: "text" | "voice" | "timing";
   state: SignalState;
   confidence: number;
+  availability?: "measured" | "simulated" | "unavailable";
   features: Record<string, number | string | boolean>;
   privateReason?: string;
 };
@@ -136,13 +142,26 @@ This is the fastest path for the first prototype because laptop audio and local 
 
 ## Raspberry Pi Path
 
+Jiko Zero integration path:
+
 1. Pi boots into Chromium kiosk.
 2. Chromium opens `http://<laptop-ip>:5173/?mode=device`.
-3. The laptop server handles audio, STT, feature extraction, readings, receipts, and TTS.
-4. An optional local daemon handles GPIO button events.
-5. The same UI and reading protocol runs unchanged.
+3. The laptop server handles audio, STT, feature extraction, readings, receipts,
+   and fixed local playback.
+4. A local daemon handles GPIO button events through the canonical protocol.
 
-For the hackathon, treat Pi 5 plus MPI3508 as a projector/display shell. Pi-local microphone capture, STT, TTS, and server hosting are future upgrade paths, not first-success criteria. Raspberry Pi has an official kiosk-mode path for full-screen Chromium, and lightweight community examples such as `geerlingguy/pi-kiosk` can be used as references.
+Jiko One device-local gate:
+
+1. The same instrument view opens a device-local server.
+2. The device adapter owns capture and source-monotonic timing.
+3. STT, features, readings, receipt, and fixed local playback complete with WAN
+   blocked and the observer disconnected.
+4. The same UI, state machine, and reading protocol run unchanged.
+
+The projector/display-shell path is valid evidence for Jiko Zero only. It must
+not be reported as device-local audio evidence. Raspberry Pi has an official
+kiosk-mode path for full-screen Chromium, but the Jiko One gate additionally
+requires capture, inference, output, supervision, and recovery on the unit.
 
 ## Manual Demo Override
 
@@ -150,7 +169,7 @@ Keep a small operator-only route or keyboard shortcut for these cases:
 
 - Room too noisy for STT.
 - Network down.
-- TTS API latency too high.
+- Local playback fails or misses its deadline.
 - Judges interrupt the demo timing.
 
 Manual override should set the same event protocol as the real pipeline. That keeps the demo path honest and prevents a separate fake UI from drifting.

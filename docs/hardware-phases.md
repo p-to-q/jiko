@@ -8,10 +8,12 @@ flow from the USB-C reference.
 | Name | Phase | What it is |
 | --- | --- | --- |
 | **Jiko Zero** | Hackathon / proof-of-concept | Raspberry Pi 5 + MPI3508 3.5-inch display as a quick, visible physical shell. |
-| **Jiko One** | Advanced prototype | Custom compute chip, current squircle industrial form, and on-board audio pipeline. The outer look from the showcase study moves into this phase. |
+| **Jiko One** | Advanced prototype | Linux-class compute module on a custom carrier, current squircle industrial form, and on-board audio pipeline. The outer look from the showcase study moves into this phase. |
 
-Jiko Zero proves the interaction ritual. Jiko One is the first step toward a
-self-contained signal instrument.
+Jiko Zero is intended to prove the interaction ritual; its target integration
+receipt is still pending. Jiko One is the first step toward a self-contained
+signal instrument. Custom silicon is explicitly deferred; see
+[`hardware-compute-decision.md`](hardware-compute-decision.md).
 
 ## Dimension Reference
 
@@ -67,41 +69,29 @@ The left side face is the vertical extruded wall at `x = -bodyW / 2`.
 
 So the practical left-side flat surface is about **120 mm × 4.3 mm**.
 
-## Thermal Vent Layout (Left Edge)
+## Current Left-Edge Thermal Mark
 
-The design intent is a vertical array of five openings on the left side. The
-recorded parameters are:
+The previous vertical slot array is retired. The current Jiko One uses the six
+inline `THERMAL_SHOU`, `THERMAL_WAN`, and `THERMAL_HUO` paths in
+`ShowcaseStage.tsx`; `buildThermalMark()` draws them at runtime.
 
-| Parameter | Model value | Physical size |
-| --- | ---: | ---: |
-| Single slot width (`slotW`) | 0.010 | **0.44 mm** |
-| Single slot height (`slotH`) | 0.200 | **8.8 mm** |
-| Slot-to-slot gap | 0.022 | **0.97 mm** |
-| Bottom square size | 0.035 | **1.54 mm** |
-| Total array height (4 slots + composite) | 1.088 | **47.8 mm** |
+- The six-path runtime mark is the only intentional feature on that local edge region.
+- Do not add the retired slot array, cross mark, square, or auxiliary opening.
+- For a physical print, extract those exact runtime paths and reproduce their
+  Canvas transform. Do not substitute an asset SVG, font, or redrawn shape.
+- Final airflow must still be validated against the actual internal stack.
 
-Layout, top to bottom:
+## Superseded Visual Reference
 
-1. Long slot 1 — 0.44 × 8.8 mm
-2. Long slot 2 — 0.44 × 8.8 mm
-3. Long slot 3 — 0.44 × 8.8 mm
-4. Long slot 4 — 0.44 × 8.8 mm
-5. Bottom composite — short slot (0.44 × 8.8 mm) + squircle square (~1.5 mm)
-
-The array occupies about **40% of the left-side height**.
-
-## Visual Reference
-
-A schematic of the overall hardware, left side face, and vent layout is saved at
-`docs/assets/vent-layout.svg`.
+`docs/assets/vent-layout.svg` records the retired slot-array study. Do not use
+it as the current Jiko One external reference.
 
 ## Design Notes
 
-- The 0.44 mm slot width is a narrow slit. For tooling or visibility it may be
-  opened to 0.7–0.9 mm (model `0.015–0.020`) in the final Jiko One shell.
-- The vent placement is on the left edge so the right edge can keep the side
-  thumb rail. Heat placement should still be validated against the real internal
-  stack once that stack is known.
+- The left edge keeps the `热` thermal feature; the right edge keeps the rounded
+  thumb rail.
+- The rear service-panel boundary is an inset score, not a protruding plate.
+- The current rear uses two diagonal screws, matching `ShowcaseStage.tsx`.
 - The dimensions above are proportions from the current showcase model, not a
   final CAD or manufacturing drawing.
 

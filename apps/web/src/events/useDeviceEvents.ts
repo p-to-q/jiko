@@ -1,4 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  classifySessionEvent,
+  createIdleInstrumentScene,
+  createInitialSessionState,
+  projectInstrumentScene,
+  reduceSessionEvent,
+  type InstrumentLampMotion,
+  type InstrumentLampMotions,
+  type InstrumentLampTone,
+  type InstrumentLampTones,
+  type InstrumentPhase,
+  type InstrumentScene,
+  type SessionMachineState,
+} from "@jiko/core";
+import {
+  SessionEventSchema,
+  type ReadingChannel as ProtocolReadingChannel,
+  type SessionEvent,
+} from "@jiko/protocol";
 import { resolveEventsUrl } from "../api/server";
 
 const SESSION_EVENT_TYPES = [
@@ -21,53 +40,72 @@ const SESSION_EVENT_TYPES = [
   "session.error",
 ] as const;
 
-type SessionEventType = (typeof SESSION_EVENT_TYPES)[number];
+export type DevicePhase = InstrumentPhase;
+export type LampTone = InstrumentLampTone;
+export type LampMotion = InstrumentLampMotion;
+export type ReadingChannel = ProtocolReadingChannel;
+export type DeviceState = InstrumentScene;
 
-export type DevicePhase = "idle" | "recording" | "processing" | "result" | "error";
-export type LampTone = "red" | "amber" | "green" | "dim";
-export type ReadingChannel = "text" | "voice" | "timing";
+type LampTones = InstrumentLampTones;
+type LampMotions = InstrumentLampMotions;
 
-type SignalState = "maintain" | "deviate" | "static";
-
-type LampTones = Record<ReadingChannel, LampTone>;
-
-export type DeviceState = {
-  phase: DevicePhase;
-  topTitle: string;
-  topSubtitle: string;
-  lamps: LampTones;
-};
-
-type IncomingSessionEvent = {
+type StreamStatusEvent = {
   type: string;
   [key: string]: unknown;
 };
 
+type IncomingSessionEvent = SessionEvent | StreamStatusEvent;
+
 export type DeviceEventSummary = {
   type: string;
   sessionId?: string;
+  attemptId?: string;
+  sequence?: number;
   timestamp?: number;
   message?: string;
 };
 
 export type DeviceEventsState = {
   device: DeviceState;
+  session: SessionMachineState;
   sessionId?: string;
+  attemptId?: string;
+  lastSequence: number;
+  transport: "connecting" | "connected" | "disconnected" | "gap";
+  resultSequence?: number;
   recentEvents: DeviceEventSummary[];
 };
 
-// amber = the canonical "yellow" sprite palette (orange). Used as the resting /
-// pre-verdict state for all three windows.
-const MOCK_LAMPS: LampTones = {
+export type DeviceEventsOptions = {
+  activeSessionId?: string;
+  discoverDeviceSessions?: boolean;
+  onSessionDiscovered?: (sessionId: string) => void;
+};
+
+// These copies belong only to the timed reveal choreography. The target scene
+// itself is projected by @jiko/core from the canonical session reducer.
+const IDLE_LAMPS: LampTones = {
   text: "amber",
   voice: "amber",
   timing: "amber",
 };
 
-const RECORDING_LAMPS: LampTones = {
-  text: "amber",
-  voice: "amber",
-  timing: "amber",
+const RESTING_LAMPS: LampMotions = {
+  text: "resting",
+  voice: "resting",
+  timing: "resting",
+};
+
+const SPINNING_LAMPS: LampMotions = {
+  text: "spinning",
+  voice: "spinning",
+  timing: "spinning",
+};
+
+const LOCKED_LAMPS: LampMotions = {
+  text: "locked",
+  voice: "locked",
+  timing: "locked",
 };
 
 const PROCESSING_LAMPS: LampTones = {
@@ -76,51 +114,96 @@ const PROCESSING_LAMPS: LampTones = {
   timing: "dim",
 };
 
-// Broken / load-failed → yellow (amber), not red. A failure is "unclear", not a
-// "disagree" verdict.
-const ERROR_LAMPS: LampTones = {
-  text: "amber",
-  voice: "amber",
-  timing: "amber",
-};
-
-const IDLE_DEVICE_STATE: DeviceState = {
-  phase: "idle",
-  topTitle: "READY",
-  topSubtitle: "IDLE",
-  lamps: MOCK_LAMPS,
-};
-
-const INITIAL_EVENTS_STATE: DeviceEventsState = {
-  device: IDLE_DEVICE_STATE,
-  recentEvents: [],
-};
-
-const REVEAL_CHANNELS: ReadingChannel[] = ["text", "voice", "timing"];
-const LAMP_TONES: LampTone[] = ["red", "green", "amber"];
-const FIRST_DELAY = 15_000;
-const STEP_DELAY = 10_000;
-const JITTER = 3_000;
-
-function randomEqualLamps(): LampTones {
+function createInitialEventsState(sessionId?: string): DeviceEventsState {
   return {
-    text: LAMP_TONES[Math.floor(Math.random() * 3)],
-    voice: LAMP_TONES[Math.floor(Math.random() * 3)],
-    timing: LAMP_TONES[Math.floor(Math.random() * 3)],
+    device: createIdleInstrumentScene(),
+    session: createInitialSessionState(sessionId),
+    sessionId,
+    lastSequence: 0,
+    transport: "connecting",
+    recentEvents: [],
   };
 }
 
-export function useDeviceEvents(): DeviceEventsState {
-  const eventsUrl = useMemo(resolveEventsUrl, []);
+const REVEAL_CHANNELS: ReadingChannel[] = ["text", "voice", "timing"];
+const LOCK_DELAYS = [0, 450, 900] as const;
+
+export function useDeviceEvents(
+  options: DeviceEventsOptions = {},
+): DeviceEventsState {
+  const {
+    activeSessionId,
+    discoverDeviceSessions = false,
+    onSessionDiscovered,
+  } = options;
+  const eventsUrl = useMemo(
+    () => resolveEventsUrl(activeSessionId),
+    [activeSessionId],
+  );
   const [rawState, setRawState] =
-    useState<DeviceEventsState>(INITIAL_EVENTS_STATE);
+    useState<DeviceEventsState>(() => createInitialEventsState(activeSessionId));
+  const [streamRevision, setStreamRevision] = useState(0);
+  const gapRecoveryRef = useRef<{ key?: string; attempts: number }>({ attempts: 0 });
 
   const [revealStep, setRevealStep] = useState(0);
-  const [targetLamps, setTargetLamps] = useState<LampTones>(MOCK_LAMPS);
-  const prevPhaseRef = useRef<DevicePhase>("idle");
+  const [targetLamps, setTargetLamps] = useState<LampTones>(IDLE_LAMPS);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const revealIdentity =
+    rawState.device.phase === "result" && rawState.resultSequence
+      ? `${rawState.attemptId ?? "unknown"}:${rawState.resultSequence}`
+      : undefined;
 
   useEffect(() => {
+    gapRecoveryRef.current = { attempts: 0 };
+  }, [activeSessionId]);
+
+  useEffect(() => {
+    if (!discoverDeviceSessions || typeof EventSource === "undefined") {
+      return;
+    }
+
+    // Device sessions are intentionally one immutable attempt each. Keep a
+    // separate unscoped discovery stream alive while the visible instrument is
+    // bound to a scoped stream, otherwise the first button press would hide
+    // every later Pi-created session from the kiosk.
+    let discoverySource: EventSource;
+    try {
+      discoverySource = new EventSource(resolveEventsUrl(undefined));
+    } catch (error) {
+      console.warn("Unable to create device discovery stream.", error);
+      return;
+    }
+
+    const handleCreated = (event: Event) => {
+      const sessionEvent = parseSessionEvent(
+        event as MessageEvent<string>,
+        "session.created",
+      );
+      if (
+        sessionEvent &&
+        isSessionEvent(sessionEvent) &&
+        sessionEvent.type === "session.created" &&
+        sessionEvent.source === "device"
+      ) {
+        onSessionDiscovered?.(sessionEvent.sessionId);
+      }
+    };
+
+    discoverySource.addEventListener("session.created", handleCreated);
+    return () => {
+      discoverySource.removeEventListener("session.created", handleCreated);
+      discoverySource.close();
+    };
+  }, [discoverDeviceSessions, onSessionDiscovered]);
+
+  useEffect(() => {
+    setRawState(createInitialEventsState(activeSessionId));
+    setRevealStep(0);
+
     if (typeof EventSource === "undefined") {
+      return;
+    }
+    if (discoverDeviceSessions && !activeSessionId) {
       return;
     }
 
@@ -133,25 +216,36 @@ export function useDeviceEvents(): DeviceEventsState {
       return;
     }
 
-    const handleMessage = (event: MessageEvent<string>) => {
-      const sessionEvent = parseSessionEvent(event);
-
+    const acceptEvent = (sessionEvent: IncomingSessionEvent | null) => {
       if (!sessionEvent) {
         return;
       }
 
-      setRawState((current) => reduceEventsState(current, sessionEvent));
+      if (isSessionEvent(sessionEvent)) {
+        if (!activeSessionId) {
+          return;
+        }
+
+        setRawState((current) => reduceScopedEventsState(
+          current,
+          sessionEvent,
+          activeSessionId,
+        ));
+        return;
+      }
+
+      setRawState((current) => reduceStreamStatus(current, sessionEvent));
+    };
+
+    const handleMessage = (event: MessageEvent<string>) => {
+      const sessionEvent = parseSessionEvent(event);
+      acceptEvent(sessionEvent);
     };
 
     const namedListeners = SESSION_EVENT_TYPES.map((type) => {
       const listener = (event: Event) => {
         const sessionEvent = parseSessionEvent(event as MessageEvent<string>, type);
-
-        if (!sessionEvent) {
-          return;
-        }
-
-        setRawState((current) => reduceEventsState(current, sessionEvent));
+        acceptEvent(sessionEvent);
       };
 
       source.addEventListener(type, listener);
@@ -161,17 +255,17 @@ export function useDeviceEvents(): DeviceEventsState {
 
     source.addEventListener("message", handleMessage);
     source.addEventListener("open", () => {
-      setRawState((current) => reduceEventsState(current, {
+      acceptEvent({
         type: "server.connected",
         timestamp: Date.now(),
-      }));
+      });
     });
     source.addEventListener("error", () => {
-      setRawState((current) => reduceEventsState(current, {
+      acceptEvent({
         type: "server.disconnected",
         timestamp: Date.now(),
         message: "SSE disconnected",
-      }));
+      });
     });
 
     return () => {
@@ -183,54 +277,112 @@ export function useDeviceEvents(): DeviceEventsState {
 
       source.close();
     };
-  }, [eventsUrl]);
+  }, [
+    activeSessionId,
+    discoverDeviceSessions,
+    eventsUrl,
+    streamRevision,
+  ]);
 
   useEffect(() => {
-    const phase = rawState.device.phase;
-    const wasResult = prevPhaseRef.current === "result";
-    prevPhaseRef.current = phase;
+    if (rawState.transport !== "gap" || !activeSessionId) {
+      return;
+    }
 
-    if (phase === "result" && !wasResult) {
-      setTargetLamps(randomEqualLamps());
-      setRevealStep(0);
+    const key = `${activeSessionId}:${rawState.lastSequence}`;
+    if (gapRecoveryRef.current.key !== key) {
+      gapRecoveryRef.current = { key, attempts: 0 };
+    }
+    if (gapRecoveryRef.current.attempts >= 1) {
+      return;
+    }
 
-      const jitter = () => (Math.random() * 2 - 1) * JITTER;
-      const d1 = FIRST_DELAY + jitter();
-      const d2 = d1 + STEP_DELAY + jitter();
-      const d3 = d2 + STEP_DELAY + jitter();
+    gapRecoveryRef.current.attempts += 1;
+    // A fresh EventSource has no inherited Last-Event-ID, so the scoped server
+    // replays the complete in-memory attempt. One bounded retry can repair a
+    // dropped/out-of-order delivery; a persistent gap remains visibly failed.
+    const reconnect = window.setTimeout(
+      () => setStreamRevision((revision) => revision + 1),
+      75,
+    );
+    return () => window.clearTimeout(reconnect);
+  }, [activeSessionId, rawState.lastSequence, rawState.transport]);
 
-      const t1 = setTimeout(() => setRevealStep(1), d1);
-      const t2 = setTimeout(() => setRevealStep(2), d2);
-      const t3 = setTimeout(() => setRevealStep(3), d3);
+  useEffect(() => {
+    if (revealIdentity) {
+      // Reveal the backend's readings in order. The result must never invent a
+      // new lamp state after the shared pipeline has already resolved it. The
+      // timer is keyed only by result identity, so later TTS/silence events do
+      // not cancel an in-flight reveal.
+      setTargetLamps(rawState.device.lamps);
+      if (prefersReducedMotion) {
+        setRevealStep(REVEAL_CHANNELS.length);
+        return;
+      }
+
+      setRevealStep(1);
+
+      const t2 = setTimeout(() => setRevealStep(2), LOCK_DELAYS[1]);
+      const t3 = setTimeout(() => setRevealStep(3), LOCK_DELAYS[2]);
 
       return () => {
-        clearTimeout(t1);
         clearTimeout(t2);
         clearTimeout(t3);
       };
     }
 
-    if (phase !== "result") {
-      setRevealStep(0);
-    }
-  }, [rawState.device.phase]);
+    setRevealStep(0);
+  }, [prefersReducedMotion, revealIdentity]);
 
   return useMemo<DeviceEventsState>(() => {
+    if (rawState.transport === "disconnected") {
+      return {
+        ...rawState,
+        device: {
+          ...rawState.device,
+          phase: "error",
+          topTitle: "LINK",
+          topSubtitle: "OFFLINE",
+          lampMotions: RESTING_LAMPS,
+        },
+      };
+    }
+
+    if (rawState.transport === "gap") {
+      return {
+        ...rawState,
+        device: {
+          ...rawState.device,
+          phase: "error",
+          topTitle: "SYNC",
+          topSubtitle: "RECONNECT",
+          lampMotions: RESTING_LAMPS,
+        },
+      };
+    }
+
     if (rawState.device.phase !== "result") {
       return rawState;
     }
 
-    const displayLamps: LampTones = { text: "dim", voice: "dim", timing: "dim" };
+    const displayLamps: LampTones = { ...PROCESSING_LAMPS };
+    const lampMotions: LampMotions = { ...SPINNING_LAMPS };
 
     for (let i = 0; i < revealStep; i++) {
-      displayLamps[REVEAL_CHANNELS[i]] = targetLamps[REVEAL_CHANNELS[i]];
+      const channel = REVEAL_CHANNELS[i];
+      displayLamps[channel] = targetLamps[channel];
+      lampMotions[channel] = "locked";
     }
+
+    const fullyLocked = revealStep === REVEAL_CHANNELS.length;
 
     return {
       ...rawState,
       device: {
         ...rawState.device,
+        phase: "result",
         lamps: displayLamps,
+        lampMotions: fullyLocked ? LOCKED_LAMPS : lampMotions,
       },
     };
   }, [rawState, revealStep, targetLamps]);
@@ -238,12 +390,14 @@ export function useDeviceEvents(): DeviceEventsState {
 
 function parseSessionEvent(
   event: MessageEvent<string>,
-  fallbackType?: SessionEventType,
+  fallbackType?: string,
 ): IncomingSessionEvent | null {
   const rawData = typeof event.data === "string" ? event.data.trim() : "";
 
   if (!rawData) {
-    return fallbackType ? { type: fallbackType } : null;
+    return fallbackType === "server.connected" || fallbackType === "server.disconnected"
+      ? { type: fallbackType }
+      : null;
   }
 
   let payload: unknown;
@@ -256,7 +410,7 @@ function parseSessionEvent(
   }
 
   if (!isRecord(payload)) {
-    return fallbackType ? { type: fallbackType } : null;
+    return null;
   }
 
   const payloadType = typeof payload.type === "string" ? payload.type : undefined;
@@ -266,78 +420,87 @@ function parseSessionEvent(
     return null;
   }
 
+  if (type === "server.connected" || type === "server.disconnected") {
+    return { ...payload, type };
+  }
+
+  const parsed = SessionEventSchema.safeParse({ ...payload, type });
+  if (!parsed.success) {
+    console.warn("Ignored invalid session event payload.", parsed.error.issues);
+    return null;
+  }
+
+  return parsed.data;
+}
+
+function reduceScopedEventsState(
+  current: DeviceEventsState,
+  event: SessionEvent,
+  activeSessionId: string,
+): DeviceEventsState {
+  if (event.sessionId !== activeSessionId) {
+    return current;
+  }
+
+  const disposition = classifySessionEvent(current, event);
+  if (
+    disposition === "duplicate" ||
+    disposition === "foreign_session"
+  ) {
+    return current;
+  }
+
+  if (disposition !== "apply") {
+    return {
+      ...current,
+      transport: "gap",
+      recentEvents: [summarizeEvent(event), ...current.recentEvents].slice(0, 12),
+    };
+  }
+
+  let session: SessionMachineState;
+  try {
+    session = reduceSessionEvent(current.session, event);
+  } catch (error) {
+    console.warn("Rejected an invalid session transition from the event stream.", error);
+    return {
+      ...current,
+      transport: "gap",
+      recentEvents: [summarizeEvent(event), ...current.recentEvents].slice(0, 12),
+    };
+  }
+
   return {
-    ...payload,
-    type,
+    device: projectInstrumentScene(session),
+    session,
+    sessionId: event.sessionId,
+    attemptId: event.attemptId,
+    lastSequence: event.sequence,
+    transport:
+      current.transport === "connecting" || current.transport === "gap"
+        ? "connected"
+        : current.transport,
+    resultSequence:
+      event.type === "session.result"
+        ? event.sequence
+        : event.type === "session.created" || event.type === "session.reset"
+          ? undefined
+          : current.resultSequence,
+    recentEvents: [summarizeEvent(event), ...current.recentEvents].slice(0, 12),
   };
 }
 
-function reduceDeviceState(
-  current: DeviceState,
-  event: IncomingSessionEvent,
-): DeviceState {
-  switch (event.type) {
-    case "session.created":
-    case "session.reset":
-      return IDLE_DEVICE_STATE;
-    case "server.disconnected":
-      return {
-        phase: "error",
-        topTitle: "LINK",
-        topSubtitle: "OFFLINE",
-        lamps: ERROR_LAMPS,
-      };
-    case "server.connected":
-      return current.phase === "error" && current.topTitle === "LINK"
-        ? IDLE_DEVICE_STATE
-        : current;
-    case "input.recording.started":
-      return {
-        phase: "recording",
-        topTitle: "REC",
-        topSubtitle: "LISTENING",
-        lamps: RECORDING_LAMPS,
-      };
-    case "input.recording.stopped":
-    case "audio.uploaded":
-    case "audio.normalized":
-    case "audio.transcribed":
-    case "audio.features.extracted":
-    case "reading.started":
-      return {
-        phase: "processing",
-        topTitle: "READING",
-        topSubtitle: "PROCESSING",
-        lamps: PROCESSING_LAMPS,
-      };
-    case "reading.channel.resolved":
-      return {
-        phase: "processing",
-        topTitle: "READING",
-        topSubtitle: "PROCESSING",
-        lamps: PROCESSING_LAMPS,
-      };
-    case "session.result":
-      return resultStateFromEvent(event);
-    case "session.error":
-      return {
-        phase: "error",
-        topTitle: "ERROR",
-        topSubtitle: getEventMessage(event) ?? "RESET",
-        lamps: ERROR_LAMPS,
-      };
-    default:
-      return current;
-  }
-}
-
-function reduceEventsState(
+function reduceStreamStatus(
   current: DeviceEventsState,
-  event: IncomingSessionEvent,
+  event: StreamStatusEvent,
 ): DeviceEventsState {
+  if (event.type !== "server.connected" && event.type !== "server.disconnected") {
+    return current;
+  }
+
   return {
-    device: reduceDeviceState(current.device, event),
-    sessionId: getSessionId(event) ?? current.sessionId,
+    ...current,
+    transport: event.type === "server.connected" ? "connected" : "disconnected",
     recentEvents: [summarizeEvent(event), ...current.recentEvents].slice(0, 12),
   };
 }
@@ -346,101 +509,15 @@ function summarizeEvent(event: IncomingSessionEvent): DeviceEventSummary {
   return {
     type: event.type,
     sessionId: getSessionId(event),
+    attemptId: getAttemptId(event),
+    sequence: getSequence(event),
     timestamp: getTimestamp(event),
     message: getEventMessage(event),
   };
 }
 
-function resultStateFromEvent(event: IncomingSessionEvent): DeviceState {
-  const result = isRecord(event.result) ? event.result : event;
-
-  return {
-    phase: "result",
-    topTitle:
-      getTopWindowLine(result, "lineZh") ??
-      getTopWindowLine(result, "lineEn") ??
-      "RESULT",
-    topSubtitle:
-      getTopWindowLine(result, "lineEn") ??
-      getTopWindowStatus(result) ??
-      "LOCKED",
-    lamps: getResultLamps(result),
-  };
-}
-
-function getResultLamps(event: Record<string, unknown>): LampTones {
-  const lamps: LampTones = { ...MOCK_LAMPS };
-
-  if (!Array.isArray(event.readings)) {
-    return lamps;
-  }
-
-  for (const reading of event.readings) {
-    if (!isRecord(reading)) {
-      continue;
-    }
-
-    const channel = toReadingChannel(reading.channel);
-    const signalState = toSignalState(reading.state);
-
-    if (!channel || !signalState) {
-      continue;
-    }
-
-    lamps[channel] = toneForSignalState(signalState);
-  }
-
-  return lamps;
-}
-
-function withResolvedReadingLamp(
-  state: DeviceState,
-  event: IncomingSessionEvent,
-): DeviceState {
-  const reading = isRecord(event.reading) ? event.reading : event;
-  const channel = toReadingChannel(reading.channel);
-  const signalState = toSignalState(reading.state);
-
-  if (!channel || !signalState) {
-    return state;
-  }
-
-  return {
-    ...state,
-    lamps: {
-      ...state.lamps,
-      [channel]: toneForSignalState(signalState),
-    },
-  };
-}
-
-function getTopWindowLine(
-  event: Record<string, unknown>,
-  key: "lineEn" | "lineZh",
-) {
-  if (!isRecord(event.topWindow)) {
-    return undefined;
-  }
-
-  const value = event.topWindow[key];
-
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-function getTopWindowStatus(event: Record<string, unknown>) {
-  if (!isRecord(event.topWindow)) {
-    return undefined;
-  }
-
-  const value = event.topWindow.status;
-
-  return typeof value === "string" && value.trim()
-    ? value.trim().replace(/_/g, " ").toUpperCase()
-    : undefined;
-}
-
 function getEventMessage(event: IncomingSessionEvent) {
-  const message = event.message;
+  const message = "message" in event ? event.message : undefined;
 
   return typeof message === "string" && message.trim()
     ? message.trim().slice(0, 22).toUpperCase()
@@ -463,34 +540,42 @@ function getTimestamp(event: IncomingSessionEvent) {
     : undefined;
 }
 
-// Per the product brief and sprite palette: red = maintain / hold / inertia,
-// green = deviate / growth / open path, yellow(amber) = static / unformed.
-function toneForSignalState(state: SignalState): LampTone {
-  if (state === "maintain") {
-    return "red";
-  }
-
-  if (state === "deviate") {
-    return "green";
-  }
-
-  return "amber";
+function getAttemptId(event: IncomingSessionEvent) {
+  const attemptId = event.attemptId;
+  return typeof attemptId === "string" && attemptId.trim()
+    ? attemptId.trim()
+    : undefined;
 }
 
-function toReadingChannel(value: unknown): ReadingChannel | undefined {
-  if (value === "text" || value === "voice" || value === "timing") {
-    return value;
-  }
-
-  return undefined;
+function getSequence(event: IncomingSessionEvent) {
+  const sequence = event.sequence;
+  return typeof sequence === "number" && Number.isInteger(sequence)
+    ? sequence
+    : undefined;
 }
 
-function toSignalState(value: unknown): SignalState | undefined {
-  if (value === "maintain" || value === "deviate" || value === "static") {
-    return value;
-  }
+function isSessionEvent(event: IncomingSessionEvent): event is SessionEvent {
+  return Boolean(
+    getSessionId(event) &&
+    getAttemptId(event) &&
+    getSequence(event),
+  );
+}
 
-  return undefined;
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(() =>
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const handleChange = () => setReduced(media.matches);
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
+
+  return reduced;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

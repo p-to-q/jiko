@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "0.3",
+  "destination": "Select an evidence-gated edge speech stack",
+  "routes": [
+    {
+      "id": "hybrid-gated",
+      "label": "Gated hybrid",
+      "color": "cyan",
+      "recommended": true,
+      "tokens": { "min": 120000, "max": 260000 },
+      "minutes": { "min": 18, "max": 42 },
+      "summary": "Local default, explicit remote challenger"
+    },
+    {
+      "id": "local-appliance",
+      "label": "Local appliance",
+      "color": "green",
+      "recommended": false,
+      "tokens": { "min": 90000, "max": 210000 },
+      "minutes": { "min": 16, "max": 38 },
+      "summary": "Offline privacy with deeper edge tuning"
+    },
+    {
+      "id": "remote-thin-client",
+      "label": "Remote thin client",
+      "color": "orange",
+      "recommended": false,
+      "tokens": { "min": 70000, "max": 160000 },
+      "minutes": { "min": 12, "max": 30 },
+      "summary": "Fast cloud iteration with network risk"
+    }
+  ],
+  "graph": {
+    "nodes": [
+      { "id": "batch-prototype", "label": "batch audio prototype", "column": 0, "lane": 2 },
+      { "id": "lock-contract", "label": "lock input + receipt", "column": 1, "lane": 2, "gate": "yellow", "control": "boundary" },
+      { "id": "warm-local", "label": "warm local stream", "column": 2, "lane": 0 },
+      { "id": "remote-stream", "label": "remote live stream", "column": 2, "lane": 4 },
+      { "id": "profile-operators", "label": "profile operators", "column": 3, "lane": 0, "control": "proof" },
+      { "id": "remote-policy", "label": "privacy + budget gate", "column": 3, "lane": 4, "gate": "red", "control": "boundary" },
+      { "id": "local-profile", "label": "offline profile", "column": 4, "lane": 0 },
+      { "id": "hybrid-scheduler", "label": "deadline scheduler", "column": 4, "lane": 2 },
+      { "id": "remote-profile", "label": "networked profile", "column": 4, "lane": 4 },
+      { "id": "corpus-benchmark", "label": "same-corpus proof", "column": 5, "lane": 2, "gate": "yellow", "control": "proof" },
+      { "id": "target-hil", "label": "target HIL + soak", "column": 6, "lane": 2, "gate": "yellow", "control": "proof" },
+      { "id": "selected-stack", "label": "measured release profile", "column": 7, "lane": 2, "control": "release" }
+    ],
+    "edges": [
+      { "from": "batch-prototype", "to": "lock-contract", "routes": ["hybrid-gated", "local-appliance", "remote-thin-client"] },
+      { "from": "lock-contract", "to": "warm-local", "routes": ["hybrid-gated", "local-appliance"] },
+      { "from": "lock-contract", "to": "remote-stream", "routes": ["hybrid-gated", "remote-thin-client"] },
+      { "from": "warm-local", "to": "profile-operators", "routes": ["local-appliance"] },
+      { "from": "profile-operators", "to": "local-profile", "routes": ["local-appliance"] },
+      { "from": "warm-local", "to": "hybrid-scheduler", "routes": ["hybrid-gated"] },
+      { "from": "remote-stream", "to": "remote-policy", "routes": ["hybrid-gated", "remote-thin-client"] },
+      { "from": "remote-policy", "to": "hybrid-scheduler", "routes": ["hybrid-gated"] },
+      { "from": "remote-policy", "to": "remote-profile", "routes": ["remote-thin-client"] },
+      { "from": "local-profile", "to": "corpus-benchmark", "routes": ["local-appliance"] },
+      { "from": "hybrid-scheduler", "to": "corpus-benchmark", "routes": ["hybrid-gated"] },
+      { "from": "remote-profile", "to": "corpus-benchmark", "routes": ["remote-thin-client"] },
+      { "from": "corpus-benchmark", "to": "target-hil", "routes": ["hybrid-gated", "local-appliance", "remote-thin-client"] },
+      { "from": "target-hil", "to": "selected-stack", "routes": ["hybrid-gated", "local-appliance", "remote-thin-client"] }
+    ]
+  }
+}

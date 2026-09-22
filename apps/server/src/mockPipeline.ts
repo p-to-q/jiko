@@ -37,7 +37,9 @@ export function buildReadings(
   transcript: string,
   language: string,
   features: AudioFeatures,
-  sttConfidence = 0.86
+  sttConfidence?: number,
+  featureSource = "measured:audio",
+  textAvailable = true
 ): Reading[] {
   return runReadings({
     text: {
@@ -66,7 +68,19 @@ export function buildReadings(
       pauseCount: features.pauseCount,
       longestPauseMs: features.longestPauseMs
     }
-  });
+  }).map((reading) => ({
+    ...reading,
+    availability: featureSource.startsWith("simulated:")
+      ? "simulated"
+      : reading.channel === "text" && !textAvailable
+        ? "unavailable"
+        : "measured",
+    features: {
+      ...reading.features,
+      featureSource,
+      readingEngine: "jiko-heuristic-v1"
+    }
+  }));
 }
 
 export function buildResult(sessionId: string, readings: Reading[]): SessionResult {

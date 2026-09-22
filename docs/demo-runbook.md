@@ -23,11 +23,29 @@ pnpm dev:server
 pnpm dev:web -- --host 0.0.0.0
 ```
 
-The default server port is `4317`. The Vite dev server usually uses `5173`.
-When the Pi opens the laptop-hosted page, the web app automatically points API
-requests at `http://<same-laptop-ip>:4317` unless `VITE_API_URL` is set.
+The default server port is `4317`, and the server binds to `127.0.0.1` by
+default. The Vite dev server usually uses `5173`. This default is the supported
+laptop-only voice path; it does not expose session audio or receipts to the
+LAN.
+
+For the controlled Pi display-shell rehearsal only, expose the server
+deliberately and allow the exact web origin printed by `pnpm demo:urls`:
+
+```sh
+HOST=0.0.0.0 \
+JIKO_HTTP_ALLOWED_ORIGINS=http://<laptop-ip>:5173,http://localhost:5173,http://127.0.0.1:5173 \
+pnpm dev:server
+```
+
+Replace `<laptop-ip>` and the port with the actual values; do not paste the
+angle-bracket placeholder. When the Pi opens the laptop-hosted page, the web
+app points API requests at `http://<same-laptop-ip>:4317` unless
+`VITE_API_URL` is set. Exact Origin checking is browser isolation, not client
+authentication. Use this mode only on a controlled demo network, and return to
+the loopback default afterward.
+
 If Vite reports a different port because `5173` is already in use, use that
-printed port for the Pi kiosk URL.
+printed port for both the Pi kiosk URL and the allowlist.
 
 For hardware-rendering review on the laptop, open:
 
@@ -121,6 +139,15 @@ chromium-browser --kiosk --noerrdialogs --disable-infobars \
 The device UI should preserve the MPI3508-oriented 320 x 480 layout. Confirm
 screen rotation, visible area, and mask alignment before rehearsing the demo.
 
+This plain-HTTP Pi path is a display/observer shell, not a browser microphone
+path: `getUserMedia` and `AudioWorklet` require a secure context away from
+localhost. A future Pi-browser audio trial needs HTTPS for the page, WSS/HTTPS
+for the API through the same TLS boundary, and the exact HTTPS origin in both
+`JIKO_HTTP_ALLOWED_ORIGINS` and `JIKO_ORDERED_PCM_ALLOWED_ORIGINS`. The current
+repository does not ship that TLS/authenticated LAN release profile. On this
+observer path the canvas replaces the record button with a non-interactive
+`INPUT / HW` status marker.
+
 ## Optional Pi Button
 
 Use the Pi button adapter only after the display path works.
@@ -131,8 +158,9 @@ python3 apps/device/pi_button_adapter.py
 ```
 
 If the MPI3508 uses the GPIO header for touch or power, do not assume `GPIO17`
-is safe. Prefer the browser record button, a USB HID button, or a small serial
-controller before forcing a GPIO layout.
+is safe. Prefer a USB HID button or a small serial controller before forcing a
+GPIO layout. The browser record button is a fallback only after the HTTPS/WSS
+profile above exists and has been tested.
 
 ## Smoke Tests
 
@@ -183,7 +211,8 @@ Web smoke:
   same UI/result path.
 - Open `http://localhost:5173/?mode=device` and confirm it fits the MPI3508
   device canvas.
-- Open the same device URL from the Pi using the laptop IP.
+- Start the explicit controlled-LAN server profile above, then open the same
+  device URL from the Pi using the laptop IP.
 
 ## Fallback Ladder
 

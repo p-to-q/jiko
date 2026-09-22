@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "jiko-hardware-hil-host-simulation-v1",
+  "scope": "Receipt-schema and artifact-integrity plumbing only; no product turn or hardware path is exercised.",
+  "evidenceClass": "host_simulation",
+  "pathCoverage": {
+    "control": "none",
+    "audio": "none",
+    "output": "none"
+  },
+  "qualification": {
+    "profile": "none",
+    "verdict": "not_evaluated"
+  }
+}

@@ -142,7 +142,7 @@ function SideKey({ recorder }: { recorder?: RecorderControls }) {
       className="demo-side-key"
       type="button"
       aria-label="录音"
-      {...recorder.pointerHandlers}
+      onClick={recorder.toggleRecording}
     >
       {content}
     </button>

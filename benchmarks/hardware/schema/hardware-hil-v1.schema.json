@@ -1,0 +1,725 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:jiko:benchmark:hardware-hil-v1",
+  "title": "Jiko hardware HIL receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schemaVersion",
+    "runId",
+    "evidenceClass",
+    "harnessStatus",
+    "startedAt",
+    "finishedAt",
+    "elapsedMonotonicMs",
+    "reproducibility",
+    "controller",
+    "dut",
+    "fixture",
+    "pathCoverage",
+    "campaign",
+    "cases",
+    "measurements",
+    "faults",
+    "checks",
+    "qualification",
+    "privacy",
+    "artifacts"
+  ],
+  "properties": {
+    "schema": { "const": "hardware_hil_v1" },
+    "schemaVersion": { "const": 1 },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-zA-Z0-9._:-]+$"
+    },
+    "evidenceClass": {
+      "enum": ["host_simulation", "hardware_in_loop"]
+    },
+    "harnessStatus": {
+      "enum": ["completed", "failed", "error"]
+    },
+    "startedAt": { "$ref": "#/$defs/timestamp" },
+    "finishedAt": { "$ref": "#/$defs/timestamp" },
+    "elapsedMonotonicMs": { "type": "number", "minimum": 0 },
+    "reproducibility": { "$ref": "#/$defs/reproducibility" },
+    "controller": { "$ref": "#/$defs/controller" },
+    "dut": { "$ref": "#/$defs/dut" },
+    "fixture": { "$ref": "#/$defs/fixture" },
+    "pathCoverage": { "$ref": "#/$defs/pathCoverage" },
+    "campaign": { "$ref": "#/$defs/campaign" },
+    "cases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/caseSummary" }
+    },
+    "measurements": { "$ref": "#/$defs/measurements" },
+    "faults": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/fault" }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "qualification": { "$ref": "#/$defs/qualification" },
+    "privacy": { "$ref": "#/$defs/privacy" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/artifact" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{3})?Z$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "unavailableMeasurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availability", "reason"],
+      "properties": {
+        "availability": {
+          "enum": ["not_collected", "unsupported", "not_applicable"]
+        },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "numberMeasurement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["availability", "value", "unit", "sampleCount", "source"],
+          "properties": {
+            "availability": { "const": "measured" },
+            "value": { "type": "number" },
+            "unit": { "type": "string", "minLength": 1 },
+            "sampleCount": { "type": "integer", "minimum": 1 },
+            "source": { "type": "string", "minLength": 1 },
+            "artifactSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        { "$ref": "#/$defs/unavailableMeasurement" }
+      ]
+    },
+    "counterMeasurement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["availability", "value", "unit", "sampleCount", "source"],
+          "properties": {
+            "availability": { "const": "measured" },
+            "value": { "type": "integer", "minimum": 0 },
+            "unit": { "const": "count" },
+            "sampleCount": { "type": "integer", "minimum": 1 },
+            "source": { "type": "string", "minLength": 1 },
+            "artifactSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        { "$ref": "#/$defs/unavailableMeasurement" }
+      ]
+    },
+    "booleanMeasurement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["availability", "value", "unit", "sampleCount", "source"],
+          "properties": {
+            "availability": { "const": "measured" },
+            "value": { "type": "boolean" },
+            "unit": { "const": "boolean" },
+            "sampleCount": { "type": "integer", "minimum": 1 },
+            "source": { "type": "string", "minLength": 1 },
+            "artifactSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        { "$ref": "#/$defs/unavailableMeasurement" }
+      ]
+    },
+    "stringMeasurement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["availability", "value", "unit", "sampleCount", "source"],
+          "properties": {
+            "availability": { "const": "measured" },
+            "value": { "type": "string", "minLength": 1 },
+            "unit": { "const": "state" },
+            "sampleCount": { "type": "integer", "minimum": 1 },
+            "source": { "type": "string", "minLength": 1 },
+            "artifactSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        { "$ref": "#/$defs/unavailableMeasurement" }
+      ]
+    },
+    "distributionMeasurement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "availability",
+            "unit",
+            "sampleCount",
+            "p50",
+            "p95",
+            "max",
+            "source"
+          ],
+          "properties": {
+            "availability": { "const": "measured" },
+            "unit": { "type": "string", "minLength": 1 },
+            "sampleCount": { "type": "integer", "minimum": 1 },
+            "p50": { "type": "number" },
+            "p95": { "type": "number" },
+            "p99": { "type": "number" },
+            "max": { "type": "number" },
+            "source": { "type": "string", "minLength": 1 },
+            "artifactSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        { "$ref": "#/$defs/unavailableMeasurement" }
+      ]
+    },
+    "gitIdentity": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["availability", "sha", "dirty"],
+          "properties": {
+            "availability": { "const": "identified" },
+            "sha": {
+              "type": "string",
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+            },
+            "dirty": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["availability", "reason"],
+          "properties": {
+            "availability": { "const": "unavailable" },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "componentIdentity": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "availability", "id", "sha256"],
+          "properties": {
+            "role": { "$ref": "#/$defs/componentRole" },
+            "availability": { "const": "identified" },
+            "id": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "availability", "reason"],
+          "properties": {
+            "role": { "$ref": "#/$defs/componentRole" },
+            "availability": { "enum": ["not_present", "unavailable"] },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "componentRole": {
+      "enum": [
+        "os_image",
+        "application",
+        "model_bundle",
+        "configuration",
+        "mcu_firmware",
+        "dsp_firmware",
+        "audio_profile"
+      ]
+    },
+    "reproducibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suite", "source", "protocol"],
+      "properties": {
+        "suite": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "manifestSha256"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "version": { "type": "integer", "minimum": 1 },
+            "manifestSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "git",
+            "lockfileSha256",
+            "schemaSha256",
+            "harnessSha256",
+            "fixtureManifestSha256",
+            "configurationSha256"
+          ],
+          "properties": {
+            "git": { "$ref": "#/$defs/gitIdentity" },
+            "lockfileSha256": { "$ref": "#/$defs/sha256" },
+            "schemaSha256": { "$ref": "#/$defs/sha256" },
+            "harnessSha256": { "$ref": "#/$defs/sha256" },
+            "fixtureManifestSha256": { "$ref": "#/$defs/sha256" },
+            "configurationSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "protocol": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sessionEvent", "sessionReceipt"],
+          "properties": {
+            "sessionEvent": { "$ref": "#/$defs/stringMeasurement" },
+            "sessionReceipt": { "$ref": "#/$defs/stringMeasurement" }
+          }
+        }
+      }
+    },
+    "controller": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "release",
+        "arch",
+        "runtime",
+        "logicalCpuCount",
+        "profileId",
+        "powerMode"
+      ],
+      "properties": {
+        "platform": { "type": "string", "minLength": 1 },
+        "release": { "type": "string", "minLength": 1 },
+        "arch": { "type": "string", "minLength": 1 },
+        "runtime": { "type": "string", "minLength": 1 },
+        "logicalCpuCount": { "type": "integer", "minimum": 1 },
+        "profileId": { "$ref": "#/$defs/stringMeasurement" },
+        "powerMode": { "$ref": "#/$defs/stringMeasurement" }
+      }
+    },
+    "dut": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["present", "reason"],
+          "properties": {
+            "present": { "const": false },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "present",
+            "profileId",
+            "serial",
+            "hardwareRevision",
+            "os",
+            "arch",
+            "threadCount",
+            "powerMode",
+            "components",
+            "update"
+          ],
+          "properties": {
+            "present": { "const": true },
+            "profileId": { "type": "string", "minLength": 1 },
+            "serial": { "type": "string", "minLength": 1 },
+            "hardwareRevision": { "type": "string", "minLength": 1 },
+            "os": { "type": "string", "minLength": 1 },
+            "arch": { "type": "string", "minLength": 1 },
+            "threadCount": { "type": "integer", "minimum": 1 },
+            "powerMode": { "$ref": "#/$defs/stringMeasurement" },
+            "components": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/componentIdentity" }
+            },
+            "update": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["slot", "health"],
+              "properties": {
+                "slot": { "$ref": "#/$defs/stringMeasurement" },
+                "health": { "$ref": "#/$defs/stringMeasurement" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "fixture": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id", "manifestSha256", "description"],
+          "properties": {
+            "kind": { "const": "synthetic" },
+            "id": { "type": "string", "minLength": 1 },
+            "manifestSha256": { "$ref": "#/$defs/sha256" },
+            "description": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "revision",
+            "calibration",
+            "ambient"
+          ],
+          "properties": {
+            "kind": { "const": "physical" },
+            "id": { "type": "string", "minLength": 1 },
+            "revision": { "type": "string", "minLength": 1 },
+            "calibration": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "sha256"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "sha256": { "$ref": "#/$defs/sha256" },
+                "calibratedAt": { "$ref": "#/$defs/timestamp" }
+              }
+            },
+            "ambient": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["temperatureC", "noiseDbA"],
+              "properties": {
+                "temperatureC": { "$ref": "#/$defs/numberMeasurement" },
+                "noiseDbA": { "$ref": "#/$defs/numberMeasurement" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "pathCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["control", "audio", "output"],
+      "properties": {
+        "control": { "enum": ["none", "api", "physical_button"] },
+        "audio": { "enum": ["none", "uploaded_fixture", "acoustic_capture"] },
+        "output": { "enum": ["none", "electrical", "acoustic"] }
+      }
+    },
+    "campaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "startCondition",
+        "plannedTurns",
+        "completedTurns",
+        "inputDurationMs"
+      ],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1 },
+        "startCondition": { "enum": ["cold", "warm", "mixed"] },
+        "plannedTurns": { "type": "integer", "minimum": 0 },
+        "completedTurns": { "type": "integer", "minimum": 0 },
+        "inputDurationMs": { "$ref": "#/$defs/numberMeasurement" },
+        "dutyCycleManifestSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "caseSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "plannedTurns",
+        "completedTurns",
+        "outcomes",
+        "latencyMs",
+        "traceArtifactSha256"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "plannedTurns": { "type": "integer", "minimum": 0 },
+        "completedTurns": { "type": "integer", "minimum": 0 },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["outcome", "count"],
+            "properties": {
+              "outcome": { "$ref": "#/$defs/outcome" },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "latencyMs": { "$ref": "#/$defs/distributionMeasurement" },
+        "traceArtifactSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "audio_invalid",
+        "audio_overrun",
+        "stt_unavailable",
+        "timed_out",
+        "reset",
+        "recovered",
+        "recovery_failed",
+        "dependency_unavailable",
+        "harness_error",
+        "not_run"
+      ]
+    },
+    "measurements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capture", "integrity", "latency", "dutPower", "dutThermal"],
+      "properties": {
+        "capture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sampleCount",
+            "monotonicElapsedMs",
+            "clockDriftPpm",
+            "firstPhonemeClipped",
+            "lastPhonemeClipped",
+            "xrunCount",
+            "gapCount",
+            "resetCount",
+            "duplicateFrameCount",
+            "outOfOrderFrameCount",
+            "overflowCount",
+            "ringHighWaterFrames",
+            "hostQueueHighWaterFrames",
+            "maxQueueAgeMs"
+          ],
+          "properties": {
+            "sampleCount": { "$ref": "#/$defs/counterMeasurement" },
+            "monotonicElapsedMs": { "$ref": "#/$defs/numberMeasurement" },
+            "clockDriftPpm": { "$ref": "#/$defs/numberMeasurement" },
+            "firstPhonemeClipped": { "$ref": "#/$defs/booleanMeasurement" },
+            "lastPhonemeClipped": { "$ref": "#/$defs/booleanMeasurement" },
+            "xrunCount": { "$ref": "#/$defs/counterMeasurement" },
+            "gapCount": { "$ref": "#/$defs/counterMeasurement" },
+            "resetCount": { "$ref": "#/$defs/counterMeasurement" },
+            "duplicateFrameCount": { "$ref": "#/$defs/counterMeasurement" },
+            "outOfOrderFrameCount": { "$ref": "#/$defs/counterMeasurement" },
+            "overflowCount": { "$ref": "#/$defs/counterMeasurement" },
+            "ringHighWaterFrames": { "$ref": "#/$defs/counterMeasurement" },
+            "hostQueueHighWaterFrames": { "$ref": "#/$defs/counterMeasurement" },
+            "maxQueueAgeMs": { "$ref": "#/$defs/numberMeasurement" }
+          }
+        },
+        "integrity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["eventLossCount", "duplicateFinalResultCount", "stuckSessionCount"],
+          "properties": {
+            "eventLossCount": { "$ref": "#/$defs/counterMeasurement" },
+            "duplicateFinalResultCount": { "$ref": "#/$defs/counterMeasurement" },
+            "stuckSessionCount": { "$ref": "#/$defs/counterMeasurement" }
+          }
+        },
+        "latency": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "buttonDownToAckMs",
+            "buttonUpToProcessingMs",
+            "releaseToResultMs",
+            "releaseToErrorMs"
+          ],
+          "properties": {
+            "buttonDownToAckMs": { "$ref": "#/$defs/distributionMeasurement" },
+            "buttonUpToProcessingMs": { "$ref": "#/$defs/distributionMeasurement" },
+            "releaseToResultMs": { "$ref": "#/$defs/distributionMeasurement" },
+            "releaseToErrorMs": { "$ref": "#/$defs/distributionMeasurement" }
+          }
+        },
+        "dutPower": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["railCurrentMa", "energyMwh"],
+          "properties": {
+            "railCurrentMa": { "$ref": "#/$defs/distributionMeasurement" },
+            "energyMwh": { "$ref": "#/$defs/numberMeasurement" }
+          }
+        },
+        "dutThermal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["temperatureC", "throttleCount"],
+          "properties": {
+            "temperatureC": { "$ref": "#/$defs/distributionMeasurement" },
+            "throttleCount": { "$ref": "#/$defs/counterMeasurement" }
+          }
+        }
+      }
+    },
+    "fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "injected",
+        "domain",
+        "type",
+        "phase",
+        "expectedOutcome",
+        "observedOutcome",
+        "verdict"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "injected": { "type": "boolean" },
+        "domain": {
+          "enum": ["none", "software_boundary", "fixture", "physical"]
+        },
+        "type": {
+          "enum": [
+            "none",
+            "process_kill",
+            "usb_disconnect",
+            "audio_xrun",
+            "consumer_slowdown",
+            "ring_overflow",
+            "network_absent",
+            "clock_step",
+            "storage_full",
+            "storage_read_only",
+            "model_missing",
+            "model_corrupt",
+            "mcu_reset",
+            "firmware_mismatch",
+            "power_loss",
+            "thermal_load",
+            "supply_droop"
+          ]
+        },
+        "phase": { "type": "string", "minLength": 1 },
+        "expectedOutcome": { "$ref": "#/$defs/outcome" },
+        "observedOutcome": { "$ref": "#/$defs/outcome" },
+        "verdict": { "enum": ["pass", "fail", "not_evaluated"] },
+        "evidenceArtifactSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "required", "verdict", "message"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "required": { "type": "boolean" },
+        "verdict": { "enum": ["pass", "fail", "not_evaluated"] },
+        "message": { "type": "string", "minLength": 1 },
+        "evidenceArtifactSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "verdict", "reasons"],
+      "properties": {
+        "profile": {
+          "enum": [
+            "none",
+            "architecture_8h",
+            "evt_24h",
+            "dvt_72h",
+            "dvt_duty_cycle"
+          ]
+        },
+        "verdict": { "enum": ["pass", "fail", "not_evaluated"] },
+        "reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stimulusClass",
+        "rawCapturedAudio",
+        "transcriptContent",
+        "containsPersonalData"
+      ],
+      "properties": {
+        "stimulusClass": {
+          "enum": ["none", "synthetic", "licensed", "consented_external"]
+        },
+        "rawCapturedAudio": {
+          "enum": ["none", "temporary_deleted", "external_access_controlled"]
+        },
+        "transcriptContent": {
+          "enum": ["omitted", "external_access_controlled"]
+        },
+        "containsPersonalData": { "type": "boolean" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256", "byteSize", "mediaType"],
+      "properties": {
+        "role": {
+          "enum": [
+            "fixture_manifest",
+            "configuration",
+            "controller_trace",
+            "event_trace",
+            "session_receipt",
+            "metric_trace",
+            "hardware_profile",
+            "build_manifest",
+            "harness_log"
+          ]
+        },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "byteSize": { "type": "integer", "minimum": 0 },
+        "mediaType": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

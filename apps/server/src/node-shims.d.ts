@@ -7,14 +7,17 @@ declare module "node:fs/promises" {
   export function mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
   export function mkdtemp(prefix: string): Promise<string>;
   export function readFile(path: string): Promise<Buffer>;
+  export function rename(oldPath: string, newPath: string): Promise<void>;
   export function rm(path: string, options?: { force?: boolean; recursive?: boolean }): Promise<void>;
   export function writeFile(path: string, data: string | Uint8Array, encoding?: string): Promise<void>;
 }
 
 declare module "node:child_process" {
   export function spawn(command: string, args?: string[], options?: { stdio?: string[] }): {
+    kill(signal?: string): boolean;
     stdin?: {
       end(value?: string): void;
+      on(event: "error", listener: (error: Error) => void): void;
     };
     on(event: "error", listener: (error: Error) => void): void;
     on(event: "close", listener: (code: number | null) => void): void;
@@ -30,8 +33,13 @@ declare module "node:child_process" {
 declare module "node:http" {
   const http: {
     createServer(handler: (request: any, response: any) => void): {
+      headersTimeout: number;
+      requestTimeout: number;
+      keepAliveTimeout: number;
+      maxRequestsPerSocket: number;
       listen(port: number, host: string, callback?: () => void): void;
       close(callback?: () => void): void;
+      closeAllConnections(): void;
     };
   };
   export default http;
@@ -82,6 +90,8 @@ declare function fetch(
     method?: string;
     headers?: Record<string, string>;
     body?: unknown;
+    redirect?: "error" | "follow" | "manual";
+    signal?: AbortSignal;
   }
 ): Promise<{
   ok: boolean;

@@ -1,6 +1,7 @@
 import type {
   AudioFeatures,
   NormalizedAudio,
+  PipelineReceipt,
   Reading,
   ReadingChannel,
   RuntimeSource,
@@ -8,15 +9,20 @@ import type {
   SessionPhase,
   SessionReceipt,
   SessionResult,
+  SessionStatus,
   SignalState,
+  SttProviderReceipt,
   TranscriptResult,
   UploadedAudio
 } from "@jiko/protocol";
+import { SessionResultSchema } from "@jiko/protocol";
 
 export type SessionReadings = Partial<Record<ReadingChannel, Reading>>;
 
 export type SessionMachineState = {
   sessionId?: string;
+  attemptId?: string;
+  lastSequence: number;
   phase: SessionPhase;
   source?: RuntimeSource;
   createdAt?: number;
@@ -30,11 +36,218 @@ export type SessionMachineState = {
   errors: string[];
 };
 
+export type InstrumentPhase =
+  | "idle"
+  | "recording"
+  | "processing"
+  | "result"
+  | "error";
+
+export type InstrumentLampTone = "red" | "amber" | "green" | "dim";
+export type InstrumentLampMotion = "resting" | "spinning" | "locked";
+export type InstrumentLampTones = Record<ReadingChannel, InstrumentLampTone>;
+export type InstrumentLampMotions = Record<ReadingChannel, InstrumentLampMotion>;
+
+/**
+ * Framework-neutral state for the four-window instrument face. Both runtime
+ * shells project this scene from the canonical session state; transport and
+ * animation adapters may temporarily decorate it, but they do not decide the
+ * product reading.
+ */
+export type InstrumentScene = {
+  phase: InstrumentPhase;
+  topTitle: string;
+  topSubtitle: string;
+  lamps: InstrumentLampTones;
+  lampMotions: InstrumentLampMotions;
+};
+
+const READING_CHANNELS: readonly ReadingChannel[] = ["text", "voice", "timing"];
+const SIGNAL_STATES: readonly SignalState[] = ["maintain", "deviate", "static"];
+
+export function createIdleInstrumentScene(): InstrumentScene {
+  return {
+    phase: "idle",
+    topTitle: "READY",
+    topSubtitle: "IDLE",
+    lamps: allLampTones("amber"),
+    lampMotions: allLampMotions("resting")
+  };
+}
+
+export function projectInstrumentScene(
+  state: SessionMachineState
+): InstrumentScene {
+  switch (state.phase) {
+    case "idle":
+    case "reset":
+      return createIdleInstrumentScene();
+    case "armed":
+    case "recording":
+      return {
+        phase: "recording",
+        topTitle: "REC",
+        topSubtitle: "LISTENING",
+        lamps: allLampTones("amber"),
+        lampMotions: allLampMotions("resting")
+      };
+    case "processing":
+    case "reading":
+      return projectProcessingScene(state.readings);
+    case "result":
+    case "silence":
+      return state.result
+        ? projectResultScene(state.result)
+        : projectProcessingScene(state.readings);
+    case "error":
+      return {
+        phase: "error",
+        topTitle: "ERROR",
+        topSubtitle: compactInstrumentMessage(
+          state.errors[state.errors.length - 1] ?? "RESET"
+        ),
+        // A runtime failure is unclear, not a red verdict.
+        lamps: allLampTones("amber"),
+        lampMotions: allLampMotions("resting")
+      };
+    default:
+      return assertNeverPhase(state.phase);
+  }
+}
+
+function projectProcessingScene(readings: SessionReadings): InstrumentScene {
+  const lamps = allLampTones("dim");
+  const lampMotions = allLampMotions("spinning");
+
+  for (const channel of READING_CHANNELS) {
+    const reading = readings[channel];
+    if (!reading) {
+      continue;
+    }
+
+    lamps[channel] = lampToneForReading(reading);
+    lampMotions[channel] = "locked";
+  }
+
+  return {
+    phase: "processing",
+    topTitle: "READING",
+    topSubtitle: "PROCESSING",
+    lamps,
+    lampMotions
+  };
+}
+
+function projectResultScene(result: SessionResult): InstrumentScene {
+  const lamps = allLampTones("dim");
+  for (const reading of result.readings) {
+    lamps[reading.channel] = lampToneForReading(reading);
+  }
+
+  return {
+    phase: "result",
+    topTitle: result.topWindow.lineZh.trim() || result.topWindow.lineEn.trim() || "RESULT",
+    topSubtitle:
+      result.topWindow.lineEn.trim() ||
+      result.topWindow.status.replace(/_/g, " ").toUpperCase() ||
+      "LOCKED",
+    lamps,
+    lampMotions: allLampMotions("locked")
+  };
+}
+
+function lampToneForReading(reading: Reading): InstrumentLampTone {
+  if (reading.availability === "unavailable") {
+    return "dim";
+  }
+
+  // Red means maintain / inertia, green means deviate / opening, and amber
+  // means static / not-yet-formed. These are signals, not good/bad scores.
+  if (reading.state === "maintain") {
+    return "red";
+  }
+  if (reading.state === "deviate") {
+    return "green";
+  }
+  return "amber";
+}
+
+function allLampTones(tone: InstrumentLampTone): InstrumentLampTones {
+  return { text: tone, voice: tone, timing: tone };
+}
+
+function allLampMotions(motion: InstrumentLampMotion): InstrumentLampMotions {
+  return { text: motion, voice: motion, timing: motion };
+}
+
+function compactInstrumentMessage(message: string): string {
+  const compact = message.trim().replace(/\s+/g, " ");
+  return (compact || "RESET").slice(0, 22).toUpperCase();
+}
+
+function assertNeverPhase(value: never): never {
+  throw new Error(`Unhandled session phase: ${String(value)}`);
+}
+
+const SESSION_EVENT_PHASES: Partial<
+  Record<SessionEvent["type"], ReadonlySet<SessionPhase | "created">>
+> = {
+  "session.created": new Set(["created"]),
+  "input.recording.started": new Set(["created", "idle"]),
+  "input.recording.stopped": new Set(["recording"]),
+  "audio.uploaded": new Set(["created", "recording", "processing"]),
+  "audio.normalized": new Set(["processing"]),
+  "audio.transcribed": new Set(["created", "processing"]),
+  "audio.features.extracted": new Set(["processing"]),
+  "reading.started": new Set(["processing"]),
+  "reading.channel.resolved": new Set(["reading"]),
+  "session.result": new Set(["reading"]),
+  "tts.started": new Set(["result"]),
+  "tts.finished": new Set(["result"]),
+  "session.silence": new Set(["result"])
+};
+
+export function canApplySessionEvent(
+  phase: SessionPhase | "created",
+  eventType: SessionEvent["type"]
+): boolean {
+  if (phase === "reset") {
+    return false;
+  }
+
+  if (phase === "error") {
+    return eventType === "session.reset";
+  }
+
+  if (eventType === "session.reset" || eventType === "session.error") {
+    return true;
+  }
+
+  return SESSION_EVENT_PHASES[eventType]?.has(phase) ?? false;
+}
+
+export function canAcceptExternalEvent(
+  phase: SessionPhase | "created",
+  eventType: SessionEvent["type"]
+): boolean {
+  const externalTypes = new Set<SessionEvent["type"]>([
+    "input.recording.started",
+    "input.recording.stopped",
+    "session.silence",
+    "session.reset",
+    "session.error"
+  ]);
+  return externalTypes.has(eventType) && canApplySessionEvent(phase, eventType);
+}
+
 export function createInitialSessionState(
-  sessionId?: string
+  sessionId?: string,
+  attemptId?: string
 ): SessionMachineState {
   return {
     sessionId,
+    attemptId,
+    lastSequence: 0,
     phase: "idle",
     readings: {},
     errors: []
@@ -45,9 +258,33 @@ export function reduceSessionEvent(
   state: SessionMachineState,
   event: SessionEvent
 ): SessionMachineState {
+  const disposition = classifySessionEvent(state, event);
+  if (disposition === "duplicate") {
+    return state;
+  }
+  if (disposition !== "apply") {
+    throw new Error(
+      `Cannot apply ${event.type} (${event.sessionId}/${event.attemptId}/${event.sequence}): ${disposition}`
+    );
+  }
+
+  // The protocol/store calls the pre-input state `created`, while the product
+  // UI renders it as `idle`. Translate that one representation boundary before
+  // enforcing the same transition contract used by the server store.
+  const transitionPhase: SessionPhase | "created" =
+    state.phase === "idle" ? "created" : state.phase;
+  const repeatsCreation = event.type === "session.created" && state.lastSequence > 0;
+  if (repeatsCreation || !canApplySessionEvent(transitionPhase, event.type)) {
+    throw new Error(
+      `Cannot apply ${event.type} from phase ${state.phase}: invalid_transition`
+    );
+  }
+
   const baseState = {
     ...state,
     sessionId: event.sessionId,
+    attemptId: event.attemptId,
+    lastSequence: event.sequence,
     source: event.source ?? state.source,
     updatedAt: event.timestamp
   };
@@ -55,7 +292,8 @@ export function reduceSessionEvent(
   switch (event.type) {
     case "session.created":
       return {
-        ...createInitialSessionState(event.sessionId),
+        ...createInitialSessionState(event.sessionId, event.attemptId),
+        lastSequence: event.sequence,
         source: event.source,
         createdAt: event.timestamp,
         updatedAt: event.timestamp
@@ -119,7 +357,7 @@ export function reduceSessionEvent(
     case "tts.finished":
       return {
         ...baseState,
-        phase: state.phase === "silence" ? "silence" : "result"
+        phase: state.phase
       };
     case "session.silence":
       return {
@@ -128,7 +366,8 @@ export function reduceSessionEvent(
       };
     case "session.reset":
       return {
-        ...createInitialSessionState(event.sessionId),
+        ...createInitialSessionState(event.sessionId, event.attemptId),
+        lastSequence: event.sequence,
         phase: "reset",
         source: event.source,
         updatedAt: event.timestamp
@@ -144,6 +383,47 @@ export function reduceSessionEvent(
   }
 }
 
+export type SessionEventCursor = {
+  sessionId?: string;
+  attemptId?: string;
+  lastSequence: number;
+};
+
+export type SessionEventDisposition =
+  | "apply"
+  | "duplicate"
+  | "foreign_session"
+  | "foreign_attempt"
+  | "sequence_gap";
+
+/**
+ * Classifies an event before it mutates a per-session projection. This is used
+ * by both the shared state machine and UI stream adapters so a global or
+ * reconnecting transport cannot silently splice two turns together.
+ */
+export function classifySessionEvent(
+  cursor: SessionEventCursor,
+  event: SessionEvent
+): SessionEventDisposition {
+  if (cursor.sessionId && event.sessionId !== cursor.sessionId) {
+    return "foreign_session";
+  }
+
+  if (cursor.attemptId && event.attemptId !== cursor.attemptId) {
+    return "foreign_attempt";
+  }
+
+  if (event.sequence <= cursor.lastSequence) {
+    return "duplicate";
+  }
+
+  if (event.sequence !== cursor.lastSequence + 1) {
+    return "sequence_gap";
+  }
+
+  return "apply";
+}
+
 export type ComposeSessionResultInput = {
   sessionId: string;
   readings: Reading[];
@@ -153,23 +433,34 @@ export type ComposeSessionResultInput = {
 export function composeSessionResult(
   input: ComposeSessionResultInput
 ): SessionResult {
-  const majorityState = getMajorityState(input.readings);
-  const presentStates = uniqueStates(input.readings);
+  const coverage = buildReadingCoverage(input.readings);
+  const availableReadings = input.readings.filter(
+    (reading) => reading.availability !== "unavailable"
+  );
+  const majorityState = getMajorityState(availableReadings);
+  const presentStates = uniqueStates(availableReadings);
   const minorityStates = majorityState
     ? presentStates.filter((state) => state !== majorityState)
     : presentStates;
-  const topWindow = buildTopWindow(majorityState, minorityStates, input.readings);
+  const topWindow = buildTopWindow(
+    majorityState,
+    minorityStates,
+    availableReadings,
+    input.sessionId,
+    coverage
+  );
 
-  return {
+  return SessionResultSchema.parse({
     sessionId: input.sessionId,
     readings: input.readings,
     majorityState,
     minorityStates,
     topWindow,
-    tts: buildTts(topWindow, majorityState, minorityStates, input.readings),
+    coverage,
+    tts: buildTts(topWindow, majorityState, minorityStates, availableReadings),
     colors: buildColorAssignments(input.readings, topWindow.status),
     silenceMs: input.silenceMs
-  };
+  });
 }
 
 export function composeSessionReceipt(
@@ -177,28 +468,69 @@ export function composeSessionReceipt(
   options: {
     startedAt: string;
     finishedAt?: string;
+    pipeline?: PipelineReceipt;
   }
 ): SessionReceipt {
   return {
+    schemaVersion: "session_receipt_v1",
     sessionId: requireSessionId(state),
+    attemptId: requireAttemptId(state),
+    lastSequence: state.lastSequence,
     startedAt: options.startedAt,
+    updatedAt: new Date(
+      state.updatedAt ?? state.createdAt ?? Date.parse(options.startedAt)
+    ).toISOString(),
     finishedAt: options.finishedAt,
-    input: state.uploadedAudio,
+    status: receiptStatusForPhase(state.phase),
+    source: state.source ?? "server",
+    input: {
+      audioStored: false,
+      ...(state.uploadedAudio ? { audio: state.uploadedAudio } : {}),
+      ...(state.normalizedAudio
+        ? { normalizedAudio: state.normalizedAudio }
+        : {})
+    },
     providers: {
       stt: state.transcript
-        ? {
-            id: state.transcript.provider,
-            latencyMs: state.transcript.latencyMs,
-            remote: false
-          }
+        ? fallbackSttProviderReceipt(state.transcript)
         : undefined
     },
     transcript: state.transcript,
     features: state.features,
+    pipeline: options.pipeline,
     readings: Object.values(state.readings),
     result: state.result,
+    events: [],
     errors: state.errors
   };
+}
+
+function fallbackSttProviderReceipt(
+  transcript: TranscriptResult
+): SttProviderReceipt {
+  return {
+    id: transcript.provider,
+    latencyMs: transcript.latencyMs,
+    remote: false,
+    outcome: transcript.failureCode ??
+      (transcript.provider === "local:manual" ? "not_run" : "completed")
+  };
+}
+
+function receiptStatusForPhase(phase: SessionPhase): SessionStatus {
+  if (phase === "idle" || phase === "armed") {
+    return "created";
+  }
+
+  return phase;
+}
+
+function requireAttemptId(state: SessionMachineState): string {
+  if (!state.attemptId) {
+    throw new Error("Cannot compose a receipt without an attempt id");
+  }
+
+  return state.attemptId;
 }
 
 function readingsByChannel(readings: Reading[]): SessionReadings {
@@ -211,8 +543,31 @@ function readingsByChannel(readings: Reading[]): SessionReadings {
 }
 
 function uniqueStates(readings: Reading[]): SignalState[] {
-  const states = readings.map((reading) => reading.state);
-  return [...new Set(states)];
+  const states = new Set(readings.map((reading) => reading.state));
+  return SIGNAL_STATES.filter((state) => states.has(state));
+}
+
+function buildReadingCoverage(
+  readings: Reading[]
+): NonNullable<SessionResult["coverage"]> {
+  const unavailableChannels = READING_CHANNELS.filter((channel) =>
+    readings.some(
+      (reading) =>
+        reading.channel === channel && reading.availability === "unavailable"
+    )
+  );
+
+  return {
+    total: readings.length,
+    measured: readings.filter(
+      (reading) => !reading.availability || reading.availability === "measured"
+    ).length,
+    simulated: readings.filter(
+      (reading) => reading.availability === "simulated"
+    ).length,
+    unavailable: unavailableChannels.length,
+    unavailableChannels
+  };
 }
 
 function getMajorityState(readings: Reading[]): SignalState | undefined {
@@ -242,8 +597,8 @@ function getMajorityState(readings: Reading[]): SignalState | undefined {
 }
 
 // Copy repository. Each bucket holds a representative English line and a pool of
-// Chinese candidates (from docs/result-copy.md); one zh line is drawn at random
-// per result so the verdict varies. Add lines here to extend a bucket.
+// Chinese candidates (from docs/result-copy.md); one zh line is selected from
+// the session id so retries and receipts reproduce the same verdict copy.
 const COPY_BUCKETS = {
   // Tie / unclear / all-static — the yellow state.
   static: {
@@ -293,26 +648,52 @@ const COPY_BUCKETS = {
   }
 } as const;
 
-function pickLine(pool: readonly string[]): string {
-  return pool[Math.floor(Math.random() * pool.length)] ?? pool[0];
+function pickLine(pool: readonly string[], seed: string): string {
+  let hash = 2166136261;
+
+  for (const character of seed) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return pool[(hash >>> 0) % pool.length] ?? pool[0];
 }
 
 function topWindowFromBucket(
   status: SessionResult["topWindow"]["status"],
-  bucket: keyof typeof COPY_BUCKETS
+  bucket: keyof typeof COPY_BUCKETS,
+  sessionId: string
 ): SessionResult["topWindow"] {
   return {
     status,
     lineEn: COPY_BUCKETS[bucket].lineEn,
-    lineZh: pickLine(COPY_BUCKETS[bucket].lineZh)
+    lineZh: pickLine(COPY_BUCKETS[bucket].lineZh, `${bucket}:${sessionId}`)
   };
 }
 
 function buildTopWindow(
   majorityState: SignalState | undefined,
   minorityStates: SignalState[],
-  readings: Reading[]
+  readings: Reading[],
+  sessionId: string,
+  coverage: NonNullable<SessionResult["coverage"]>
 ): SessionResult["topWindow"] {
+  if (coverage.unavailable > 0) {
+    if (readings.length < 2 || !majorityState) {
+      return {
+        status: "insufficient",
+        lineEn: "Not enough signal.",
+        lineZh: "有一路没有抵达。\n这一轮先不要相信。"
+      };
+    }
+
+    return {
+      status: "partial",
+      lineEn: "One signal is unavailable.",
+      lineZh: "有一路没有抵达。\n先只看见已经亮起的。"
+    };
+  }
+
   if (readings.length === 0) {
     return {
       status: "empty",
@@ -323,22 +704,22 @@ function buildTopWindow(
 
   // Tie: no state holds a majority — the yellow / unsettled verdict.
   if (!majorityState) {
-    return topWindowFromBucket("mixed", "static");
+    return topWindowFromBucket("mixed", "static", sessionId);
   }
 
   if (minorityStates.length > 0) {
-    return topWindowFromBucket("minority_exists", "minority");
+    return topWindowFromBucket("minority_exists", "minority", sessionId);
   }
 
   if (majorityState === "maintain") {
-    return topWindowFromBucket("consensus_maintain", "maintain");
+    return topWindowFromBucket("consensus_maintain", "maintain", sessionId);
   }
 
   if (majorityState === "deviate") {
-    return topWindowFromBucket("consensus_deviate", "unanimous");
+    return topWindowFromBucket("consensus_deviate", "unanimous", sessionId);
   }
 
-  return topWindowFromBucket("consensus_static", "static");
+  return topWindowFromBucket("consensus_static", "static", sessionId);
 }
 
 function buildTts(
@@ -347,6 +728,10 @@ function buildTts(
   minorityStates: SignalState[],
   readings: Reading[]
 ): SessionResult["tts"] {
+  if (topWindow.status === "partial" || topWindow.status === "insufficient") {
+    return undefined;
+  }
+
   if (readings.length === 0) {
     return undefined;
   }
@@ -354,26 +739,40 @@ function buildTts(
   if (!majorityState) {
     return {
       language: "zh",
-      text: "没有多数。",
+      text: clipText("mixed.no-majority"),
       clipKey: "mixed.no-majority"
     };
   }
 
   if (minorityStates.length > 0) {
+    const clipKey = `minority.${majorityState}`;
     return {
       language: "zh",
-      text: `两项${stateLineZh(majorityState)}。一项不同。${spokenLine(
-        topWindow.lineZh
-      )}`,
-      clipKey: `minority.${majorityState}`
+      text: clipText(clipKey),
+      clipKey
     };
   }
 
+  const clipKey = `consensus.${majorityState}`;
   return {
     language: "zh",
-    text: spokenLine(topWindow.lineZh),
-    clipKey: `consensus.${majorityState}`
+    text: clipText(clipKey),
+    clipKey
   };
+}
+
+const CLIP_TEXT: Record<string, string> = {
+  "mixed.no-majority": "没有多数。",
+  "minority.maintain": "两项维持。一项不同。路的另一边有信号。它还没有熄灭。",
+  "minority.deviate": "两项偏离。一项不同。路的另一边有信号。它还没有熄灭。",
+  "minority.static": "两项静止。一项不同。路的另一边有信号。它还没有熄灭。",
+  "consensus.maintain": "太一致了。但一致不等于答案。",
+  "consensus.deviate": "答案太整齐了。它们都同意，但你还在。",
+  "consensus.static": "这次没有异声。系统合上了，你没有。"
+};
+
+function clipText(clipKey: string): string {
+  return CLIP_TEXT[clipKey] ?? "信号已经落定。"
 }
 
 function buildColorAssignments(
@@ -384,7 +783,9 @@ function buildColorAssignments(
     (colors, reading) => {
       return {
         ...colors,
-        [reading.channel]: `signal.${reading.state}`
+        [reading.channel]: reading.availability === "unavailable"
+          ? "signal.unavailable"
+          : `signal.${reading.state}`
       };
     },
     {}
@@ -394,22 +795,6 @@ function buildColorAssignments(
     ...assignments,
     topWindow: `result.${topWindowStatus}`
   };
-}
-
-function stateLineZh(state: SignalState): string {
-  if (state === "maintain") {
-    return "维持";
-  }
-
-  if (state === "deviate") {
-    return "偏离";
-  }
-
-  return "静止";
-}
-
-function spokenLine(line: string): string {
-  return line.replace(/\s+/g, "");
 }
 
 function requireSessionId(state: SessionMachineState): string {

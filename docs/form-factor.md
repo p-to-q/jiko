@@ -9,9 +9,10 @@ is different. See [Hardware Phases](hardware-phases.md) for the full definition
 and the dimension calculation from the USB-C reference.
 
 - **Jiko Zero** — Hackathon baseline: Raspberry Pi 5 + MPI3508 3.5-inch display.
-- **Jiko One** — Advanced prototype: custom chip and the current squircle form
-  factor from the showcase study. The current industrial-design model is the
-  starting point for this phase.
+- **Jiko One** — Advanced prototype: Linux-class compute module on a custom
+  carrier and the current squircle form factor from the showcase study. The
+  current industrial-design model is the starting point for this phase; it is
+  not a proven internal stack-up.
 
 ## Hardware Baseline
 
@@ -60,8 +61,9 @@ Required exterior functions:
   exits with gravity and does not compete with the side thumb control.
 - Listening: one or two very small microphone holes, preferably on the top
   edge where speech can reach the aperture without reading as a front camera.
-- Heat: side or rear venting, biased toward the warmer internal region after
-  measurement. Start with narrow slots, not a decorative round-hole matrix.
+- Heat: place real venting only after stack-up and thermal measurement. The
+  current left edge carries the six-path thermal mark, not an opening; prefer a
+  rear or other measured region rather than reviving the retired slot array.
 - Assembly: rear screws or heat-set insert access points are acceptable if they
   make the object feel serviceable and do not intrude on the front face.
 
@@ -72,14 +74,15 @@ Recommended first layout, `Quiet Field Instrument`:
 | Front | Four-window mask only; no utility holes. |
 | Top edge | Single mic pinhole first; second pinhole only if the microphone module needs it. |
 | Right edge | Long hold-to-record rail. |
-| Left edge | Five to seven narrow vertical thermal slots. |
+| Left edge | Six-path `热` thermal mark only; no slot array or airflow claim. |
 | Bottom edge | Centered or slightly right-biased USB-C opening. |
 | Back | Two or four small screw points, clear of the rounded corners. |
 
 Alternative layout, `Recorder-like Listening Object`:
 
 - Top edge: dual microphone holes.
-- Left or rear side wall: more explicit thermal slots.
+- Rear or another thermally measured region: explicit vents if testing requires
+  them. Keep the current left-edge thermal mark closed.
 - Bottom edge: USB-C.
 - Side: record rail.
 

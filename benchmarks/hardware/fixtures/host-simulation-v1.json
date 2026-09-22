@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "jiko-hardware-hil-host-contract-fixture-v1",
+  "description": "Metadata-only synthetic fixture for exercising receipt creation, schema validation, semantic validation, and artifact hashing without a DUT.",
+  "stimulusClass": "none",
+  "productTurns": 0,
+  "containsAudio": false,
+  "containsTranscript": false
+}

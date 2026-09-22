@@ -1,0 +1,12 @@
+# Contract: jiko_systemd_v1
+[Unit]
+Description=Periodically check Jiko server readiness
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30s
+AccuracySec=5s
+Unit=jiko-server-probe.service
+
+[Install]
+WantedBy=timers.target

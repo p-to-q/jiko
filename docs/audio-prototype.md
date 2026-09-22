@@ -1,5 +1,12 @@
 # Audio Prototype
 
+> Status: this file is the compact implementation primer. Current route
+> selection and release gates are authoritative in
+> `docs/research-asr-accuracy-stack.md`,
+> `docs/research-low-latency-voice-input.md`, and
+> `docs/operational-readiness.md`. No model listed below is a release winner
+> until it passes the same-corpus laptop and target-hardware gates.
+
 ## Prototype Goal
 
 The first audio prototype should prove the full loop:
@@ -10,7 +17,9 @@ The first audio prototype should prove the full loop:
 4. Produce three independent reading states.
 5. Trigger UI animation and TTS.
 
-Accuracy can be rough at first. Reliability and observability matter more.
+The early prototype accepted rough accuracy to expose the full loop. The
+current program requires reliability, observability, and measured accuracy;
+none may be inferred from an upstream benchmark alone.
 
 ## Recommended Laptop Path
 
@@ -19,10 +28,15 @@ Use the laptop as the audio computer first. The Pi should not be the first place
 Preferred path:
 
 - Browser or desktop UI starts/stops recording.
-- Backend receives a WAV/WebM file.
+- A secure browser streams ordered source-rate PCM through the versioned
+  protocol; explicit `MediaRecorder` whole-blob upload remains the batch
+  compatibility/control path.
 - STT runs locally on the laptop or through a self-hosted local service.
 - Python extracts feature data.
 - Backend returns structured readings.
+
+The ordered transport currently hands complete audio to STT only after stop.
+It is not yet incremental streaming inference and has no reconnect/replay WAL.
 
 ## STT Options
 
@@ -115,7 +129,8 @@ Cons:
 
 ### Option F: sherpa-onnx
 
-Best for: a future unified offline path across desktop and embedded devices.
+Best for: the current persistent SenseVoice batch baseline and a portable
+streaming Zipformer challenger across desktop and embedded devices.
 
 Pros:
 
@@ -125,17 +140,37 @@ Pros:
 
 Cons:
 
-- More setup complexity for the first day.
-- Needs model choice and benchmarking before becoming the main path.
+- A shared runtime does not make its models interchangeable: checkpoint
+  license/hash, endpoint behavior, memory, Chinese/code-switch accuracy, and
+  target-board thermals still need separate receipts.
+- The integrated SenseVoice route is a baseline, not proof that it is the best
+  live route.
+
+### Option G: Moonshine Mandarin Streaming
+
+Best for: a compact Mandarin streaming challenger with cached incremental
+state and a small device-oriented footprint.
+
+Pros:
+
+- Upstream provides a Mandarin Tiny Streaming route and chunked evaluation.
+- Useful independent architecture against the sherpa transducer family.
+
+Cons:
+
+- Must be measured on Jiko's frozen Chinese/code-switch/noise slices.
+- Upstream accuracy and speed figures are not Jiko release evidence.
 
 ## Voice Activity Detection
 
 Use VAD to split speech and silence before running readings.
 
-Recommended:
+Candidate:
 
-- Silero VAD for Python prototype.
-- Browser-side simple RMS threshold only for UI responsiveness.
+- Calibrated Silero VAD for a local worker or an equivalent streaming VAD
+  supported on the chosen runtime.
+- Browser-side simple RMS only for responsive indication, never as the
+  authoritative transcript endpoint.
 
 Silero VAD is lightweight, supports 8 kHz and 16 kHz sampling rates, and has Python/ONNX paths. It is a good fit for detecting start/end of speech and silence segments.
 
@@ -158,13 +193,16 @@ Minimum features for the first prototype:
 Recommended libraries:
 
 - Web Audio API: browser-side recording and live metering.
-- MediaRecorder API: simple browser audio capture.
+- AudioWorklet: default ordered PCM capture in a secure browser context.
+- MediaRecorder API: explicit whole-blob compatibility/control capture.
 - Meyda: JavaScript real-time and offline audio features via Web Audio.
 - librosa: Python offline feature extraction.
 - aubio: pitch detection and onset/tempo style features.
 - openSMILE: larger feature sets if we later want emotion-like speech features.
 
-Do not start with a black-box emotion classifier. Use transparent features first, because the product needs independent readings, not a fake confidence label.
+Do not start with a black-box emotion classifier. Use transparent features first,
+because the product needs separately computed readings, not a fake confidence
+label or a claim of statistical independence.
 
 ## Reading Heuristics
 
@@ -210,11 +248,15 @@ Piper is a fast local neural TTS engine with command-line, Python API, web serve
 
 - Pause microphone capture while TTS is playing.
 - Store extracted feature JSON for each dev session.
-- Store raw recordings only when debugging requires them.
+- Store raw recordings only in an explicit, consented dev fixture workflow;
+  never commit them or real-person transcripts.
 - Show a debug panel only in dev mode.
 - Always allow a manual transcript override for demo rehearsal.
 - Keep result text short enough that TTS never becomes the main event.
 - Do not send audio to paid cloud APIs by default.
+- Keep remote APIs as explicit named challengers only: server-held keys,
+  global enablement, per-session consent, pinned provider/model/region, no
+  redirect, no automatic fallback, and a receipt of the trust boundary.
 
 ## Minimal Session Log
 

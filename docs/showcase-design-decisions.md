@@ -77,36 +77,13 @@ The screen is a live canvas texture, not a static image. Its outer clip now uses
 
 The active screen still fills almost the full front face. Internal LED windows and small indicators can keep simpler tiny radii because they are part of the pixel-screen language, not the metal/glass enclosure language.
 
-## Left-Edge Thermal Vents (Deferred)
+## Left-Edge Thermal Mark
 
-The left edge (opposite the side button) has a vertical array of thermal slots.
-Design studied but not yet rendered — recorded here for future reference.
-
-Layout (top to bottom):
-- 4 long stadium slots (width 0.010—0.012, height 0.180—0.200, gap 0.020—0.022)
-- 1 bottom composite: short stadium slot + squircle square (size ~0.035—0.040)
-
-Positioning intent:
-- Left side face, symmetric to right button, at z ≈ bodyDepth × 0.1
-- Geometry must sit at or slightly outside the body surface
-  (x = -(bodyW / 2 + bevel + small offset)) to avoid occlusion by the
-  beveled body shell
-- Dark recessed appearance with MeshBasicMaterial / MeshPhysicalMaterial
-
-Implementation notes (from failed attempts):
-- ExtrudeGeometry with rotation.y = -π/2 creates an extrusion along +X
-  (into the body), but the body's bevel pushes the left surface outward,
-  so the vent outer face must be at x < bodySurfaceAtZ.
-- At z near bodyDepth/2 the bevel is significant (~0.020 at z=0.069).
-  At z = bodyDepth × 0.1 the bevel is negligible and the body surface
-  is exactly at x = ±bodyW/2.
-- Flat ShapeGeometry (no depth) avoids z-fighting but lacks a recessed look.
-- Opaque body + DoubleSide vent material: the vent's dark back cap
-  (at x = sideX + depth) is occluded by the body surface unless the
-  entire vent protrudes outside the body.
-- A viable solution may need polygonOffset on the vent material, or
-  placement on a flat portion of the side face where the body surface
-  is well-defined (z ≈ 0 to bodyDepth × 0.15).
+The old vertical slot-array study is retired. The current left edge uses only
+the six-path `热` mark rendered by `buildThermalMark()`; it is not an airflow
+opening. Real vent position and geometry remain pending the internal stack and
+thermal measurements, and should use the rear or another measured region rather
+than restoring the old array. See [Hardware Phases](hardware-phases.md).
 
 ## Side Button Exception
 
@@ -120,6 +97,34 @@ The hardware has two motion layers:
 - `free will` celebration: two full turns in a random direction with eased acceleration/deceleration and a small vertical bob.
 
 Manual dragging and the celebration both operate on the same Three.js hardware group so the screen, body, and button stay synchronized.
+
+The official-site first viewport uses the production background declaration
+unchanged: the `#1f1e1a` warm-black base, faint `135deg` wash, original diagonal
+warm light, and green glow at `84% 78%` remain one continuous composition.
+
+The Kimi reference WebP is not rendered. Its baked-in ridge and exposure bands
+created a separate scenic layer that competed with Jiko and introduced visible
+regional boundaries whenever it was masked. Only the transparent WebGL paper
+surface remains, but it is not a permanently visible screen coating. It appears
+as a short signal-interference burst: one fine-sand scale and sparse pin-point
+flecks resample at 12 fps for roughly 1.1–1.65 seconds. The earlier coarse pore,
+fibre, and high-opacity phase was removed. Samples use CSS
+pixels rather than device pixels, so the material keeps its scale on fullscreen
+high-DPI displays. A broad Gaussian weight makes the disturbance slightly
+stronger through the vertical middle without creating a visible band.
+
+Kimi's ellipse geometry, animated color junctions, orbit trails, and scroll
+capsule are not part of the Jiko composition.
+
+One burst runs 2.2 seconds after the first-view reveal begins, once the main
+copy has largely settled. Later ambient bursts use a randomized 14–30 second
+interval. The `free will` interaction does not trigger background interference;
+it keeps only its existing device celebration. Between bursts the canvas is
+hidden and does not animate. Reduced-motion mode suppresses the interference
+entirely.
+
+The retired fluid-mist direction is recorded in
+[Archived Fluid Mist Background](archive/site-fluid-mist-background.md).
 
 ## Current Guardrails
 

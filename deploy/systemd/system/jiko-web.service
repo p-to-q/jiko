@@ -1,0 +1,46 @@
+# Contract: jiko_systemd_v1
+[Unit]
+Description=Jiko local built web shell (jiko_systemd_v1)
+After=local-fs.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=jiko
+Group=jiko
+WorkingDirectory=/opt/jiko/current/apps/web/dist
+EnvironmentFile=/etc/jiko/web.env
+Environment=JIKO_DEPLOYMENT_SCHEMA=jiko_systemd_v1
+Environment=JIKO_INSTALL_ROOT=/opt/jiko/current
+Environment=JIKO_STATE_DIR=/var/lib/jiko
+Environment=JIKO_ENV_FILE=/etc/jiko/web.env
+Environment=JIKO_WEB_PROBE_URL=http://127.0.0.1:4173/
+ExecStartPre=/usr/bin/node /opt/jiko/current/deploy/systemd/runtime-preflight.mjs web
+ExecStart=/usr/bin/python3 -m http.server 4173 --bind 127.0.0.1 --directory /opt/jiko/current/apps/web/dist
+ExecStartPost=/usr/bin/env JIKO_PROBE_ATTEMPTS=20 JIKO_PROBE_RETRY_MS=100 /usr/bin/node /opt/jiko/current/deploy/systemd/runtime-probe.mjs web
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=15
+TimeoutStopSec=10
+KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

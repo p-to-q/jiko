@@ -42,6 +42,7 @@ async function main() {
     await waitForHealth();
     await smokeManualTranscript();
     await smokeAudioUpload();
+    await smokeCorruptAudioUpload();
     console.log("demo smoke passed");
   } catch (error) {
     console.error("demo smoke failed");
@@ -174,8 +175,24 @@ async function smokeAudioUpload() {
       throw new Error("Audio smoke did not produce pitch features.");
     }
 
+    if (!session?.pipeline?.stages?.some?.((stage) => stage.stage === "total")) {
+      throw new Error("Audio smoke did not produce a total pipeline receipt.");
+    }
+
+    if (!session.pipeline.stages.some((stage) => stage.stage === "features" && stage.status === "ready")) {
+      throw new Error("Audio smoke did not record a ready feature stage.");
+    }
+
     if (!process.env.STT_PROVIDER && !session?.transcript?.provider?.includes("unavailable")) {
       throw new Error("Audio smoke should record local STT unavailable when no provider is configured.");
+    }
+
+    if (!process.env.STT_PROVIDER && "confidence" in session.transcript) {
+      throw new Error("Unavailable STT must not fabricate a zero confidence value.");
+    }
+
+    if (!process.env.STT_PROVIDER && session.transcript.failureCode !== "provider_unavailable") {
+      throw new Error("Unavailable STT must expose a machine-readable failure code.");
     }
 
     if (process.env.STT_PROVIDER && session?.transcript?.provider?.includes("unavailable")) {
@@ -188,6 +205,40 @@ async function smokeAudioUpload() {
     }
   } finally {
     await rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+async function smokeCorruptAudioUpload() {
+  const sessionId = `smoke-corrupt-${runId}`;
+  await createSession(sessionId);
+
+  const response = await fetch(`${baseUrl}/sessions/${sessionId}/audio`, {
+    method: "POST",
+    headers: {
+      "content-type": "audio/wav",
+    },
+    body: new Uint8Array([0x4a, 0x49, 0x4b, 0x4f]),
+  });
+  const payload = await readJson(response);
+  assertOk(response, payload, "corrupt audio upload");
+
+  const session = payload?.session;
+  if (session?.status !== "error") {
+    throw new Error("Corrupt audio smoke did not move the session to error.");
+  }
+
+  if (session?.result) {
+    throw new Error("Corrupt audio smoke produced a result from unusable input.");
+  }
+
+  const normalizeStage = session?.pipeline?.stages?.find?.(
+    (stage) => stage.stage === "normalize",
+  );
+  const totalStage = session?.pipeline?.stages?.find?.(
+    (stage) => stage.stage === "total",
+  );
+  if (normalizeStage?.status !== "failed" || totalStage?.status !== "failed") {
+    throw new Error("Corrupt audio smoke did not retain failed pipeline stages.");
   }
 }
 

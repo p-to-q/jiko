@@ -2,7 +2,8 @@
 
 This document defines how humans, coding agents, and humans operating coding agents should change this repository.
 
-It is adapted in spirit from `p-to-q/repo-template`'s engineering discipline, then rewritten for this private hardware/software prototype.
+It is adapted in spirit from `p-to-q/repo-template`'s engineering discipline,
+then rewritten for this public-source, pre-release hardware/software prototype.
 
 ## Core Stance
 
@@ -243,7 +244,9 @@ Raspberry Pi:
 
 ## Profile Expectations
 
-This repo currently uses a private `micro+` profile.
+This repo currently uses a public-source `micro+` profile. Public visibility does
+not relax the privacy rules for recordings, transcripts, credentials, or local
+runtime data.
 
 | Profile | Expectation |
 | --- | --- |

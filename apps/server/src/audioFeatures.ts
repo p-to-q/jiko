@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import type { AudioFeatures } from "@jiko/protocol";
 
 type WavData = {
@@ -15,9 +15,17 @@ const minPauseMs = 220;
 const minPitchHz = 60;
 const maxPitchHz = 500;
 const minPitchCorrelation = 0.35;
+const pitchSampleStep = 2;
 
-export async function extractWavFeatures(path: string): Promise<AudioFeatures> {
-  const wav = parsePcm16MonoWav(await readFile(path));
+export async function extractWavFeatures(
+  inputPath: string,
+  maxBytes = Number.MAX_SAFE_INTEGER
+): Promise<AudioFeatures> {
+  const metadata = await stat(inputPath);
+  if (!metadata.isFile() || metadata.size > maxBytes) {
+    throw new Error(`Normalized WAV exceeds the ${maxBytes} byte analysis limit.`);
+  }
+  const wav = parsePcm16MonoWav(await readFile(inputPath));
   const frameSize = Math.max(1, Math.round((wav.sampleRateHz * frameMs) / 1000));
   const pitchFrameSize = Math.max(1, Math.round((wav.sampleRateHz * pitchFrameMs) / 1000));
   const frameRms = collectFrameRms(wav.samples, frameSize);
@@ -37,6 +45,7 @@ export async function extractWavFeatures(path: string): Promise<AudioFeatures> {
 
   return {
     durationMs,
+    digitalSilenceDetected: containsOnlyZeroSamples(wav.samples),
     speechMs: clampMs(speechFrameCount * frameMs, durationMs),
     silenceMs: clampMs(silenceFrameCount * frameMs, durationMs),
     preSpeechDelayMs: firstSpeechFrame >= 0 ? clampMs(firstSpeechFrame * frameMs, durationMs) : durationMs,
@@ -52,8 +61,22 @@ export async function extractWavFeatures(path: string): Promise<AudioFeatures> {
   };
 }
 
+function containsOnlyZeroSamples(samples: Int16Array): boolean {
+  for (const sample of samples) {
+    if (sample !== 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function parsePcm16MonoWav(buffer: Buffer): WavData {
-  if (buffer.toString("ascii", 0, 4) !== "RIFF" || buffer.toString("ascii", 8, 12) !== "WAVE") {
+  if (
+    buffer.length < 12 ||
+    buffer.toString("ascii", 0, 4) !== "RIFF" ||
+    buffer.toString("ascii", 8, 12) !== "WAVE"
+  ) {
     throw new Error("Expected RIFF/WAVE audio after normalization.");
   }
 
@@ -69,8 +92,14 @@ function parsePcm16MonoWav(buffer: Buffer): WavData {
     const chunkId = buffer.toString("ascii", offset, offset + 4);
     const chunkSize = buffer.readUInt32LE(offset + 4);
     const chunkStart = offset + 8;
+    if (chunkStart + chunkSize > buffer.length) {
+      throw new Error("Normalized WAV contains a truncated chunk.");
+    }
 
     if (chunkId === "fmt ") {
+      if (chunkSize < 16) {
+        throw new Error("Normalized WAV contains an invalid fmt chunk.");
+      }
       audioFormat = buffer.readUInt16LE(chunkStart);
       channelCount = buffer.readUInt16LE(chunkStart + 2);
       sampleRateHz = buffer.readUInt32LE(chunkStart + 4);
@@ -86,7 +115,16 @@ function parsePcm16MonoWav(buffer: Buffer): WavData {
     offset = chunkStart + chunkSize + (chunkSize % 2);
   }
 
-  if (audioFormat !== 1 || channelCount !== 1 || bitsPerSample !== 16 || !sampleRateHz || dataStart < 0) {
+  if (
+    audioFormat !== 1 ||
+    channelCount !== 1 ||
+    bitsPerSample !== 16 ||
+    sampleRateHz !== 16000 ||
+    dataStart < 0 ||
+    dataSize < 2 ||
+    dataSize % 2 !== 0 ||
+    dataStart + dataSize > buffer.length
+  ) {
     throw new Error("Expected PCM 16-bit mono WAV after normalization.");
   }
 
@@ -212,25 +250,29 @@ function estimateFramePitch(
   end: number,
   sampleRateHz: number
 ): number | undefined {
-  const length = end - start;
+  const length = Math.floor((end - start) / pitchSampleStep);
 
   if (length < 32) {
     return undefined;
   }
 
-  const minLag = Math.max(1, Math.floor(sampleRateHz / maxPitchHz));
-  const maxLag = Math.min(length - 1, Math.ceil(sampleRateHz / minPitchHz));
+  const effectiveSampleRateHz = sampleRateHz / pitchSampleStep;
+  const minLag = Math.max(1, Math.floor(effectiveSampleRateHz / maxPitchHz));
+  const maxLag = Math.min(length - 1, Math.ceil(effectiveSampleRateHz / minPitchHz));
   let bestLag = 0;
   let bestCorrelation = 0;
+  const correlations: number[] = [];
 
   for (let lag = minLag; lag <= maxLag; lag += 1) {
     let sum = 0;
     let energyA = 0;
     let energyB = 0;
 
-    for (let index = start; index < end - lag; index += 1) {
-      const a = samples[index] / sampleMax;
-      const b = samples[index + lag] / sampleMax;
+    for (let index = 0; index < length - lag; index += 1) {
+      const sampleIndex = start + index * pitchSampleStep;
+      const laggedIndex = start + (index + lag) * pitchSampleStep;
+      const a = samples[sampleIndex] / sampleMax;
+      const b = samples[laggedIndex] / sampleMax;
       sum += a * b;
       energyA += a * a;
       energyB += b * b;
@@ -238,6 +280,7 @@ function estimateFramePitch(
 
     const denominator = Math.sqrt(energyA * energyB);
     const correlation = denominator > 0 ? sum / denominator : 0;
+    correlations.push(correlation);
 
     if (correlation > bestCorrelation) {
       bestCorrelation = correlation;
@@ -249,7 +292,51 @@ function estimateFramePitch(
     return undefined;
   }
 
-  return sampleRateHz / bestLag;
+  const selectionThreshold = Math.max(
+    minPitchCorrelation,
+    bestCorrelation * 0.92
+  );
+  let selectedIndex = bestLag - minLag;
+
+  for (let index = 1; index < correlations.length - 1; index += 1) {
+    if (
+      correlations[index] >= selectionThreshold &&
+      correlations[index] >= correlations[index - 1] &&
+      correlations[index] >= correlations[index + 1]
+    ) {
+      selectedIndex = index;
+      break;
+    }
+  }
+
+  const selectedLag = minLag + selectedIndex;
+  const interpolatedLag = interpolatePeakLag(
+    selectedLag,
+    correlations[selectedIndex - 1],
+    correlations[selectedIndex],
+    correlations[selectedIndex + 1]
+  );
+
+  return effectiveSampleRateHz / interpolatedLag;
+}
+
+function interpolatePeakLag(
+  lag: number,
+  previous: number | undefined,
+  current: number,
+  next: number | undefined
+): number {
+  if (previous === undefined || next === undefined) {
+    return lag;
+  }
+
+  const denominator = previous - 2 * current + next;
+  if (Math.abs(denominator) < 1e-9) {
+    return lag;
+  }
+
+  const offset = Math.max(-0.5, Math.min(0.5, 0.5 * (previous - next) / denominator));
+  return lag + offset;
 }
 
 function mean(values: number[]): number {

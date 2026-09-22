@@ -46,7 +46,7 @@ Three square windows:
 - Emotion reading (code: `"voice"`): how the user sounded.
 - Context reading (code: `"timing"`): when the user hesitated, rushed, paused, or stopped.
 
-> **Code mapping note:** In the codebase, `"text"` = content, `"voice"` = emotion, `"context"` = timing. The public-facing terms are content, emotion, and context.
+> **Code mapping note:** In the codebase, `"text"` = content, `"voice"` = emotion, `"timing"` = context. The public-facing terms are content, emotion, and context.
 
 ## Physical Direction
 
@@ -59,8 +59,9 @@ The form has two phases. See [Hardware Phases](hardware-phases.md):
 - **Jiko Zero** — the hackathon stack uses Raspberry Pi 5 with MPI3508 display
   as a fast, visible prototype shell.
 - **Jiko One** — the advanced prototype carries the same object language into a
-  custom-chip form factor. The showcase industrial-design model is the starting
-  point for this phase.
+  device-local Linux-class compute module on a custom carrier. The showcase
+  industrial-design model is the starting point for this phase; custom silicon
+  remains deferred.
 
 The product form is independent of any specific compute board. The interaction is
 quieter and stranger than an assistant.

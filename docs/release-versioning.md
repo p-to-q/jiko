@@ -1,6 +1,6 @@
 # Release Versioning
 
-This repository uses one product version across the private workspace packages.
+This repository uses one product version across its workspace packages.
 The package versions are not package-publication promises; they are a shared
 prototype release marker for the current jiko artifact.
 
@@ -9,41 +9,24 @@ prototype release marker for the current jiko artifact.
 - Version: `0.9.0`
 - Release name: `Showcase Prototype`
 - Hardware phase: **Jiko Zero** (hackathon prototype; Raspberry Pi 5 + MPI3508)
-- Snapshot ordinal: `23`
-- Reference commit: `db14613`
-
-Full internal label:
-
-```text
-jiko 0.9.0 "Showcase Prototype" (+23.db14613)
-```
+- Git identity: resolve from the exact built checkout; do not reuse a stale
+  documentation SHA as release evidence.
 
 The next minor should be `0.10.0` when the browser recording, receipt viewer,
 and one benchmarked local STT path are stable enough to rehearse as a single
 laptop-first demo loop. That line continues Jiko Zero. The Jiko One (custom
-chip, showcase form factor) milestones will be tracked separately in
-[Hardware Phases](hardware-phases.md) once that stack is defined.
+carrier with Linux-class compute, showcase form factor) milestones will be
+tracked separately in [Hardware Phases](hardware-phases.md) once that stack is
+defined; custom silicon remains deferred.
 
 ## Calculation
 
-The old `0.2.0` line understated the project state. At the current reference
-commit, the repository has:
-
-- 23 total commits.
-- 11 feature commits.
-- 5 fix or hardening commits.
-- 4 asset or chore commits.
-- 2 merge commits.
-- 1 initialization commit.
-- 49 tracked source files, 10,896 source lines.
-- 28 tracked documentation files, 5,902 documentation lines.
-- 44 tracked structured asset files, 4,046 lines.
-- 129 counted source, documentation, and structured asset files, 21,628 lines.
-
-The mechanical snapshot number is therefore `23`, but the release version should
-not be `0.23.0`. A commit count is useful build metadata, not a product-maturity
-minor version. The project is still pre-1.0 because the hardware smoke test,
-local STT benchmarking, and release/deployment workflow are not locked.
+The old `0.2.0` line understated the demonstrated product surface, but commit
+counts and source-line totals are not maturity evidence and immediately go
+stale. Build metadata, receipts, and release notes must derive the commit SHA
+from the checkout that actually passed the gate. The project is still pre-1.0
+because target hardware, a decision-grade real-speech model benchmark, and the
+signed update/rollback workflow are not release-qualified.
 
 ## Version Rule
 
@@ -71,5 +54,5 @@ Keep all workspace package versions aligned.
 
 Milestones `0.1.0` through the current release are **Jiko Zero** work:
 laptop-first loop, Pi kiosk shell, and the four-window UI. Future milestones will
-carry the shared core into **Jiko One** once the custom-chip stack is known.
-
+carry the shared core into **Jiko One** once the compute-module and custom-carrier
+stack is known.

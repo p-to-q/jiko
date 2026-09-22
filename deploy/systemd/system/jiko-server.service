@@ -1,0 +1,58 @@
+# Contract: jiko_systemd_v1
+[Unit]
+Description=Jiko local instrument server (jiko_systemd_v1)
+After=local-fs.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=jiko
+Group=jiko
+SupplementaryGroups=audio
+WorkingDirectory=/opt/jiko/current/apps/server
+EnvironmentFile=/etc/jiko/server.env
+Environment=JIKO_DEPLOYMENT_SCHEMA=jiko_systemd_v1
+Environment=JIKO_INSTALL_ROOT=/opt/jiko/current
+Environment=JIKO_STATE_DIR=/var/lib/jiko
+Environment=JIKO_ENV_FILE=/etc/jiko/server.env
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=4317
+Environment=JIKO_PROBE_URL=http://127.0.0.1:4317/health
+StateDirectory=jiko
+StateDirectoryMode=0750
+RuntimeDirectory=jiko
+RuntimeDirectoryMode=0750
+UMask=0027
+ExecStartPre=/usr/bin/mkdir -p /var/lib/jiko/sessions
+ExecStartPre=/usr/bin/node /opt/jiko/current/deploy/systemd/runtime-preflight.mjs server
+ExecStart=/usr/bin/node /opt/jiko/current/apps/server/dist/index.js
+ExecStartPost=/usr/bin/env JIKO_PROBE_TIMEOUT_MS=75000 JIKO_PROBE_ATTEMPTS=20 JIKO_PROBE_RETRY_MS=100 /usr/bin/node /opt/jiko/current/deploy/systemd/runtime-probe.mjs server
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=90
+TimeoutStopSec=10
+KillSignal=SIGTERM
+KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+ReadWritePaths=/var/lib/jiko
+
+[Install]
+WantedBy=multi-user.target
