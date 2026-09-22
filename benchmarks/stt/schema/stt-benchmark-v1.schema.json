@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jiko.local/schemas/stt-benchmark-v1.schema.json",
+  "title": "Jiko STT benchmark receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runId", "startedAt", "finishedAt", "source", "environment", "corpus", "measurement", "candidates", "qualification"],
+  "properties": {
+    "schemaVersion": { "const": "stt_benchmark_v1" },
+    "runId": { "$ref": "#/$defs/safeId" },
+    "startedAt": { "type": "string", "minLength": 1 },
+    "finishedAt": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gitSha", "gitDirty", "configSha256", "lockfileSha256"],
+      "properties": {
+        "gitSha": { "type": "string", "minLength": 1 },
+        "gitDirty": { "type": "boolean" },
+        "configSha256": { "$ref": "#/$defs/sha256" },
+        "lockfileSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "profileId", "platform", "release", "arch", "node"],
+      "properties": {
+        "kind": { "enum": ["host", "target"] },
+        "profileId": { "$ref": "#/$defs/safeId" },
+        "platform": { "type": "string", "minLength": 1 },
+        "release": { "type": "string", "minLength": 1 },
+        "arch": { "type": "string", "minLength": 1 },
+        "node": { "type": "string", "minLength": 1 },
+        "dutId": { "type": "string", "minLength": 1 },
+        "hardwareRevision": { "type": "string", "minLength": 1 },
+        "osImageSha256": { "$ref": "#/$defs/sha256" },
+        "powerMode": { "type": "string", "minLength": 1 }
+      }
+    },
+    "corpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availability", "caseCount", "caseIds", "audioSpec", "reason"],
+      "properties": {
+        "availability": { "enum": ["unavailable", "verified"] },
+        "manifestId": { "$ref": "#/$defs/safeId" },
+        "manifestSha256": { "$ref": "#/$defs/sha256" },
+        "caseCount": { "type": "integer", "minimum": 0 },
+        "caseIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/safeId" } },
+        "audioSpec": { "$ref": "#/$defs/audioSpec" },
+        "reason": { "type": ["string", "null"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "availability": { "const": "verified" } } },
+          "then": {
+            "required": ["manifestId", "manifestSha256"],
+            "properties": {
+              "manifestId": { "$ref": "#/$defs/safeId" },
+              "manifestSha256": { "$ref": "#/$defs/sha256" },
+              "caseCount": { "type": "integer", "minimum": 1 },
+              "caseIds": { "type": "array", "minItems": 1 },
+              "reason": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "availability": { "const": "unavailable" } } },
+          "then": {
+            "properties": {
+              "caseCount": { "const": 0 },
+              "caseIds": { "type": "array", "maxItems": 0 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "normalizationId", "rawTranscriptStored", "warmupIterations", "measuredIterations"],
+      "properties": {
+        "scope": { "const": "normalized-wav-to-transcript" },
+        "normalizationId": { "const": "jiko-stt-text-normalization-v1" },
+        "rawTranscriptStored": { "const": false },
+        "warmupIterations": { "type": "integer", "minimum": 0 },
+        "measuredIterations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "candidates": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/candidate" } },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidenceLevel", "thresholdsLocked", "verdict", "reason"],
+      "properties": {
+        "evidenceLevel": { "enum": ["not_evaluated", "host_measured", "target_measured"] },
+        "thresholdsLocked": { "type": "boolean" },
+        "verdict": { "enum": ["not_evaluated", "pass", "fail"] },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "safeId": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9._:-]+$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "audioSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mediaType", "sampleRateHz", "channelCount", "sampleFormat"],
+      "properties": {
+        "mediaType": { "const": "audio/wav" },
+        "sampleRateHz": { "const": 16000 },
+        "channelCount": { "const": 1 },
+        "sampleFormat": { "const": "pcm_s16le" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "name", "sha256", "bytes"],
+      "properties": {
+        "role": { "enum": ["runtime", "worker", "model", "tokens", "configuration", "identity_manifest"] },
+        "name": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "executionIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerId", "runtime", "configurationId", "artifacts"],
+      "properties": {
+        "providerId": { "enum": ["local:sherpa-onnx-sensevoice", "local:whisper.cpp", "self-hosted:funasr-http:loopback"] },
+        "runtime": { "type": "string", "minLength": 1 },
+        "configurationId": { "$ref": "#/$defs/sha256" },
+        "artifacts": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/artifact" } }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["samples", "p50", "p95", "max"],
+      "properties": {
+        "samples": { "type": "integer", "minimum": 1 },
+        "p50": { "type": "number", "minimum": 0 },
+        "p95": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 }
+      }
+    },
+    "rate": { "oneOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }] },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completedCases", "failedCases", "characterErrors", "characterReferenceUnits", "cer",
+        "wordErrors", "wordReferenceUnits", "wer", "codeSwitchErrors", "codeSwitchReferenceUnits",
+        "codeSwitchTokenErrorRate", "codeSwitchBoundaryErrors", "codeSwitchBoundaryReferenceUnits",
+        "codeSwitchBoundaryErrorRate", "silenceCases", "silenceHallucinations",
+        "silenceHallucinationRate", "keywordHits", "keywordTotal", "keywordPreservationRate",
+        "latencyMs", "realTimeFactor"
+      ],
+      "properties": {
+        "completedCases": { "type": "integer", "minimum": 0 },
+        "failedCases": { "type": "integer", "minimum": 0 },
+        "characterErrors": { "type": "integer", "minimum": 0 },
+        "characterReferenceUnits": { "type": "integer", "minimum": 0 },
+        "cer": { "$ref": "#/$defs/rate" },
+        "wordErrors": { "type": "integer", "minimum": 0 },
+        "wordReferenceUnits": { "type": "integer", "minimum": 0 },
+        "wer": { "$ref": "#/$defs/rate" },
+        "codeSwitchErrors": { "type": "integer", "minimum": 0 },
+        "codeSwitchReferenceUnits": { "type": "integer", "minimum": 0 },
+        "codeSwitchTokenErrorRate": { "$ref": "#/$defs/rate" },
+        "codeSwitchBoundaryErrors": { "type": "integer", "minimum": 0 },
+        "codeSwitchBoundaryReferenceUnits": { "type": "integer", "minimum": 0 },
+        "codeSwitchBoundaryErrorRate": { "$ref": "#/$defs/rate" },
+        "silenceCases": { "type": "integer", "minimum": 0 },
+        "silenceHallucinations": { "type": "integer", "minimum": 0 },
+        "silenceHallucinationRate": { "$ref": "#/$defs/rate" },
+        "keywordHits": { "type": "integer", "minimum": 0 },
+        "keywordTotal": { "type": "integer", "minimum": 0 },
+        "keywordPreservationRate": { "$ref": "#/$defs/rate" },
+        "latencyMs": { "$ref": "#/$defs/distribution" },
+        "realTimeFactor": { "$ref": "#/$defs/distribution" }
+      }
+    },
+    "caseResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id", "iteration", "language", "metric", "audioSha256", "referenceSha256", "hypothesisSha256",
+        "outcome", "latencyMs", "audioDurationMs", "errorUnits", "referenceUnits",
+        "boundaryErrors", "boundaryReferenceUnits", "keywordHits", "keywordTotal"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "iteration": { "type": "integer", "minimum": 1 },
+        "slices": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/safeId" }
+        },
+        "language": { "enum": ["zh", "en", "code_switch", "silence"] },
+        "metric": { "enum": ["cer", "wer", "code_switch_token_error", "silence_hallucination"] },
+        "audioSha256": { "$ref": "#/$defs/sha256" },
+        "referenceSha256": { "$ref": "#/$defs/sha256" },
+        "hypothesisSha256": { "$ref": "#/$defs/sha256" },
+        "outcome": { "enum": ["completed", "provider_unavailable", "timed_out", "failed"] },
+        "latencyMs": { "type": "number", "minimum": 0 },
+        "audioDurationMs": { "type": "number", "exclusiveMinimum": 0 },
+        "errorUnits": { "type": "integer", "minimum": 0 },
+        "referenceUnits": { "type": "integer", "minimum": 0 },
+        "boundaryErrors": { "type": "integer", "minimum": 0 },
+        "boundaryReferenceUnits": { "type": "integer", "minimum": 0 },
+        "keywordHits": { "type": "integer", "minimum": 0 },
+        "keywordTotal": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "family", "availability", "reason", "identity", "metrics", "cases"],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "family": { "enum": ["sensevoice", "whisper_cpp", "funasr"] },
+        "availability": { "enum": ["unavailable", "measured", "failed"] },
+        "reason": { "type": ["string", "null"] },
+        "identity": { "oneOf": [{ "$ref": "#/$defs/executionIdentity" }, { "type": "null" }] },
+        "metrics": { "oneOf": [{ "$ref": "#/$defs/metrics" }, { "type": "null" }] },
+        "cases": { "type": "array", "items": { "$ref": "#/$defs/caseResult" } }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "availability": { "const": "measured" } } },
+          "then": { "properties": { "reason": { "type": "null" }, "identity": { "$ref": "#/$defs/executionIdentity" }, "metrics": { "$ref": "#/$defs/metrics" }, "cases": { "type": "array", "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "availability": { "const": "unavailable" } } },
+          "then": { "properties": { "reason": { "type": "string", "minLength": 1 }, "identity": { "type": "null" }, "metrics": { "type": "null" }, "cases": { "type": "array", "maxItems": 0 } } }
+        },
+        {
+          "if": { "properties": { "availability": { "const": "failed" } } },
+          "then": { "properties": { "reason": { "type": "string", "minLength": 1 }, "metrics": { "type": "null" }, "cases": { "type": "array", "minItems": 1 } } }
+        }
+      ]
+    }
+  }
+}

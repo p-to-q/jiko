@@ -1,6 +1,6 @@
 # Jiko — instant decision making instrument
 
-> A physical decision-making instrument by [p → q]. You hold the button, speak one intention, and three independent readings — content, emotion, and context — lock into red, yellow, or green signals. It does not tell you what to do. The decision stays with you.
+> A pre-release physical signal-instrument project by [p → q]. You hold the button, speak one intention, and three separately computed readings — content, emotion, and context — lock into red, yellow, or green signals. Hardware integration is pending. It does not tell you what to do. The decision stays with you.
 
 ## What It Is
 

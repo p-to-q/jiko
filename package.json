@@ -9,10 +9,27 @@
     "demo:smoke": "node scripts/demo-smoke.mjs",
     "demo:urls": "node scripts/print-demo-urls.mjs",
     "build": "pnpm --recursive --if-present build",
-    "typecheck": "pnpm --recursive --if-present typecheck"
+    "typecheck": "pnpm --recursive --if-present typecheck",
+    "test": "pnpm build && pnpm test:device && pnpm test:runtime && node --test --test-concurrency=1 packages/*/test/*.test.mjs benchmarks/hardware/test/*.test.mjs && node --test --test-concurrency=1 apps/server/test/*.test.mjs && node --test --test-concurrency=1 benchmarks/stt/test/*.test.mjs benchmarks/soak/test/*.test.mjs",
+    "test:device": "python3 -m unittest discover -s apps/device -p 'test_*.py'",
+    "test:runtime": "pnpm --filter @jiko/server build && node --test deploy/systemd/test/*.test.mjs",
+    "test:hil": "node --test benchmarks/hardware/test/*.test.mjs",
+    "test:stt-benchmark": "pnpm --filter @jiko/server build && node --test benchmarks/stt/test/*.test.mjs",
+    "test:soak-receipt": "node --test benchmarks/soak/test/*.test.mjs",
+    "test:e2e": "pnpm --filter @jiko/web e2e",
+    "benchmark": "pnpm build && node benchmarks/harness.mjs",
+    "benchmark:hil:host": "node benchmarks/hardware/host-harness.mjs",
+    "benchmark:hil:validate": "node benchmarks/hardware/validate-receipt.mjs",
+    "benchmark:stt:preflight": "node benchmarks/stt/host-preflight.mjs",
+    "benchmark:stt:run": "pnpm --filter @jiko/server build && node benchmarks/stt/measured-runner.mjs",
+    "benchmark:stt:validate": "node benchmarks/stt/validate-receipt.mjs",
+    "benchmark:stt:compare": "node benchmarks/stt/compare-receipt.mjs",
+    "benchmark:soak": "pnpm --filter @jiko/server... build && node benchmarks/soak/host-harness.mjs",
+    "benchmark:soak:validate": "node benchmarks/soak/validate-receipt.mjs"
   },
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
+    "ajv": "^8.17.1",
     "typescript": "^5.5.4"
   },
   "dependencies": {

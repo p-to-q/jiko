@@ -1,0 +1,52 @@
+# Contract: jiko_systemd_v1
+[Unit]
+Description=Jiko Raspberry Pi input adapter (jiko_systemd_v1)
+After=jiko-server.service
+Wants=jiko-server.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=exec
+User=jiko
+Group=jiko
+SupplementaryGroups=gpio
+WorkingDirectory=/opt/jiko/current
+EnvironmentFile=/etc/jiko/device.env
+Environment=JIKO_DEPLOYMENT_SCHEMA=jiko_systemd_v1
+Environment=JIKO_INSTALL_ROOT=/opt/jiko/current
+Environment=JIKO_STATE_DIR=/var/lib/jiko-device
+Environment=JIKO_ENV_FILE=/etc/jiko/device.env
+Environment=JIKO_SERVER_URL=http://127.0.0.1:4317
+StateDirectory=jiko-device
+StateDirectoryMode=0750
+UMask=0027
+ExecStartPre=/usr/bin/node /opt/jiko/current/deploy/systemd/runtime-preflight.mjs device
+ExecStart=/usr/bin/python3 /opt/jiko/current/apps/device/pi_button_adapter.py
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=15
+TimeoutStopSec=10
+KillSignal=SIGINT
+KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+ReadWritePaths=/var/lib/jiko-device
+
+[Install]
+WantedBy=multi-user.target

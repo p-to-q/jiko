@@ -50,7 +50,41 @@ export type ReadingsInput = {
 };
 
 const TEXT_MIN_CHARS = 3;
-const LOW_STT_CONFIDENCE = 0.35;
+
+const CHINESE_NEGATION_PREFIXES = [
+  "不",
+  "没",
+  "别",
+  "不要",
+  "不想",
+  "不愿",
+  "不会",
+  "不能",
+  "不该",
+  "不打算",
+  "不是想",
+  "并不想",
+  "没想过"
+];
+
+const ENGLISH_NEGATION_PREFIXES = [
+  "no",
+  "not",
+  "never",
+  "cannot",
+  "can't",
+  "won't",
+  "don't",
+  "do not",
+  "not want to",
+  "never want to",
+  "do not want to",
+  "don't want to",
+  "not plan to",
+  "do not plan to",
+  "don't plan to",
+  "not going to"
+];
 
 const MAINTAIN_KEYWORDS = [
   "avoid",
@@ -111,8 +145,15 @@ const DEVIATE_KEYWORDS = [
   "离开",
   "辞职",
   "说出来",
-  "问",
-  "走",
+  "去问",
+  "想问",
+  "问问",
+  "问清楚",
+  "开口问",
+  "想走",
+  "走开",
+  "出发",
+  "迈出",
   "开始",
   "改变",
   "打破"
@@ -121,19 +162,30 @@ const DEVIATE_KEYWORDS = [
 export function readText(input: TextReadingInput = {}): Reading {
   const transcript = normalizeTranscript(input.transcript);
   const characterCount = countMeaningfulCharacters(transcript);
-  const maintainMatches = matchKeywords(transcript, MAINTAIN_KEYWORDS);
-  const deviateMatches = matchKeywords(transcript, DEVIATE_KEYWORDS);
+  const maintainSignals = matchKeywordsWithNegation(transcript, MAINTAIN_KEYWORDS);
+  const deviateSignals = matchKeywordsWithNegation(transcript, DEVIATE_KEYWORDS);
+  const maintainMatches = [
+    ...maintainSignals.affirmed,
+    ...deviateSignals.negated.map(markNegatedKeyword)
+  ];
+  const deviateMatches = [
+    ...deviateSignals.affirmed,
+    ...maintainSignals.negated.map(markNegatedKeyword)
+  ];
   const sttConfidence = normalizeOptionalNumber(input.sttConfidence);
 
   const features: ReadingFeatures = {
     language: input.language ?? "unknown",
     characterCount,
     maintainKeywordCount: maintainMatches.length,
-    deviateKeywordCount: deviateMatches.length
+    deviateKeywordCount: deviateMatches.length,
+    negatedMaintainKeywordCount: maintainSignals.negated.length,
+    negatedDeviateKeywordCount: deviateSignals.negated.length
   };
 
   if (sttConfidence !== undefined) {
     features.sttConfidence = sttConfidence;
+    features.sttConfidenceUsage = "telemetry_only";
   }
 
   if (characterCount < TEXT_MIN_CHARS) {
@@ -146,17 +198,20 @@ export function readText(input: TextReadingInput = {}): Reading {
     );
   }
 
-  if (sttConfidence !== undefined && sttConfidence < LOW_STT_CONFIDENCE) {
+  if (maintainMatches.length > 0 && deviateMatches.length > 0) {
     return makeReading(
       "text",
       "static",
-      0.44,
-      features,
-      `STT confidence ${sttConfidence.toFixed(2)} is below ${LOW_STT_CONFIDENCE}.`
+      0.48,
+      {
+        ...features,
+        matchedKeywords: [...maintainMatches, ...deviateMatches].join(", ")
+      },
+      "Text contains both maintain and deviate keyword signals."
     );
   }
 
-  if (maintainMatches.length > deviateMatches.length) {
+  if (maintainMatches.length > 0) {
     return makeReading(
       "text",
       "maintain",
@@ -169,7 +224,7 @@ export function readText(input: TextReadingInput = {}): Reading {
     );
   }
 
-  if (deviateMatches.length > maintainMatches.length) {
+  if (deviateMatches.length > 0) {
     return makeReading(
       "text",
       "deviate",
@@ -179,19 +234,6 @@ export function readText(input: TextReadingInput = {}): Reading {
         matchedKeywords: deviateMatches.join(", ")
       },
       `Deviate keywords outweighed maintain keywords: ${deviateMatches.join(", ")}.`
-    );
-  }
-
-  if (maintainMatches.length > 0 && deviateMatches.length > 0) {
-    return makeReading(
-      "text",
-      "static",
-      0.48,
-      {
-        ...features,
-        matchedKeywords: [...maintainMatches, ...deviateMatches].join(", ")
-      },
-      "Text contains balanced maintain and deviate keyword signals."
     );
   }
 
@@ -418,12 +460,91 @@ function countMeaningfulCharacters(transcript: string): number {
   return transcript.replace(/\s+/g, "").length;
 }
 
-function matchKeywords(transcript: string, keywords: string[]): string[] {
+function matchKeywordsWithNegation(
+  transcript: string,
+  keywords: string[]
+): { affirmed: string[]; negated: string[] } {
   if (transcript.length === 0) {
-    return [];
+    return { affirmed: [], negated: [] };
   }
 
-  return keywords.filter((keyword) => transcript.includes(keyword.toLowerCase()));
+  return keywords.reduce<{ affirmed: string[]; negated: string[] }>(
+    (matches, keyword) => {
+      const normalizedKeyword = keyword.toLowerCase();
+      const indices = keywordIndices(transcript, normalizedKeyword);
+      if (indices.length === 0) {
+        return matches;
+      }
+
+      const polarities = new Set(indices.map((index) => {
+        const prefix = transcript.slice(Math.max(0, index - 40), index);
+        return hasNegationPrefix(prefix) ? "negated" : "affirmed";
+      }));
+      if (polarities.has("negated")) {
+        matches.negated.push(keyword);
+      }
+      if (polarities.has("affirmed")) {
+        matches.affirmed.push(keyword);
+      }
+
+      return matches;
+    },
+    { affirmed: [], negated: [] }
+  );
+}
+
+function keywordIndices(transcript: string, keyword: string): number[] {
+  const indices: number[] = [];
+  let fromIndex = 0;
+
+  while (fromIndex <= transcript.length - keyword.length) {
+    const index = transcript.indexOf(keyword, fromIndex);
+    if (index < 0) {
+      break;
+    }
+
+    if (!isAsciiKeyword(keyword) || hasAsciiWordBoundaries(transcript, index, keyword.length)) {
+      indices.push(index);
+    }
+    fromIndex = index + Math.max(1, keyword.length);
+  }
+
+  return indices;
+}
+
+function isAsciiKeyword(keyword: string): boolean {
+  return /^[a-z0-9 '\-]+$/i.test(keyword);
+}
+
+function hasAsciiWordBoundaries(
+  transcript: string,
+  index: number,
+  length: number
+): boolean {
+  const before = transcript[index - 1];
+  const after = transcript[index + length];
+
+  return !isAsciiWordCharacter(before) && !isAsciiWordCharacter(after);
+}
+
+function isAsciiWordCharacter(value: string | undefined): boolean {
+  return value !== undefined && /[a-z0-9_']/i.test(value);
+}
+
+function hasNegationPrefix(prefix: string): boolean {
+  const trimmed = prefix.trimEnd();
+  const chinesePrefix = trimmed.slice(-8);
+  if (CHINESE_NEGATION_PREFIXES.some((negation) => chinesePrefix.endsWith(negation))) {
+    return true;
+  }
+
+  return ENGLISH_NEGATION_PREFIXES.some((negation) => {
+    return trimmed === negation || trimmed.endsWith(` ${negation}`);
+  });
+}
+
+function markNegatedKeyword(keyword: string): string {
+  return `not:${keyword}`;
 }
 
 function keywordConfidence(primaryMatches: number, secondaryMatches: number): number {

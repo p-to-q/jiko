@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="660" viewBox="0 0 1080 660" role="img" aria-labelledby="route-title route-desc">
+  <title id="route-title">route map for Choose a provable Jiko hardware and runtime path</title>
+  <desc id="route-desc">Linux EVT: 140k to 300k tokens, 20 to 50 minutes, 4 checkpoints, suggested. Pi lab instrument: 80k to 180k tokens, 12 to 35 minutes, 3 checkpoints. MCU edge probe: 70k to 170k tokens, 12 to 30 minutes, 4 checkpoints</desc>
+  <defs>
+    <filter id="dock-shadow" x="-8%" y="-30%" width="116%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000000" flood-opacity=".16"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#000000" flood-opacity=".09"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity=".06"/>
+    </filter>
+  </defs>
+  <style>
+    text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC",Arial,sans-serif;font-variant-numeric:tabular-nums}.title{font-size:22px;font-weight:600;fill:#1F1F1F}.subtitle{font-size:13px;font-weight:400;fill:#6B6B6B}.eyebrow{font-size:11px;font-weight:700;letter-spacing:1.1px;fill:#1F1F1F}.endpoint-sub{font-size:11px;font-weight:500;fill:#6B6B6B}.node-label{font-size:12px;font-weight:450;fill:#1F1F1F}.card-label{font-size:14px;font-weight:650;fill:#1F1F1F}.cost{font-size:24px;font-weight:600;fill:#1F1F1F}.unit{font-size:12px;font-weight:500;fill:#6B6B6B}.meta{font-size:12px;font-weight:600}.check-count{font-size:12px;font-weight:500;fill:#6B6B6B}.summary{font-size:12px;font-weight:400;fill:#6B6B6B}.card rect{transition:fill .18s ease,stroke .18s ease}.flow{opacity:.16;stroke-dasharray:2 15;animation:travel 1.25s linear infinite}.window-lights circle{transform-box:fill-box;transform-origin:center}.window-lights:hover circle{animation:light-pop .32s ease both}.window-lights circle:nth-child(2){animation-delay:.04s}.window-lights circle:nth-child(3){animation-delay:.08s}@keyframes travel{to{stroke-dashoffset:-34}}@keyframes light-pop{50%{transform:scale(1.2)}}@media(prefers-reduced-motion:reduce){.flow{animation:none}.window-lights circle{animation:none!important}.card rect{transition:none}}
+  </style>
+  <rect width="1080" height="660" rx="18" fill="#F4F4F4"/>
+  <rect x="16" y="12" width="1048" height="636" rx="16" fill="#FFFFFF" stroke="#E5E5E5"/>
+  <g class="window-lights" transform="translate(38 35)">
+    <circle cx="0" cy="0" r="6" fill="#E25555"/>
+    <circle cx="20" cy="0" r="6" fill="#E6A700"/>
+    <circle cx="40" cy="0" r="6" fill="#32A05F"/>
+  </g>
+  <text x="100" y="40" class="eyebrow">via · a [p → q] project</text>
+  <text x="1032" y="40" text-anchor="end" class="eyebrow subtle">ptoq.io</text>
+  <text x="48" y="80" class="title">Choose a provable Jiko hardware and runtime path</text>
+  <text x="48" y="104" class="subtitle">Choose how this gets built</text>
+  <g class="map"><path d="M36 142H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 210H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 278H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 346H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path d="M36 414H1044" stroke="#E8E8E8" stroke-width="1.35" stroke-dasharray="6 9"/><path class="edge e0" d="M72 278 C126 278 202.8 278 256.8 278" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M72 278 C126 278 202.8 278 256.8 278" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><path class="edge e1" d="M256.8 278 C310.8 278 387.6 278 441.6 278" fill="none" stroke="#1F1F1F" stroke-width="6" stroke-linecap="round"/><path class="flow" d="M256.8 278 C310.8 278 387.6 278 441.6 278" fill="none" stroke="#1F1F1F" stroke-width="2" stroke-linecap="round"/><path class="edge e2" d="M441.6 278 C495.6 278 572.4000000000001 142 626.4000000000001 142" fill="none" stroke="#3AB9B1" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M441.6 278 C495.6 278 572.4000000000001 142 626.4000000000001 142" fill="none" stroke="#3AB9B1" stroke-width="2" stroke-linecap="round"/><path class="edge e3" d="M626.4000000000001 142 C680.4000000000001 142 757.2 142 811.2 142" fill="none" stroke="#3AB9B1" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M626.4000000000001 142 C680.4000000000001 142 757.2 142 811.2 142" fill="none" stroke="#3AB9B1" stroke-width="2" stroke-linecap="round"/><path class="edge e4" d="M811.2 142 C865.2 142 942 142 996 142" fill="none" stroke="#3AB9B1" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M811.2 142 C865.2 142 942 142 996 142" fill="none" stroke="#3AB9B1" stroke-width="2" stroke-linecap="round"/><path class="edge e5" d="M441.6 278 C495.6 278 572.4000000000001 278 626.4000000000001 278" fill="none" stroke="#F3883B" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M441.6 278 C495.6 278 572.4000000000001 278 626.4000000000001 278" fill="none" stroke="#F3883B" stroke-width="2" stroke-linecap="round"/><path class="edge e6" d="M626.4000000000001 278 C680.4000000000001 278 757.2 278 811.2 278" fill="none" stroke="#F3883B" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M626.4000000000001 278 C680.4000000000001 278 757.2 278 811.2 278" fill="none" stroke="#F3883B" stroke-width="2" stroke-linecap="round"/><path class="edge e7" d="M811.2 278 C865.2 278 942 278 996 278" fill="none" stroke="#F3883B" stroke-width="5.5" stroke-linecap="round"/><path class="flow" d="M811.2 278 C865.2 278 942 278 996 278" fill="none" stroke="#F3883B" stroke-width="2" stroke-linecap="round"/><path class="edge e8" d="M441.6 278 C495.6 278 572.4000000000001 414 626.4000000000001 414" fill="none" stroke="#9B79EC" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="6 7"/><path class="flow" d="M441.6 278 C495.6 278 572.4000000000001 414 626.4000000000001 414" fill="none" stroke="#9B79EC" stroke-width="2" stroke-linecap="round"/><path class="edge e9" d="M626.4000000000001 414 C680.4000000000001 414 757.2 414 811.2 414" fill="none" stroke="#9B79EC" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="6 7"/><path class="flow" d="M626.4000000000001 414 C680.4000000000001 414 757.2 414 811.2 414" fill="none" stroke="#9B79EC" stroke-width="2" stroke-linecap="round"/><path class="edge e10" d="M811.2 414 C865.2 414 942 414 996 414" fill="none" stroke="#9B79EC" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="6 7"/><path class="flow" d="M811.2 414 C865.2 414 942 414 996 414" fill="none" stroke="#9B79EC" stroke-width="2" stroke-linecap="round"/><g class="node"><circle cx="72" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/></g><g class="node"><circle cx="256.8" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><g transform="translate(269.8 261)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="256.8" y="307" text-anchor="middle" class="node-label">seal runtime cont…</text></g><g class="node"><circle cx="441.6" cy="278" r="11" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="3.5"/><g transform="translate(454.6 261)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="441.6" y="307" text-anchor="middle" class="node-label">freeze corpus + p…</text></g><g class="node"><circle cx="626.4000000000001" cy="142" r="11" fill="#FFFFFF" stroke="#3AB9B1" stroke-width="3.5"/><text x="626.4000000000001" y="171" text-anchor="middle" class="node-label">warm local workers</text></g><g class="node"><circle cx="811.2" cy="142" r="11" fill="#FFFFFF" stroke="#3AB9B1" stroke-width="3.5"/><g transform="translate(824.2 125)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="811.2" y="171" text-anchor="middle" class="node-label">prove Pi 5 profile</text></g><g class="node"><circle cx="996" cy="142" r="11" fill="#FFFFFF" stroke="#3AB9B1" stroke-width="3.5"/><g transform="translate(1009 125)"><circle r="6" fill="#32A05F" stroke="#FFFFFF" stroke-width="3"/></g></g><g class="node"><circle cx="626.4000000000001" cy="278" r="11" fill="#FFFFFF" stroke="#F3883B" stroke-width="3.5"/><text x="626.4000000000001" y="307" text-anchor="middle" class="node-label">Pi audio + kiosk …</text></g><g class="node"><circle cx="811.2" cy="278" r="11" fill="#FFFFFF" stroke="#F3883B" stroke-width="3.5"/><g transform="translate(824.2 261)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="811.2" y="307" text-anchor="middle" class="node-label">8h architecture H…</text></g><g class="node"><circle cx="996" cy="278" r="11" fill="#FFFFFF" stroke="#F3883B" stroke-width="3.5"/><g transform="translate(1009 261)"><circle r="6" fill="#32A05F" stroke="#FFFFFF" stroke-width="3"/></g></g><g class="node"><circle cx="626.4000000000001" cy="414" r="11" fill="#FFFFFF" stroke="#9B79EC" stroke-width="3.5"/><text x="626.4000000000001" y="443" text-anchor="middle" class="node-label">ESP32-S3 AFE/cont…</text></g><g class="node"><circle cx="811.2" cy="414" r="11" fill="#FFFFFF" stroke="#9B79EC" stroke-width="3.5"/><g transform="translate(824.2 397)"><circle r="6" fill="#E6A700" stroke="#FFFFFF" stroke-width="3"/></g><text x="811.2" y="443" text-anchor="middle" class="node-label">latency + power A…</text></g><g class="node"><circle cx="996" cy="414" r="11" fill="#FFFFFF" stroke="#9B79EC" stroke-width="3.5"/><g transform="translate(1009 397)"><circle r="6" fill="#32A05F" stroke="#FFFFFF" stroke-width="3"/></g></g></g>
+  <g class="endpoint" transform="translate(72 278)">
+    <text y="-24" text-anchor="middle" class="eyebrow">START</text>
+    <text y="29" text-anchor="middle" class="endpoint-sub">integrated protot…</text>
+  </g><g class="endpoint" transform="translate(996 142)">
+    <text y="-24" text-anchor="middle" class="eyebrow">DONE</text>
+    <text y="29" text-anchor="middle" class="endpoint-sub">CM5 EVT build pac…</text>
+  </g><g class="endpoint" transform="translate(996 278)">
+    <text y="-24" text-anchor="middle" class="eyebrow">DONE</text>
+    <text y="29" text-anchor="middle" class="endpoint-sub">lab instrument pa…</text>
+  </g><g class="endpoint" transform="translate(996 414)">
+    <text y="-24" text-anchor="middle" class="eyebrow">DONE</text>
+    <text y="29" text-anchor="middle" class="endpoint-sub">bounded edge-role…</text>
+  </g>
+  <rect class="route-dock" x="32" y="468" width="1016" height="164" rx="22" fill="#FFFFFF" stroke="#DEDEDE" filter="url(#dock-shadow)"/>
+  <g class="card selected" data-route-id="linux-evt" transform="translate(48 484)" aria-label="Linux EVT, 140k–300k tokens, 20 to 50 minutes, 4 engineering checks">
+      <rect width="320" height="132" rx="12" fill="#F2F5F5" stroke="#AEBFC0" stroke-width="1"/>
+      <text x="16" y="33" class="card-label">Linux EVT</text>
+      <text x="16" y="67" class="cost">140k–300k<tspan class="unit"> tok</tspan></text>
+      <text x="16" y="87" class="meta" fill="#247C78">20–50 min</text>
+      <g class="gate-light" transform="translate(238 84)" aria-label="4 engineering checks">
+    <title>4 engineering checks</title>
+    <g transform="translate(0 -9)" fill="#1F1F1F">
+      <rect x="5" y="1.5" width="8" height="15" rx="2.4" fill="none" stroke="#1F1F1F" stroke-width="1.8"/>
+      <circle cx="9" cy="6" r="1.45"/>
+      <circle cx="9" cy="12" r="1.45"/>
+      <path d="M5 4.8H2.2c.25 1.45 1.15 2.45 2.8 2.85V4.8Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85V4.8ZM5 10.8H2.2c.25 1.45 1.15 2.45 2.8 2.85v-2.85Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85v-2.85Z"/>
+    </g>
+    <text x="22" y="4" class="check-count">4 checks</text>
+  </g>
+      <text x="16" y="117" class="summary">Warm local inference and a CM5-re…</text>
+    </g><g class="card" data-route-id="pi-lab" transform="translate(380 484)" aria-label="Pi lab instrument, 80k–180k tokens, 12 to 35 minutes, 3 engineering checks">
+      <rect width="320" height="132" rx="12" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1"/>
+      <text x="16" y="33" class="card-label">Pi lab instrument</text>
+      <text x="16" y="67" class="cost">80k–180k<tspan class="unit"> tok</tspan></text>
+      <text x="16" y="87" class="meta" fill="#A95227">12–35 min</text>
+      <g class="gate-light" transform="translate(238 84)" aria-label="3 engineering checks">
+    <title>3 engineering checks</title>
+    <g transform="translate(0 -9)" fill="#1F1F1F">
+      <rect x="5" y="1.5" width="8" height="15" rx="2.4" fill="none" stroke="#1F1F1F" stroke-width="1.8"/>
+      <circle cx="9" cy="6" r="1.45"/>
+      <circle cx="9" cy="12" r="1.45"/>
+      <path d="M5 4.8H2.2c.25 1.45 1.15 2.45 2.8 2.85V4.8Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85V4.8ZM5 10.8H2.2c.25 1.45 1.15 2.45 2.8 2.85v-2.85Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85v-2.85Z"/>
+    </g>
+    <text x="22" y="4" class="check-count">3 checks</text>
+  </g>
+      <text x="16" y="117" class="summary">Prove the full loop on Pi 5 befor…</text>
+    </g><g class="card" data-route-id="mcu-edge" transform="translate(712 484)" aria-label="MCU edge probe, 70k–170k tokens, 12 to 30 minutes, 4 engineering checks">
+      <rect width="320" height="132" rx="12" fill="#FFFFFF" stroke="#E5E5E5" stroke-width="1"/>
+      <text x="16" y="33" class="card-label">MCU edge probe</text>
+      <text x="16" y="67" class="cost">70k–170k<tspan class="unit"> tok</tspan></text>
+      <text x="16" y="87" class="meta" fill="#674BA8">12–30 min</text>
+      <g class="gate-light" transform="translate(238 84)" aria-label="4 engineering checks">
+    <title>4 engineering checks</title>
+    <g transform="translate(0 -9)" fill="#1F1F1F">
+      <rect x="5" y="1.5" width="8" height="15" rx="2.4" fill="none" stroke="#1F1F1F" stroke-width="1.8"/>
+      <circle cx="9" cy="6" r="1.45"/>
+      <circle cx="9" cy="12" r="1.45"/>
+      <path d="M5 4.8H2.2c.25 1.45 1.15 2.45 2.8 2.85V4.8Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85V4.8ZM5 10.8H2.2c.25 1.45 1.15 2.45 2.8 2.85v-2.85Zm8 0h2.8c-.25 1.45-1.15 2.45-2.8 2.85v-2.85Z"/>
+    </g>
+    <text x="22" y="4" class="check-count">4 checks</text>
+  </g>
+      <text x="16" y="117" class="summary">Bound ESP32-S3 to measured edge d…</text>
+    </g>
+  </svg>

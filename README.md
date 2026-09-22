@@ -6,13 +6,15 @@
 
 ---
 
-jiko is a small physical signal instrument. it listens to one spoken intention, separates it into three independent readings — content, emotion, context — then reveals whether the readings agree or diverge. it does not tell you what to do. the final choice stays with you.
+jiko is a small physical signal instrument. it listens to one spoken intention, separates it into three separately computed readings — content, emotion, context — then reveals whether the readings agree or diverge. it does not tell you what to do. the final choice stays with you.
 
 > pre-release · v0.9 · hardware in design · software prototype functional · [site live](https://jiko.ptoq.io)
 
 When every AI rushes to give you an answer, jiko refuses — it splits your thought into three signal lights, and leaves you to read them.
 
 In an age of too many answers, restraint is radical.
+
+> [Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) [2026-09-17] takes a wonderfully heretical model route: give up string generation and return typed, probabilistic decisions in a reported 70–500 ms. That reaches a surprisingly similar feeling of fast, bounded judgment. It makes this landscape more interesting. ([research note](docs/research-system-one-jev.md))
 
 ## what it is not
 
@@ -43,7 +45,7 @@ color mapping: red · yellow · green. never good / bad / correct / wrong.
 
 ## hardware direction
 
-a thick vertical slab — masked four-window shell, side thumb button. the prototype runs on Raspberry Pi 5 with MPI3508 display, but the product form is independent of any specific compute board. the interaction is quieter and stranger than an assistant.
+a thick vertical slab — masked four-window shell, side thumb button. the current hardware and kiosk work is designed around a Raspberry Pi 5 with an MPI3508 display, but that target has not yet completed a physical integration receipt and the product form remains independent of any specific compute board. the interaction is quieter and stranger than an assistant.
 
 current industrial design uses superellipse (squircle) corner geometry. see `docs/form-factor.md` and `docs/hardware-notes.md`.
 
@@ -51,7 +53,7 @@ current industrial design uses superellipse (squircle) corner geometry. see `doc
 
 - `https://jiko.ptoq.io/` — canonical public website.
 - `https://jiko-showcase.vercel.app/` — Vercel fallback / frontend deployment URL.
-- `/?mode=device` — the kiosk face. the actual instrument.
+- `/?mode=device` — the intended kiosk face; physical-instrument proof is still pending.
 - `showcase.html` — a standalone Three.js hardware-material study.
 - `site.html` — the public first-viewport, embedding the hardware object in a quiet framed page.
 
@@ -82,11 +84,29 @@ curl -X POST http://localhost:4317/sessions/demo-001/manual-transcript \
 
 - [Product Brief](docs/product-brief.md)
 - [Engineering Discipline](docs/engineering-discipline.md)
+- [Productization Program](docs/productization-program.md)
+- [Operational Readiness](docs/operational-readiness.md)
+- [Human Experience And Interface Audit](docs/human-experience-audit.md)
+- [Mature Device Systems Research And Jiko Redesign](docs/mature-device-systems-research.md)
+- [Wearable And Desktop Hardware Research](docs/research-wearable-hardware.md)
+- [Embedded Local Voice Systems Research](docs/research-embedded-voice-systems.md)
+- [Audio Instrument And Production Systems Research](docs/research-audio-instrument-production-systems.md)
+- [System One Models / Jev Research](docs/research-system-one-jev.md)
+- [Edge Speech, Compute, And Hardware Co-Design](docs/research-edge-speech-optimization.md)
+- [Edge Speech Route Map](docs/edge-speech-routes-v1.svg)
+- [Low-Latency Voice Input: Local And API Paths](docs/research-low-latency-voice-input.md)
+- [Open Voice Hardware Repository Archaeology](docs/research-open-voice-hardware-repos.md)
+- [ASR Accuracy Stack And Model Selection](docs/research-asr-accuracy-stack.md)
+- [Benchmark Plan](docs/benchmark-plan.md)
+- [Instrument Runtime Design](docs/instrument-runtime-design.md)
+- [Algorithm Evaluation And Scheduling](docs/algorithm-evaluation.md)
+- [Hardware Compute Decision](docs/hardware-compute-decision.md)
 - [Engineering Architecture](docs/engineering-architecture.md)
 - [Backend Architecture](docs/backend-architecture.md)
 - [Runtime Paths](docs/runtime-paths.md)
 - [Audio Prototype](docs/audio-prototype.md)
 - [Data Handling](docs/data-handling.md)
+- [Remote Audio Policy](docs/remote-audio-policy.md)
 - [Result Copy](docs/result-copy.md)
 - [Form Factor](docs/form-factor.md)
 - [Hardware Phases](docs/hardware-phases.md)

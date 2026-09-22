@@ -14,9 +14,14 @@
   "dependencies": {
     "@jiko/core": "workspace:*",
     "@jiko/protocol": "workspace:*",
-    "@jiko/readings": "workspace:*"
+    "@jiko/readings": "workspace:*",
+    "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.18.1"
   }
 }

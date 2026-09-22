@@ -56,7 +56,6 @@ def main() -> int:
                     "text": text,
                     "language": guess_language(text),
                     "provider": "local:sherpa-onnx-sensevoice",
-                    "confidence": 0.76 if text else 0.2,
                     "latencyMs": round((time.time() - started_at) * 1000),
                 },
                 ensure_ascii=False,

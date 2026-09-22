@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "0.3",
+  "destination": "Choose a provable Jiko hardware and runtime path",
+  "routes": [
+    {
+      "id": "linux-evt",
+      "label": "Linux EVT",
+      "color": "cyan",
+      "recommended": true,
+      "tokens": { "min": 140000, "max": 300000 },
+      "minutes": { "min": 20, "max": 50 },
+      "summary": "Warm local inference and a CM5-ready EVT package"
+    },
+    {
+      "id": "pi-lab",
+      "label": "Pi lab instrument",
+      "color": "orange",
+      "recommended": false,
+      "tokens": { "min": 80000, "max": 180000 },
+      "minutes": { "min": 12, "max": 35 },
+      "summary": "Prove the full loop on Pi 5 before integration"
+    },
+    {
+      "id": "mcu-edge",
+      "label": "MCU edge probe",
+      "color": "purple",
+      "recommended": false,
+      "tokens": { "min": 70000, "max": 170000 },
+      "minutes": { "min": 12, "max": 30 },
+      "summary": "Bound ESP32-S3 to measured edge duties only"
+    }
+  ],
+  "graph": {
+    "terminals": {
+      "origins": {
+        "linux-evt": "prototype",
+        "pi-lab": "prototype",
+        "mcu-edge": "prototype"
+      },
+      "destinations": {
+        "linux-evt": "evt-package",
+        "pi-lab": "lab-package",
+        "mcu-edge": "edge-decision"
+      }
+    },
+    "nodes": [
+      {
+        "id": "prototype",
+        "label": "integrated prototype",
+        "column": 0,
+        "lane": 2
+      },
+      {
+        "id": "runtime-contract",
+        "label": "seal runtime contract",
+        "column": 1,
+        "lane": 2,
+        "gate": "yellow",
+        "control": "boundary"
+      },
+      {
+        "id": "frozen-evidence",
+        "label": "freeze corpus + profiles",
+        "column": 2,
+        "lane": 2,
+        "gate": "yellow",
+        "control": "decision"
+      },
+      {
+        "id": "warm-worker",
+        "label": "warm local workers",
+        "column": 3,
+        "lane": 0
+      },
+      {
+        "id": "pi-profile",
+        "label": "prove Pi 5 profile",
+        "column": 4,
+        "lane": 0,
+        "gate": "yellow",
+        "control": "proof"
+      },
+      {
+        "id": "evt-package",
+        "label": "CM5 EVT build package",
+        "column": 5,
+        "lane": 0,
+        "gate": "green",
+        "control": "release"
+      },
+      {
+        "id": "pi-lab-loop",
+        "label": "Pi audio + kiosk loop",
+        "column": 3,
+        "lane": 2
+      },
+      {
+        "id": "architecture-hil",
+        "label": "8h architecture HIL",
+        "column": 4,
+        "lane": 2,
+        "gate": "yellow",
+        "control": "proof"
+      },
+      {
+        "id": "lab-package",
+        "label": "lab instrument package",
+        "column": 5,
+        "lane": 2,
+        "gate": "green"
+      },
+      {
+        "id": "esp32-edge",
+        "label": "ESP32-S3 AFE/control",
+        "column": 3,
+        "lane": 4
+      },
+      {
+        "id": "edge-ab",
+        "label": "latency + power A/B",
+        "column": 4,
+        "lane": 4,
+        "gate": "yellow",
+        "control": "proof"
+      },
+      {
+        "id": "edge-decision",
+        "label": "bounded edge-role call",
+        "column": 5,
+        "lane": 4,
+        "gate": "green",
+        "control": "decision"
+      }
+    ],
+    "edges": [
+      {
+        "from": "prototype",
+        "to": "runtime-contract",
+        "routes": ["linux-evt", "pi-lab", "mcu-edge"]
+      },
+      {
+        "from": "runtime-contract",
+        "to": "frozen-evidence",
+        "routes": ["linux-evt", "pi-lab", "mcu-edge"]
+      },
+      {
+        "from": "frozen-evidence",
+        "to": "warm-worker",
+        "routes": ["linux-evt"]
+      },
+      {
+        "from": "warm-worker",
+        "to": "pi-profile",
+        "routes": ["linux-evt"]
+      },
+      {
+        "from": "pi-profile",
+        "to": "evt-package",
+        "routes": ["linux-evt"]
+      },
+      {
+        "from": "frozen-evidence",
+        "to": "pi-lab-loop",
+        "routes": ["pi-lab"]
+      },
+      {
+        "from": "pi-lab-loop",
+        "to": "architecture-hil",
+        "routes": ["pi-lab"]
+      },
+      {
+        "from": "architecture-hil",
+        "to": "lab-package",
+        "routes": ["pi-lab"]
+      },
+      {
+        "from": "frozen-evidence",
+        "to": "esp32-edge",
+        "routes": ["mcu-edge"],
+        "kind": "branch"
+      },
+      {
+        "from": "esp32-edge",
+        "to": "edge-ab",
+        "routes": ["mcu-edge"],
+        "kind": "branch"
+      },
+      {
+        "from": "edge-ab",
+        "to": "edge-decision",
+        "routes": ["mcu-edge"],
+        "kind": "branch"
+      }
+    ]
+  }
+}

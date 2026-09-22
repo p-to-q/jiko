@@ -6,8 +6,9 @@ The repo tracks two hardware phases. See [Hardware Phases](hardware-phases.md)
 for the full phase definition, USB-C scale reference, and physical dimensions.
 
 - **Jiko Zero** — Hackathon prototype: Raspberry Pi 5 + MPI3508 display.
-- **Jiko One** — Advanced prototype: custom chip, current squircle form factor,
-  on-board audio path. The vent layout and dimensions are recorded there.
+- **Jiko One** — Advanced prototype: Linux-class compute module on a custom
+  carrier, current squircle form factor, and on-board audio path. The vent
+  layout and appearance-derived dimensions are recorded there.
 
 The notes below are oriented toward Jiko Zero construction, but the enclosure
 principles (edge openings, front mask, side button) apply to Jiko One as well.
@@ -50,7 +51,8 @@ Why:
 
 - A front fourth button would compete with the four-window screen layout.
 - Side placement makes it feel wearable and handheld.
-- Hold-to-record is robust in noisy rooms.
+- Hold-to-record gives a deterministic capture boundary in noisy rooms; actual
+  robustness still requires physical microphone/noise testing.
 - Button state gives useful timing features: press time, release time, pre-speech delay.
 
 Recommended interaction:
@@ -95,7 +97,7 @@ Preferred first-pass edge layout:
 | --- | --- | --- |
 | USB-C power/data | Bottom edge, centered or slightly right-biased | Keeps cable exit predictable and visually secondary. |
 | Microphone | Top edge, one small pinhole first | Reads as listening without looking like a camera or decoration. |
-| Thermal vents | Left edge or rear side wall, five to seven narrow slots | Gives heat a path out without turning the face into a grille. |
+| Thermal vents | Rear or another measured region; exact shape pending stack-up thermal tests | The current left-edge six-path `热` mark is visual, not a vent, and the retired slot array must not return. |
 | Screws/inserts | Back, two or four small points | Makes the first shell serviceable and believable. |
 
 Do not use a speaker grille, sound slit, round-hole vent matrix, or copied Pi 5
@@ -133,14 +135,16 @@ For the hackathon Pi-class prototype shell:
 For a later Pi-local demo:
 
 - Prefer USB microphone over analog hacks.
-- Do not add built-in speaker hardware unless the product direction explicitly
-  changes.
+- Measure the actual output path before committing enclosure openings.
 
 For the final self-contained object:
 
-- No built-in outward speaker, speaker cavity, speaker module, speaker grille,
-  or sound slit.
-- Do not reserve an enclosure playback path.
+- The spoken-line ritual remains a product requirement, but the output
+  architecture is still open.
+- Reserve either a measured on-device transducer path or an explicit paired
+  local output path.
+- Do not add a decorative grille until transducer, amplifier, level, acoustic,
+  and enclosure measurements exist.
 
 ## Thermal Notes
 

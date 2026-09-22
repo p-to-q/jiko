@@ -3,10 +3,11 @@
 ## Runtime Phases
 
 The runtime paths are defined for **Jiko Zero** (the hackathon laptop + Raspberry
-Pi 5 kiosk prototype). **Jiko One** (custom-chip advanced prototype) will reuse
-the same shared core and event protocol, but its runtime adapters will be defined
-when that compute stack is chosen. See [Hardware Phases](hardware-phases.md) for
-the phase definitions and physical dimensions.
+Pi 5 kiosk prototype). **Jiko One** (a device-local Linux-class compute module
+on a custom carrier) will reuse the same shared core and event protocol, but its
+runtime adapters will be defined when that compute stack is chosen. Custom
+silicon remains deferred. See [Hardware Phases](hardware-phases.md) for the
+phase definitions and physical dimensions.
 
 ## Purpose
 
@@ -61,8 +62,11 @@ Suggested stack:
 
 - `apps/web`: Vite + React + TypeScript + PixiJS/Canvas.
 - `apps/server`: Node/TypeScript or Python service.
-- Audio capture: browser `MediaRecorder` first, Python capture only if browser permissions become annoying.
-- STT: FunASR local service first for Chinese/mixed speech; faster-whisper, whisper.cpp, or MLX Whisper as local desktop fallbacks.
+- Audio capture: browser `AudioWorklet` ordered PCM by default when supported;
+  explicit `MediaRecorder` mode remains the batch compatibility/control path.
+- STT: persistent sherpa-onnx SenseVoice is the integrated batch baseline;
+  benchmark streaming Zipformer, Moonshine Mandarin, FunASR two-pass, and
+  quantized whisper.cpp controls on the same corpus before choosing.
 - TTS: Piper or pre-generated local audio clips first; browser speech synthesis only as emergency fallback.
 
 Why:
@@ -79,9 +83,12 @@ Responsibilities:
 
 - Boot into Chromium kiosk.
 - Display the same four-window UI on the MPI3508.
-- Open the laptop-hosted web app at `http://<laptop-ip>:5173/?mode=device`.
+- Open the laptop-hosted web app at `http://<laptop-ip>:5173/?mode=device`
+  only after the operator explicitly enables the controlled-LAN server profile
+  documented in `docs/demo-runbook.md`.
 - Optionally read a side button through GPIO, USB HID, or serial and post events to the laptop server.
-- Stay compatible with a future Pi-local audio path without requiring it for the hackathon.
+- Keep the experimental Pi-local ALSA/JPCM edge optional; it is not required
+  for the hackathon and has no target-hardware proof yet.
 
 For the hackathon bring-up, the Pi is a tiny projector/display object. Do not make Pi-local microphone capture, STT, TTS, or server hosting part of the first success condition.
 
@@ -89,10 +96,18 @@ Suggested stack:
 
 - Raspberry Pi OS.
 - Chromium kiosk opening the laptop-hosted web app.
-- `apps/device`: Python adapter for optional GPIO button input.
+- `apps/device`: Python adapters for optional GPIO button input and an
+  experimental bounded `arecord` -> ordered-JPCM capture edge.
 - GPIO: `gpiozero` first for button input.
 - Future Pi STT fallback: Vosk for Pi-compatible offline recognition.
 - Future Pi TTS fallback: Piper or pre-generated local clips.
+
+The HTTP kiosk origin is currently a display/observer path. It is not a secure
+browser microphone origin, and changing `HOST` to `0.0.0.0` does not provide
+authentication. Device-local browser capture requires an explicit HTTPS/WSS
+deployment plus scoped enrollment/capability work; Pi-native capture remains a
+separate host-tested adapter and is not yet integrated with the button or
+systemd device runtime.
 
 Why:
 
@@ -165,12 +180,16 @@ type SpeechProvider = {
 
 Laptop default:
 
-- STT: FunASR local service, faster-whisper, whisper.cpp, or MLX Whisper depending on the laptop.
+- STT: persistent sherpa-onnx SenseVoice is the integrated batch baseline, not
+  a selected winner. Run the frozen corpus against streaming Zipformer,
+  Moonshine Mandarin, FunASR two-pass, and a quantized whisper.cpp control
+  before selecting a release route.
 - TTS: Piper or pre-generated result lines.
 
 Laptop fallback:
 
-- STT: Vosk or browser/manual transcript for rehearsal.
+- STT: an installed local adapter or the clearly labelled manual-transcript
+  rehearsal path. Do not silently switch providers after a failure.
 - TTS: browser speech synthesis or local system voice.
 
 Pi default for hackathon:
@@ -181,7 +200,9 @@ Pi default for hackathon:
 
 Pi future fallback:
 
-- STT: Vosk.
+- STT: no default yet; Vosk is a lightweight control, while Zipformer,
+  Moonshine Mandarin, SenseVoice, and whisper.cpp must earn selection on the
+  physical target.
 - TTS: Piper or pre-generated audio clips.
 
 ## Decision Rule

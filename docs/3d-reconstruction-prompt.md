@@ -1,5 +1,12 @@
 # 3D 硬件重建 Prompt — Jiko One Showcase
 
+> 2026-07 current-model note: the running Three.js showcase is the primary
+> reference. Retired details in older diagrams must not override it. The
+> current model reuses the inline `THERMAL_*` paths in `ShowcaseStage.tsx` on the left edge, a rear-panel
+> score with two screws, a genuinely rounded side rail, and a capsule-shaped
+> USB-C assembly. The screen carries three status dots, clock, weekday/date,
+> battery, and three complete 9×9 raised pixel sprites.
+
 ## 1. 项目入口
 
 | 资源 | 地址 |
@@ -15,7 +22,7 @@
 
 | 文件 | 为什么读 |
 |---|---|
-| `docs/hardware-phases.md` | 两个硬件阶段定义（Jiko Zero / Jiko One），USB-C 锚定的比例尺（1 单位 = 44 mm），整体尺寸（80×120×6.6 mm），散热孔布局 |
+| `docs/hardware-phases.md` | 两个硬件阶段定义、比例尺和当前外部硬件说明 |
 | `docs/form-factor.md` | 形态因数细节，物件方向说明 |
 | `docs/product-brief.md` | 产品定位 |
 | `docs/showcase-design-decisions.md` | 散热孔设计意图和几何笔记 |
@@ -26,7 +33,7 @@
 
 | 文件 | 为什么读 |
 |---|---|
-| `apps/web/src/ui/ShowcaseStage.tsx` | **最重要的参考文件**。包含完整的 Three.js 实现：机身 Squircle 几何、侧边按钮、背面螺丝×4、USB-C 接口（含舌头）、麦克风孔径、"热"字散热标记。所有材质参数、位置、尺寸均可在此提取 |
+| `apps/web/src/ui/ShowcaseStage.tsx` | **最重要的参考文件**。包含完整的 Three.js 实现：机身 Squircle 几何、侧边按钮、背面螺丝×2、USB-C 接口（含舌头）、麦克风孔径、6 条内联 THERMAL 路径标记。所有材质参数、位置、尺寸均可在此提取 |
 | `apps/web/src/ui/showcaseScreenTexture.ts` | 屏幕内容生成逻辑（LED 点阵字体、时钟、Sprite 动画） |
 | `apps/web/src/ui/squircleGeometry.ts` | Squircle 角点计算（exponentX / exponentY 控制圆角形状） |
 | `apps/web/src/ui/dotMatrixFont.ts` | 点阵字体映射 |
@@ -36,8 +43,8 @@
 
 | 文件 | 内容 |
 |---|---|
-| `docs/assets/vent-layout.svg` | 散热孔布局示意（三视图） |
-| `docs/assets/re-char.svg` | "热"字原始 SVG（用于散热标记的 canvas 渲染输入） |
+| `docs/assets/vent-layout.svg` | 已淘汰的旧散热槽研究，仅作历史记录，不作为当前建模参考 |
+| `THERMAL_SHOU` / `THERMAL_WAN` / `THERMAL_HUO` | 左侧标记的运行时真实轮廓源；位于 `ShowcaseStage.tsx`，不是外部 SVG 或字体 |
 | `docs/assets/svg/*.svg` | 各种 UI Sprite SVG（king / tree / oracle） |
 
 ## 3. 核心尺寸规范
@@ -104,14 +111,12 @@ scale = 8.34 mm / 0.19 model_unit ≈ 43.9 → 取整 44 mm / unit
 | 正面 Mouth 宽度 | 0.24 | — |
 | 正面 Mouth 高度 | 0.028 | — |
 
-### 螺丝（背面×4）
+### 螺丝（背面×2）
 
 | 参数 | 模型值 |
 |---|---|
 | 位置 1 | `(-bodyW × 0.39, bodyH × 0.395)` |
-| 位置 2 | `(bodyW × 0.39, bodyH × 0.395)` |
-| 位置 3 | `(-bodyW × 0.39, -bodyH × 0.395)` |
-| 位置 4 | `(bodyW × 0.39, -bodyH × 0.395)` |
+| 位置 2 | `(bodyW × 0.39, -bodyH × 0.395)` |
 | 螺丝半径 | ~0.028 |
 | 螺丝槽颜色 | `0x000000`，透明度 0.78 |
 
@@ -125,13 +130,40 @@ scale = 8.34 mm / 0.19 model_unit ≈ 43.9 → 取整 44 mm / unit
 | 按钮厚度 | 0.16 |
 | 倒角 | 0.018 |
 
-### "热"字散热标记（左侧平面）
+### SVG 散热标记（左侧平面）
 
 - 使用 `buildThermalMark()` 函数
 - 位置：`x = -(bodyW / 2 + 0.004)`，`y = -bodyH × 0.26`（左下侧）
 - 通过 Canvas 2D 渲染：扫描路径 → `Path2D` → 填充深棕 `rgba(45,42,38,1)` + 描边亮灰 `rgba(210,218,228,1)`
 - 通过 `THREE.CanvasTexture` 贴在 `PlaneGeometry` 上
 - 使用 `syncLeftFaceDepth()` 实现相机角度适配的深度测试
+- 物理模型直接提取 `ShowcaseStage.tsx` 的 6 条 `THERMAL_*` Path2D 路径，复现 `14820 × 15320` Canvas 负 Y 变换后作为布尔裁剪体；不得改用 `re-char.svg`、字体或近似字形
+
+### 背板（当前）
+
+- 中间背板与外部背壳保持同一平面；只有围绕背板一周的 0.35 mm 圆角矩形环形沟槽向内切入 0.32 mm
+- 只保留两颗对角螺丝
+- 每颗螺丝只有一条横向槽，呈“减号”，不是十字槽
+
+### 侧边按钮与 USB-C 实体化
+
+- 侧边按钮沿用当前 Three.js 的圆角长条轮廓；整体向左平移并直接贴入机身，不生成连接线或独立安装颈
+- USB-C 保留当前 Three.js 的多层视觉结构，但将色块解释成真实深度：外部凹坑、金属环、深色后壁和连接后壁的舌片
+- USB-C 所有可见层应位于机身底面以内，不作为外凸贴片
+- USB-C 外部凹坑和外唇使用 `DETAIL_CORNER` 的 squircle：exponent=3.2；凹坑圆角约 0.99 mm，外唇圆角约 0.74 mm
+- 只有 8.34 × 2.56 mm 的真实内口和舌片使用 Type-C 半圆端轮廓，不能把外部四边形也改成胶囊形
+
+### 三套圆角参数不可混用
+
+- 机身：圆角半径 6.60 mm，exponentX=4.2、exponentY=3.8
+- 屏幕玻璃：机身圆角半径的 0.92 倍，exponentX/Y=3.5
+- USB-C 外层机械细节：`DETAIL_CORNER` exponentX/Y=3.2
+
+### 屏幕内容（当前）
+
+- 顶部：竖排三个状态点、`11:33` 点阵时钟、`TUE`、`JUL 21` 和电池图形
+- 下方：king / tree / oracle 三个完整 9×9 点阵角色
+- 亮点、暗点和窗口边框均应为可见实体层，建议凸起 0.15–0.4 mm
 
 ## 4. 建模要求
 
@@ -143,10 +175,10 @@ scale = 8.34 mm / 0.19 model_unit ≈ 43.9 → 取整 44 mm / unit
 | **屏幕** | 屏幕上内容要有 **物理凸起**（像素往上凸），在渲染图上必须能看出来 |
 | **麦克风** | **真正挖出一个洞**。沉孔（countersink）+ 内孔（bore）+ 边缘高光环（chamfer）。不要用贴图模拟 |
 | **USB-C** | **真正挖出接口**。包含：外部凹坑（recess）、内部 USB-C 口（inner mouth）、**USB 舌头（tongue）**、正面 rim、正面 mouth。舌头要在接口内部可见 |
-| **螺丝** | 背面 4 颗真实螺丝几何，带螺丝槽 |
+| **螺丝** | 背面 2 颗真实螺丝几何，带螺丝槽 |
 | **侧边按钮** | 按钮 + 导轨凹槽，与机身分离 |
-| **散热标记** | "热"字图形在左侧平面，内凹黑底 + 亮灰描边 |
-| **背板** | 机身背面较小的 Squircle 面板，与主体分离 |
+| **散热标记** | 直接使用 `ShowcaseStage.tsx` 内联 `THERMAL_*` 路径裁剪左侧平面 |
+| **背板** | 机身背面向内刻入的 Squircle 轮廓痕，不外凸 |
 
 ### 4.2 材质
 
@@ -232,13 +264,13 @@ scale = 8.34 mm / 0.19 model_unit ≈ 43.9 → 取整 44 mm / unit
 8. 建立统一的坐标系（原点在机身中心，Y 向上，Z 为厚度）
 9. 分部件建模：
    - 机身 Squircle（含倒角 bevel）
-   - 正面覆层 × 背板
+   - 正面覆层 × 内凹背板刻线
    - 屏幕基板 + 像素凸起层 + 玻璃唇边
    - 右侧按钮（含导轨）
-   - 背面 4 颗螺丝
+   - 背面 2 颗对角螺丝
    - 顶部麦克风（沉孔 + 内孔 + 边缘环）
    - 底部 USB-C（凹坑 + 接口 + 舌头 + Rim + Mouth）
-   - 左侧"热"字散热标记
+   - 左侧现有 SVG 散热标记
 10. 每完成一个部件，导出 GLB 并叠加到当前 Three.js 场景中校验比例
 11. 调整材质参数直到视觉匹配
 

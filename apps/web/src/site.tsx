@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import brandWordmark from "./assets/jiko-wordmark-site.svg";
 import ptoqLogo from "./assets/ptoq-logo.png";
 import { ShowcaseStage } from "./ui/ShowcaseStage";
+import { SitePaperGrain } from "./ui/SitePaperGrain";
 import "./styles.css";
 import "./showcase.css";
 import "./site.css";
@@ -534,6 +535,7 @@ function Site() {
 
   return (
     <main className="site-shell" aria-label="jiko official site study">
+      <SitePaperGrain ready={revealReady} />
       <section
         className="site-frame"
         data-reveal={revealReady ? "ready" : "pending"}

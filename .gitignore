@@ -8,6 +8,7 @@ build/
 .next/
 .vite/
 coverage/
+artifacts/
 *.tsbuildinfo
 
 # Python
@@ -17,6 +18,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.venv-model/
 venv/
 
 # Environment and secrets
@@ -41,6 +43,13 @@ sessions/
 *.m4a
 *.webm
 *.aiff
+*.ogg
+*.flac
+*.aac
+*.pcm
+*.raw
+*.mp4
+*.mov
 
 # OS/editor
 .DS_Store
@@ -51,3 +60,9 @@ sessions/
 # Local experiments unrelated to jiko
 _vendor/
 wevault/
+
+# Reproducible CAD exports (keep source, notes, and metadata in Git)
+models/**/*.stl
+models/**/*.step
+models/**/*.glb
+models/**/*.png

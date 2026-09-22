@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jiko.local/schemas/stt-corpus-manifest-v1.schema.json",
+  "title": "Jiko verified STT corpus manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "manifestId", "provenance", "audioSpec", "cases"],
+  "properties": {
+    "schemaVersion": { "const": "stt_corpus_manifest_v1" },
+    "manifestId": { "$ref": "#/$defs/safeId" },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "description", "redistribution"],
+      "properties": {
+        "class": { "enum": ["synthetic", "licensed", "consented_internal"] },
+        "description": { "type": "string", "minLength": 1 },
+        "redistribution": { "enum": ["allowed", "prohibited"] }
+      }
+    },
+    "audioSpec": { "$ref": "#/$defs/audioSpec" },
+    "cases": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/case" } }
+  },
+  "$defs": {
+    "safeId": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9._:-]+$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "audioSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mediaType", "sampleRateHz", "channelCount", "sampleFormat"],
+      "properties": {
+        "mediaType": { "const": "audio/wav" },
+        "sampleRateHz": { "const": 16000 },
+        "channelCount": { "const": 1 },
+        "sampleFormat": { "const": "pcm_s16le" }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 45 }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "language", "audio", "reference", "keywords", "slices"],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "language": { "enum": ["zh", "en", "code_switch", "silence"] },
+        "audio": { "$ref": "#/$defs/audio" },
+        "reference": { "type": "string" },
+        "keywords": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "slices": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/safeId" } }
+      }
+    }
+  }
+}

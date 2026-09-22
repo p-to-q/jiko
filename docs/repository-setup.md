@@ -2,17 +2,20 @@
 
 ## Status
 
-This repository is intended to be private. Do not publish it as open source unless the team explicitly decides to do that later.
+This repository is public source under the terms in [`LICENSE`](../LICENSE).
+Public visibility applies to code, documentation, synthetic fixtures, and
+deliberately published design assets. It does not authorize publishing user
+recordings, real-person transcripts, credentials, private endpoints, or local
+runtime receipts.
 
-No `LICENSE` file is included. That is intentional: without a license, external users are not granted reuse rights by default.
-
-The repository profile is private `micro+`: small enough for a hackathon prototype, but disciplined enough that future code has a clear place to land.
+The repository profile is public-source `micro+`: small enough for a prototype,
+but disciplined enough that future code has a clear place to land.
 
 ## Suggested GitHub Settings
 
 Create the GitHub repository as:
 
-- Visibility: private.
+- Visibility: public.
 - Default branch: `main`.
 - Issues: enabled.
 - Projects: optional.
@@ -50,18 +53,22 @@ Branch protection can be added after the first working prototype:
 - `.gitignore`: default ignored files for Node, Python, build output, secrets, logs, and local recordings.
 - `.env.example`: placeholder environment variables.
 - `.editorconfig`, `.gitattributes`, `.prettierrc`: small formatting defaults.
+- `.github/workflows/ci.yml`: Linux host build, contracts, tests, benchmark, and
+  Chromium product journeys on pull requests and `main`.
 - `AGENTS.md`: local agent instructions.
 
 ## Still Missing
 
 Add these when the relevant workflow exists:
 
-- `apps/device`.
-- Basic CI after the first runnable app exists.
-- CAD/source files for the shell once dimensions are known.
+- Production-enclosure CAD after the internal stack and dimensions are measured.
 - `docs/demo-script.md` after the interaction copy is settled.
 
-Do not add governance files, license files, ADR trees, or CI workflows until there is a real workflow to support.
+Do not add governance files or ADR trees until there is a real workflow to
+support. Host CI validates the runnable workspace on pull requests and `main`;
+it does not protect merges until branch protection requires the check.
+Target-HIL and signed release automation remain separate future gates. The
+current license is already part of the public repo.
 
 ## Secret Handling
 
@@ -86,4 +93,5 @@ git remote add origin git@github.com:ORG_OR_USER/REPO_NAME.git
 git push -u origin main
 ```
 
-Only run the remote commands after the private GitHub repo exists.
+Only run the remote commands after the intended GitHub repository exists and its
+visibility and license have been checked.

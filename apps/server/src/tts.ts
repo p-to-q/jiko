@@ -11,7 +11,10 @@ type TtsOutput = {
 
 const serverRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-export async function speakLocalResult(tts: TtsRequest | undefined): Promise<TtsOutput | undefined> {
+export async function speakLocalResult(
+  tts: TtsRequest | undefined,
+  signal?: AbortSignal
+): Promise<TtsOutput | undefined> {
   if (!tts?.text.trim()) {
     return undefined;
   }
@@ -20,12 +23,12 @@ export async function speakLocalResult(tts: TtsRequest | undefined): Promise<Tts
   const startedAt = Date.now();
 
   if (provider === "clip" || provider === "clips" || provider === "local-clip") {
-    const receipt = await runLocalClip(tts, startedAt);
+    const receipt = await runLocalClip(tts, startedAt, signal);
     return { provider: receipt };
   }
 
   if (provider === "piper") {
-    const receipt = await runPiper(tts.text, startedAt);
+    const receipt = await runPiper(tts.text, startedAt, signal);
     return { provider: receipt };
   }
 
@@ -38,7 +41,11 @@ export async function speakLocalResult(tts: TtsRequest | undefined): Promise<Tts
   };
 }
 
-async function runLocalClip(tts: TtsRequest, startedAt: number): Promise<ProviderReceipt> {
+async function runLocalClip(
+  tts: TtsRequest,
+  startedAt: number,
+  signal?: AbortSignal
+): Promise<ProviderReceipt> {
   if (!tts.clipKey) {
     return {
       id: "local:clip:key-missing",
@@ -65,7 +72,7 @@ async function runLocalClip(tts: TtsRequest, startedAt: number): Promise<Provide
   }
 
   try {
-    await playAudioFile(clipPath);
+    await playAudioFile(clipPath, signal);
 
     return {
       id: `local:clip:played:${safeReceiptPart(tts.clipKey)}`,
@@ -73,6 +80,9 @@ async function runLocalClip(tts: TtsRequest, startedAt: number): Promise<Provide
       remote: false
     };
   } catch (error) {
+    if (signal?.aborted) {
+      throw error;
+    }
     return {
       id: `local:clip:playback-failed:${shortReason(error)}`,
       latencyMs: Date.now() - startedAt,
@@ -81,7 +91,11 @@ async function runLocalClip(tts: TtsRequest, startedAt: number): Promise<Provide
   }
 }
 
-async function runPiper(text: string, startedAt: number): Promise<ProviderReceipt> {
+async function runPiper(
+  text: string,
+  startedAt: number,
+  signal?: AbortSignal
+): Promise<ProviderReceipt> {
   const bin = process.env.PIPER_BIN?.trim() || "piper";
   const voice = process.env.PIPER_VOICE?.trim();
 
@@ -97,7 +111,14 @@ async function runPiper(text: string, startedAt: number): Promise<ProviderReceip
   const outputPath = path.join(outputDir, "speech.wav");
 
   try {
-    await runProcess(bin, ["--model", voice, "--output_file", outputPath], { stdin: text });
+    await runProcess(bin, ["--model", voice, "--output_file", outputPath], {
+      stdin: text,
+      signal,
+      timeoutMs: ttsProcessTimeoutMs()
+    });
+    if (playbackEnabled()) {
+      await playAudioFile(outputPath, signal);
+    }
 
     return {
       id: "local:piper",
@@ -105,6 +126,9 @@ async function runPiper(text: string, startedAt: number): Promise<ProviderReceip
       remote: false
     };
   } catch (error) {
+    if (signal?.aborted) {
+      throw error;
+    }
     return {
       id: `local:piper:unavailable:${shortReason(error)}`,
       latencyMs: Date.now() - startedAt,
@@ -141,13 +165,24 @@ function resolveLocalDirs(dir: string): string[] {
   return [path.resolve(dir), path.resolve(serverRoot, dir)];
 }
 
-async function playAudioFile(filePath: string): Promise<void> {
+async function playAudioFile(filePath: string, signal?: AbortSignal): Promise<void> {
   const command = process.env.TTS_PLAY_COMMAND?.trim() || defaultPlayCommand();
   if (!command) {
     throw new Error("No local audio playback command is configured.");
   }
 
-  await runProcess(command, [filePath]);
+  await runProcess(command, [filePath], {
+    signal,
+    timeoutMs: ttsProcessTimeoutMs()
+  });
+}
+
+function ttsProcessTimeoutMs(): number {
+  const configured = Number(process.env.TTS_PROCESS_TIMEOUT_MS ?? "20000");
+  if (!Number.isFinite(configured) || configured <= 0) {
+    return 20_000;
+  }
+  return Math.min(configured, 60_000);
 }
 
 async function fileExists(filePath: string): Promise<boolean> {

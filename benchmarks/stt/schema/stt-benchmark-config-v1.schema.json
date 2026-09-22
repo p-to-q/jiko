@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jiko.local/schemas/stt-benchmark-config-v1.schema.json",
+  "title": "Jiko STT benchmark runner config v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profileId", "environmentKind", "corpusManifestPath", "warmupIterations", "measuredIterations", "candidates"],
+  "properties": {
+    "schemaVersion": { "const": "stt_benchmark_config_v1" },
+    "profileId": { "$ref": "#/$defs/safeId" },
+    "environmentKind": { "enum": ["host", "target"] },
+    "corpusManifestPath": { "type": ["string", "null"] },
+    "warmupIterations": { "type": "integer", "minimum": 0 },
+    "measuredIterations": { "type": "integer", "minimum": 0 },
+    "target": { "$ref": "#/$defs/target" },
+    "candidates": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/candidate" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "environmentKind": { "const": "target" } } },
+      "then": {
+        "required": ["target"],
+        "properties": { "target": { "$ref": "#/$defs/target" } }
+      }
+    }
+  ],
+  "$defs": {
+    "safeId": { "type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[A-Za-z0-9._:-]+$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dutId", "hardwareRevision", "osImageSha256", "powerMode"],
+      "properties": {
+        "dutId": { "type": "string", "minLength": 1 },
+        "hardwareRevision": { "type": "string", "minLength": 1 },
+        "osImageSha256": { "$ref": "#/$defs/sha256" },
+        "powerMode": { "type": "string", "minLength": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "sensevoiceSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts", "language", "threads", "executionProvider", "useItn", "timeoutMs"],
+      "properties": {
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["python", "worker", "model", "tokens"],
+          "properties": {
+            "python": { "$ref": "#/$defs/artifact" },
+            "worker": { "$ref": "#/$defs/artifact" },
+            "model": { "$ref": "#/$defs/artifact" },
+            "tokens": { "$ref": "#/$defs/artifact" }
+          }
+        },
+        "language": { "type": "string", "minLength": 1 },
+        "threads": { "type": "integer", "minimum": 1 },
+        "executionProvider": { "type": "string", "minLength": 1 },
+        "useItn": { "type": "boolean" },
+        "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 90000 }
+      }
+    },
+    "whisperSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifacts", "language", "timeoutMs"],
+      "properties": {
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["runtime", "model"],
+          "properties": {
+            "runtime": { "$ref": "#/$defs/artifact" },
+            "model": { "$ref": "#/$defs/artifact" }
+          }
+        },
+        "language": { "type": "string", "minLength": 1 },
+        "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 90000 }
+      }
+    },
+    "funasrSettings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["endpoint", "model", "language", "identityManifestPath", "timeoutMs"],
+      "properties": {
+        "endpoint": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "language": { "type": "string", "minLength": 1 },
+        "identityManifestPath": { "type": "string", "minLength": 1 },
+        "timeoutMs": { "type": "integer", "minimum": 1, "maximum": 90000 }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "family"],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "family": { "enum": ["sensevoice", "whisper_cpp", "funasr"] },
+        "settings": { "type": ["object", "null"] }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["settings"], "properties": { "family": { "const": "sensevoice" }, "settings": { "type": "object" } } },
+          "then": { "properties": { "settings": { "$ref": "#/$defs/sensevoiceSettings" } } }
+        },
+        {
+          "if": { "required": ["settings"], "properties": { "family": { "const": "whisper_cpp" }, "settings": { "type": "object" } } },
+          "then": { "properties": { "settings": { "$ref": "#/$defs/whisperSettings" } } }
+        },
+        {
+          "if": { "required": ["settings"], "properties": { "family": { "const": "funasr" }, "settings": { "type": "object" } } },
+          "then": { "properties": { "settings": { "$ref": "#/$defs/funasrSettings" } } }
+        }
+      ]
+    }
+  }
+}

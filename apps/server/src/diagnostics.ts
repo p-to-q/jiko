@@ -1,7 +1,16 @@
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  getConfiguredSherpaSenseVoiceWorker,
+  sherpaSenseVoiceProviderId,
+  type SttWorkerReadiness
+} from "./persistentSttWorker.js";
 import { runProcess } from "./process.js";
+import {
+  describeFunAsrEndpoint,
+  getDeepgramConfigurationDiagnostic
+} from "./stt.js";
 
 export type DiagnosticStatus = "ready" | "configured" | "missing" | "disabled";
 
@@ -9,6 +18,13 @@ export type DiagnosticCheck = {
   status: DiagnosticStatus;
   id: string;
   detail?: string;
+  readiness?: SttWorkerReadiness;
+};
+
+export type StrictDiagnosticBlocker = {
+  component: "runtime.ffmpeg" | "providers.stt" | "providers.tts";
+  status: DiagnosticStatus;
+  id: string;
 };
 
 const requiredClipKeys = [
@@ -23,6 +39,18 @@ const requiredClipKeys = [
 
 const clipExtensions = ["wav", "mp3", "m4a", "aiff"];
 const serverRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const ffmpegProbeTimeoutMs = 1_000;
+const ffmpegProbeMaxOutputBytes = 64 * 1024;
+const ffmpegProbeCacheTtlMs = 1_000;
+
+type FfmpegProbeCache = {
+  bin: string;
+  expiresAtMs: number;
+  result?: DiagnosticCheck;
+  pending?: Promise<DiagnosticCheck>;
+};
+
+let ffmpegProbeCache: FfmpegProbeCache | undefined;
 
 export async function collectDiagnostics() {
   const [ffmpeg, stt, tts] = await Promise.all([
@@ -31,7 +59,13 @@ export async function collectDiagnostics() {
     checkTtsProvider()
   ]);
 
+  const strictBlocking = strictReadinessBlockers(ffmpeg, stt, tts);
   return {
+    // `/health` is also a liveness endpoint. Consumers that require every
+    // runtime/provider to be proved ready must gate on this separate field;
+    // `configured`, `disabled`, and `missing` deliberately do not pass it.
+    strictReady: strictBlocking.length === 0,
+    strictBlocking,
     runtime: {
       ffmpeg
     },
@@ -44,9 +78,40 @@ export async function collectDiagnostics() {
 
 async function checkFfmpeg(): Promise<DiagnosticCheck> {
   const bin = process.env.FFMPEG_BIN?.trim() || "ffmpeg";
+  const now = performance.now();
+  if (ffmpegProbeCache?.bin === bin) {
+    if (ffmpegProbeCache.pending) {
+      return ffmpegProbeCache.pending;
+    }
+    if (ffmpegProbeCache.result && now < ffmpegProbeCache.expiresAtMs) {
+      return ffmpegProbeCache.result;
+    }
+  }
 
+  const pending = probeFfmpeg(bin);
+  ffmpegProbeCache = {
+    bin,
+    expiresAtMs: 0,
+    pending
+  };
+
+  const result = await pending;
+  if (ffmpegProbeCache?.bin === bin && ffmpegProbeCache.pending === pending) {
+    ffmpegProbeCache = {
+      bin,
+      expiresAtMs: performance.now() + ffmpegProbeCacheTtlMs,
+      result
+    };
+  }
+  return result;
+}
+
+async function probeFfmpeg(bin: string): Promise<DiagnosticCheck> {
   try {
-    await runProcess(bin, ["-version"]);
+    await runProcess(bin, ["-version"], {
+      timeoutMs: ffmpegProbeTimeoutMs,
+      maxOutputBytes: ffmpegProbeMaxOutputBytes
+    });
     return {
       status: "ready",
       id: bin
@@ -60,6 +125,21 @@ async function checkFfmpeg(): Promise<DiagnosticCheck> {
   }
 }
 
+function strictReadinessBlockers(
+  ffmpeg: DiagnosticCheck,
+  stt: DiagnosticCheck,
+  tts: DiagnosticCheck
+): StrictDiagnosticBlocker[] {
+  const checks: ReadonlyArray<readonly [StrictDiagnosticBlocker["component"], DiagnosticCheck]> = [
+    ["runtime.ffmpeg", ffmpeg],
+    ["providers.stt", stt],
+    ["providers.tts", tts]
+  ];
+  return checks.flatMap(([component, check]) => check.status === "ready"
+    ? []
+    : [{ component, status: check.status, id: check.id }]);
+}
+
 async function checkSttProvider(): Promise<DiagnosticCheck> {
   const provider = process.env.STT_PROVIDER?.trim().toLowerCase();
 
@@ -71,11 +151,40 @@ async function checkSttProvider(): Promise<DiagnosticCheck> {
     };
   }
 
+  if (provider === "deepgram") {
+    return getDeepgramConfigurationDiagnostic();
+  }
+
   if (provider === "funasr") {
     const endpoint = process.env.FUNASR_ENDPOINT?.trim();
-    return endpoint
-      ? { status: "configured", id: "local:funasr-http", detail: endpoint }
-      : { status: "missing", id: "local:funasr-http", detail: "FUNASR_ENDPOINT is required." };
+    if (!endpoint) {
+      return {
+        status: "missing",
+        id: "self-hosted:funasr-http",
+        detail: "FUNASR_ENDPOINT is required."
+      };
+    }
+
+    const boundary = describeFunAsrEndpoint(endpoint);
+    if (boundary?.scope === "network") {
+      return {
+        status: "missing",
+        id: "self-hosted:funasr-http:network-blocked",
+        detail: "FUNASR_ENDPOINT must use loopback or a literal private LAN address; public/DNS network endpoints are blocked."
+      };
+    }
+
+    return boundary
+      ? {
+          status: "configured",
+          id: `self-hosted:funasr-http:${boundary.scope}`,
+          detail: `${boundary.scope}; ${boundary.origin}; operator-managed self-hosted endpoint`
+        }
+      : {
+          status: "missing",
+          id: "self-hosted:funasr-http:invalid",
+          detail: "FUNASR_ENDPOINT must be a valid HTTP(S) endpoint without credentials or a fragment."
+        };
   }
 
   if (provider === "whisper.cpp" || provider === "whisper_cpp" || provider === "whisper-cpp") {
@@ -115,7 +224,7 @@ async function checkSttProvider(): Promise<DiagnosticCheck> {
     if (!model || !tokens) {
       return {
         status: "missing",
-        id: "local:sherpa-onnx-sensevoice",
+        id: sherpaSenseVoiceProviderId,
         detail: "SHERPA_ONNX_SENSEVOICE_MODEL and SHERPA_ONNX_SENSEVOICE_TOKENS are required."
       };
     }
@@ -129,16 +238,31 @@ async function checkSttProvider(): Promise<DiagnosticCheck> {
     if (!pythonReady || !modelReady || !tokensReady) {
       return {
         status: "missing",
-        id: "local:sherpa-onnx-sensevoice",
+        id: sherpaSenseVoiceProviderId,
         detail: `${pythonReady ? "" : "SHERPA_ONNX_PYTHON not found. "}${modelReady ? "" : "SHERPA_ONNX_SENSEVOICE_MODEL not found. "}${tokensReady ? "" : "SHERPA_ONNX_SENSEVOICE_TOKENS not found."}`.trim()
       };
     }
 
-    return {
-      status: "ready",
-      id: "local:sherpa-onnx-sensevoice",
-      detail: path.basename(path.dirname(model))
-    };
+    try {
+      const readiness = await getConfiguredSherpaSenseVoiceWorker().start();
+      return {
+        status: "ready",
+        id: sherpaSenseVoiceProviderId,
+        detail: [
+          `${readiness.runtime.name}@${readiness.runtime.version}`,
+          `${readiness.artifacts.model.name} sha256:${readiness.artifacts.model.sha256.slice(0, 12)}`,
+          `${readiness.artifacts.tokens.name} sha256:${readiness.artifacts.tokens.sha256.slice(0, 12)}`,
+          `load ${readiness.loadMs} ms`
+        ].join("; "),
+        readiness
+      };
+    } catch (error) {
+      return {
+        status: "missing",
+        id: sherpaSenseVoiceProviderId,
+        detail: `Persistent worker not ready: ${shortReason(error)}`
+      };
+    }
   }
 
   return {

@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Install system audio and browser dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+          pnpm --filter @jiko/web exec playwright install --with-deps chromium
+
+      - name: Unit, contract, runtime, and benchmark tests
+        run: |
+          pnpm test
+          pnpm typecheck
+          pnpm benchmark
+
+      - name: Preserve structural benchmark receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: structural-benchmark-${{ github.sha }}
+          path: artifacts/benchmarks/latest.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Browser product journeys
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+        run: pnpm test:e2e
+
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-failure-evidence
+          path: artifacts/playwright/**
+          if-no-files-found: ignore
+          retention-days: 7
