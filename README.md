@@ -132,4 +132,4 @@ https://github.com/p-to-q/jiko/issues
 
 [CC BY-NC-SA 4.0](./LICENSE). you can read, learn, fork, and contribute — but not commercialize.
 
-a [p to q](https://www.ptoq.io/) project.
+a [p → q](https://www.ptoq.io/) project.
